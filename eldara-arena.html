@@ -624,7 +624,9 @@ function update(gs,dt) {
     if(pr.traveled>pr.range||isWall(gs.arena,pr.x,pr.y)){pr.alive=false;spawnEfx(gs,'splat',pr.x,pr.y);}
     var tgt=pr.owner===me.id?en:me;
     if(pr.alive&&Math.hypot(pr.x-tgt.x,pr.y-tgt.y)<26) {
-      if(!tgt.rollInv){dealDmg(gs,tgt,pr.dmg,'proj');if(pr.dot>0){tgt.poisoned=pr.dotDur;tgt.poisonDmg=pr.dot;tgt.poisonTimer=850;}pr.alive=false;spawnEfx(gs,'impact',pr.x,pr.y);}
+      if(pr.visualOnly){pr.alive=false;spawnEfx(gs,'impact',pr.x,pr.y);}
+      else if(!tgt.rollInv){dealDmg(gs,tgt,pr.dmg,'proj');if(pr.dot>0){tgt.poisoned=pr.dotDur;tgt.poisonDmg=pr.dot;tgt.poisonTimer=850;}pr.alive=false;spawnEfx(gs,'impact',pr.x,pr.y);}
+      else{pr.alive=false;}
     }
     if(!pr.alive)gs.projs.splice(i,1);
   }
@@ -835,35 +837,38 @@ function dbg(msg) {
 function processAction(msg,gs,me,en) {
   if(!msg||!gs||!me||!en)return;
   if(msg.type==='attack'){
-    var C5=CLS[en.cls],atkPos=msg.data||{};
+    // Show attack animation on our side. Damage was dealt on attacker's side + HP broadcast.
+    var C5=CLS[en.cls];
     en.attacking=14;
-    var expos={x:atkPos.x!=null?atkPos.x:en.x,y:atkPos.y!=null?atkPos.y:en.y};
-    var rangeDist=Math.hypot(expos.x-me.x,expos.y-me.y);
-    dbg('ATK recv. dist='+Math.round(rangeDist)+' range='+(C5.atkRange+30)+' rollInv='+me.rollInv);
-    if(rangeDist<C5.atkRange+30){
-      if(!me.rollInv){
-        if(me.blocking)dealDmg(gs,me,Math.max(1,Math.floor(C5.atkDmg*0.15)),'block');
-        else dealDmg(gs,me,C5.atkDmg+Math.floor(Math.random()*7)-3,'slash');
-      } else { dbg('Blocked by rollInv!'); }
-    } else { dbg('Out of range - no dmg'); }
+    spawnEfx(gs,'slash',en.x,en.y);
+    dbg('ATK anim recv');
   } else if(msg.type==='skill1'){
+    // Shooter already dealt damage locally + broadcast HP. We just animate on our side.
     var sk1r=CLS[en.cls].s1,sp1=msg.data||{};
+    var enPos1={x:sp1.x!=null?sp1.x:en.x,y:sp1.y!=null?sp1.y:en.y};
+    en.s1cd=sk1r.cd;
+    // Show projectile flying toward us (visual only — damage already happened)
     if(sk1r.proj){
-      var a2=Math.atan2(me.y-(sp1.y||en.y),me.x-(sp1.x||en.x));
-      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:en.cls==='mage'?'fireball':'arrow',x:sp1.x||en.x,y:sp1.y||en.y,vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,dmg:sk1r.dmg,dot:sk1r.dot||0,dotDur:sk1r.dotDur||0,range:sk1r.range,traveled:0,alive:true,anim:0});
-    } else if(sk1r.stun&&Math.hypot((sp1.x||en.x)-me.x,(sp1.y||en.y)-me.y)<sk1r.range){
-      dealDmg(gs,me,sk1r.dmg,'bash');me.stunned=sk1r.stun;spawnEfx(gs,'stun',me.x,me.y);
-    } else if(sk1r.aoe&&Math.hypot((sp1.x||en.x)-me.x,(sp1.y||en.y)-me.y)<sk1r.range){
-      dealDmg(gs,me,sk1r.dmg,'aoe');spawnEfx(gs,'aoe',sp1.x||en.x,sp1.y||en.y);
+      var a2=Math.atan2(me.y-enPos1.y,me.x-enPos1.x);
+      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:en.cls==='mage'?'fireball':'arrow',x:enPos1.x,y:enPos1.y,vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,dmg:0,dot:0,dotDur:0,range:sk1r.range,traveled:0,alive:true,anim:0,visualOnly:true});
+    } else if(sk1r.stun){
+      spawnEfx(gs,'stun',me.x,me.y);
+    } else if(sk1r.aoe){
+      spawnEfx(gs,'aoe',enPos1.x,enPos1.y);
     }
-    spawnEfx(gs,'cast',sp1.x||en.x,sp1.y||en.y);
+    spawnEfx(gs,'cast',enPos1.x,enPos1.y);
   } else if(msg.type==='skill2'){
+    // Visual only on receiver side — damage already broadcast via HP pushState
     var sk2r=CLS[en.cls].s2,sp2=msg.data||{};
+    var enPos3={x:sp2.x!=null?sp2.x:en.x,y:sp2.y!=null?sp2.y:en.y};
+    en.s2cd=sk2r.cd;
     if(sk2r.proj){
-      var a3=Math.atan2(me.y-(sp2.y||en.y),me.x-(sp2.x||en.x));
-      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:'arrow',x:sp2.x||en.x,y:sp2.y||en.y,vx:Math.cos(a3)*sk2r.speed,vy:Math.sin(a3)*sk2r.speed,dmg:sk2r.dmg,dot:sk2r.dot||0,dotDur:sk2r.dotDur||0,range:sk2r.range,traveled:0,alive:true,anim:0});
+      var a3=Math.atan2(me.y-enPos3.y,me.x-enPos3.x);
+      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:'arrow',x:enPos3.x,y:enPos3.y,vx:Math.cos(a3)*sk2r.speed,vy:Math.sin(a3)*sk2r.speed,dmg:0,dot:0,dotDur:0,range:sk2r.range,traveled:0,alive:true,anim:0,visualOnly:true});
+    } else if(sk2r.aoe){
+      spawnEfx(gs,'aoe',enPos3.x,enPos3.y);
     }
-    spawnEfx(gs,'cast',sp2.x||en.x,sp2.y||en.y);
+    spawnEfx(gs,'cast',enPos3.x,enPos3.y);
   } else if(msg.type==='roll'){
     startRoll(en);
   } else if(msg.type==='rematch'){
@@ -952,25 +957,20 @@ document.addEventListener('keydown',function(e){
   if(!me||!en)return;
   if(!me||me.dead)return;
   if(e.code==='KeyZ'||e.code==='Space'){if(me.atkTimer<=0){
-    if(gameMode==='pvp'){
-      // In PvP: animate locally, push action. Damage applied on opponent's side.
-      var C2=CLS[me.cls];me.attacking=14;me.atkTimer=C2.atkMs;
-      pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y)});
-    } else {doAttack(gameState,me,en);}
+    // Run attack locally — deals damage to local enemy, HP broadcast via pushState
+    doAttack(gameState,me,en);
+    if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y)});
   }}
   if(e.code==='KeyX'){startRoll(me);if(gameMode==='pvp')pushAction('roll');}
   if(e.code==='KeyC'){
-    if(gameMode==='pvp'){
-      // Apply MP cost + cooldown locally, push to opponent
-      var C3=CLS[me.cls],sk1=C3.s1;
-      if(me.mp>=sk1.mp){me.mp-=sk1.mp;me.s1cd=sk1.cd;pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y)});spawnEfx(gameState,'cast',me.x,me.y);}
-    } else {doSkill(gameState,me,en,1);}
+    // Always run skill locally — projectiles & damage handled here, HP broadcast via pushState
+    doSkill(gameState,me,en,1);
+    if(gameMode==='pvp')pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y)});
   }
   if(e.code==='KeyV'){
-    if(gameMode==='pvp'){
-      var C4=CLS[me.cls],sk2=C4.s2;
-      if(me.mp>=sk2.mp){me.mp-=sk2.mp;me.s2cd=sk2.cd;pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});spawnEfx(gameState,'cast',me.x,me.y);}
-    } else {doSkill(gameState,me,en,2);}
+    // Always run skill locally — projectiles & damage handled here, HP broadcast via pushState
+    doSkill(gameState,me,en,2);
+    if(gameMode==='pvp')pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});
   }
   if(e.code==='KeyF')me.blocking=true;
 });
