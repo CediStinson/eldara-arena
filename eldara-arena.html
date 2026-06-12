@@ -491,15 +491,24 @@ function mkGS(arenaKey,me,en) {
 // ═══════════════════════════════════════════
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 
-function dealDmg(gs,target,dmg,type) {
+function dealDmg(gs,target,dmg,type,dotData) {
   if(target.dead)return;
+  if(gameMode==='pvp'&&!target.isMe) {
+    // In PvP, we don't own the enemy's HP — send damage to their inbox instead
+    dbg('SEND DMG '+Math.round(dmg)+' to opponent');
+    sendDamage(dmg, type, dotData||null);
+    // Show hit effect locally
+    target.hitFlash=220;
+    spawnEfx(gs,type,target.x,target.y);
+    return;
+  }
+  // Apply damage to ourselves (we own our own HP)
   target.hp=Math.max(0,target.hp-dmg);
   target.hitFlash=220;
   spawnEfx(gs,type,target.x,target.y);
   sidelog('\u2694',Math.round(dmg)+' dmg \u2192 '+target.name);
-  dbg('DMG '+Math.round(dmg)+' to '+target.name+' hp='+Math.round(target.hp)+'/'+target.maxHp);
+  dbg('DMG '+Math.round(dmg)+' to self hp='+Math.round(target.hp)+'/'+target.maxHp);
   if(target.hp<=0){target.dead=true;target.hp=0;}
-  // Immediately broadcast new HP if this is us taking damage
   if(target.isMe&&gameMode==='pvp')pushState(target);
   if(target.hp<=0)endRound(gs);
 }
@@ -840,10 +849,16 @@ function pushState(me) {
 }
 
 function pushAction(type,data) {
-  // Write to opponent's inbox so they read and delete it themselves
   dbg('SEND '+type+' to '+enemyIdPvp.slice(0,8));
   if(!enemyIdPvp){dbg('ERROR: enemyIdPvp empty!');return;}
   fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:type,from:myId,data:data||{},ts:Date.now()});
+}
+
+function sendDamage(dmg, type, extraData) {
+  // Tell opponent to apply damage to themselves
+  if(!enemyIdPvp||gameMode!=='pvp')return;
+  var d=Object.assign({dmg:Math.round(dmg),dtype:type||'hit'},extraData||{});
+  fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:'damage',from:myId,data:d,ts:Date.now()});
 }
 
 function startListeningEnemy(enemyId) {
@@ -896,6 +911,19 @@ function processAction(msg,gs,me,en) {
       spawnEfx(gs,'aoe',enPos3.x,enPos3.y);
     }
     spawnEfx(gs,'cast',enPos3.x,enPos3.y);
+  } else if(msg.type==='damage'){
+    // Opponent dealt damage to us — apply to ourselves
+    var dmgAmt=msg.data&&msg.data.dmg?msg.data.dmg:0;
+    var dmgType=msg.data&&msg.data.dtype?msg.data.dtype:'hit';
+    dbg('RECV DMG '+dmgAmt+' type='+dmgType);
+    if(dmgAmt>0&&me&&!me.dead){
+      me.hp=Math.max(0,me.hp-dmgAmt);
+      me.hitFlash=220;
+      spawnEfx(gs,dmgType,me.x,me.y);
+      sidelog('\u2694',dmgAmt+' dmg (incoming)');
+      if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}
+      if(gameMode==='pvp')pushState(me);
+    }
   } else if(msg.type==='roll'){
     startRoll(en);
   } else if(msg.type==='rematch'){
