@@ -496,7 +496,10 @@ function dealDmg(gs,target,dmg,type) {
   target.hitFlash=220;
   spawnEfx(gs,type,target.x,target.y);
   sidelog('\u2694',Math.round(dmg)+' dmg \u2192 '+target.name);
-  if(target.hp<=0){target.dead=true;target.hp=0;endRound(gs);}
+  if(target.hp<=0){target.dead=true;target.hp=0;}
+  // Immediately broadcast new HP if this is us taking damage
+  if(target.isMe&&gameMode==='pvp')pushState(target);
+  if(target.hp<=0)endRound(gs);
 }
 
 function doAttack(gs,attacker,target) {
@@ -594,8 +597,10 @@ function update(gs,dt) {
   if(gs.phase==='countdown'){gs.countdown-=dt;if(gs.countdown<=0)resetRound(gs);return;}
   gs.roundMs+=dt;
   if(gs.roundMs>=1000){gs.roundMs-=1000;gs.roundTimer=Math.max(0,gs.roundTimer-1);}
-  if(gs.roundTimer<=0){var p0=gs.players[0],p1=gs.players[1],w=p0.hp>=p1.hp?p0:p1;w.wins++;endRound(gs);showBanner('TIME UP \u2014 '+w.name);return;}
-  var me=gs.players[0],en=gs.players[1];
+  if(gs.roundTimer<=0){var p0=gs.players[0],p1=gs.players[1],w=p0.hp>=p1.hp?p0:p1;w.wins++;showBanner('TIME UP \u2014 '+w.name);endRound(gs);return;}
+  var me=gs.players.find(function(p){return p.isMe;});
+  var en=gs.players.find(function(p){return !p.isMe;});
+  if(!me||!en)return;
   updateLocal(gs,me,dt);
   if(gameMode==='training')updateAI(gs,en,me,dt);
   else lerpRemote(en);
@@ -661,10 +666,12 @@ function lerpRemote(en) {
   if(remoteState.hitFlash) en.hitFlash=80;
   if(remoteState.stunned>0) en.stunned=remoteState.stunned;
   if(remoteState.poisoned>0) en.poisoned=remoteState.poisoned;
-  // Check if remote player just died
-  if(en.dead&&gameState&&gameState.phase==='fighting') {
+  // Check if remote player just died (only trigger once)
+  if(en.dead&&!en._deathFired&&gameState&&gameState.phase==='fighting'){
+    en._deathFired=true;
     endRound(gameState);
   }
+  if(!en.dead)en._deathFired=false;
 }
 
 // ═══════════════════════════════════════════
@@ -737,11 +744,10 @@ function draw(gs) {
 // ═══════════════════════════════════════════
 function endRound(gs) {
   if(gs.phase==='gameOver')return;
-  var dead=null,alive=null;
-  for(var i=0;i<gs.players.length;i++){if(gs.players[i].dead)dead=gs.players[i];else alive=gs.players[i];}
+  var dead=gs.players.find(function(p){return p.dead;});
+  var alive=gs.players.find(function(p){return !p.dead;});
   if(alive){alive.wins++;showBanner(alive.name+' WINS ROUND!');}else showBanner('DRAW!');
-  var winner=null;
-  for(var j=0;j<gs.players.length;j++){if(gs.players[j].wins>=2){winner=gs.players[j];break;}}
+  var winner=gs.players.find(function(p){return p.wins>=2;});
   if(winner){gs.phase='gameOver';setTimeout(function(){showOverlay(winner.isMe?'VICTORY':'DEFEAT',winner.name+' wins the match!');},900);return;}
   gs.phase='countdown';gs.countdown=3200;
   setTimeout(function(){showBanner('ROUND '+(gs.round+1)+'...');},1000);
@@ -751,7 +757,8 @@ function resetRound(gs) {
   var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
   gs.arena=ARENAS[ak];gs.arenaKey=ak;
   for(var i=0;i<gs.players.length;i++){
-    var p=gs.players[i],C=CLS[p.cls],sp=p.isMe?gs.arena.sp1:gs.arena.sp2;
+    var p=gs.players[i],C2=CLS[p.cls],sp=p.isMe?gs.arena.sp1:gs.arena.sp2;
+    var C=C2;
     p.x=sp.x*TILE+TILE/2;p.y=sp.y*TILE+TILE/2;
     p.hp=C.hp;p.mp=C.mp;p.dead=false;
     p.stunned=0;p.poisoned=0;p.rolling=0;p.attacking=0;p.hitFlash=0;p.blocking=false;p.s1cd=0;p.s2cd=0;p.atkTimer=0;
@@ -769,7 +776,10 @@ function hideOverlay(){document.getElementById('game-overlay').classList.remove(
 // HUD
 // ═══════════════════════════════════════════
 function updateHUD(gs) {
-  var me=gs.players[0],en=gs.players[1],C=CLS[me.cls];
+  var me=gs.players.find(function(p){return p.isMe;});
+  var en=gs.players.find(function(p){return !p.isMe;});
+  if(!me||!en)return;
+  var C=CLS[me.cls];
   document.getElementById('sp-myname').textContent=me.name+(me.wins?' ('+me.wins+'\u2605)':'');
   document.getElementById('sp-myhp').style.width=(me.hp/me.maxHp*100)+'%';document.getElementById('sp-myhp-v').textContent=Math.ceil(me.hp)+'/'+me.maxHp;
   document.getElementById('sp-mymp').style.width=(me.mp/me.maxMp*100)+'%';document.getElementById('sp-mymp-v').textContent=Math.ceil(me.mp)+'/'+me.maxMp;
@@ -814,7 +824,10 @@ function startListeningActions() {
   var myInbox='/rooms/'+roomCode+'/inbox/'+myId;
   esActions=fbListen(myInbox,function(data){
     if(!data||!gameState)return;
-    var gs=gameState,en=gs.players[1],me=gs.players[0];
+    var gs=gameState;
+    var me=gs.players.find(function(p){return p.isMe;});
+    var en=gs.players.find(function(p){return !p.isMe;});
+    if(!me||!en)return;
     var keys=Object.keys(data);
     if(keys.length===0)return;
     keys.forEach(function(k){
@@ -858,8 +871,8 @@ function startListeningActions() {
         sidelog(msg.data.who||'?',msg.data.text||'');
       }
     });
-    // Delete my inbox after processing — I own it, I clear it
-    fbDelete(myInbox);
+    // Delete each processed entry individually so we don't lose concurrent messages
+    keys.forEach(function(k){ fbDelete(myInbox+'/'+k); });
   });
 }
 
@@ -904,7 +917,9 @@ document.addEventListener('keydown',function(e){
   if(acted.indexOf(e.code)>=0)e.preventDefault();
   if(keys[e.code])return;keys[e.code]=true;
   if(!gameState||gameState.phase!=='fighting')return;
-  var me=gameState.players[0],en=gameState.players[1];
+  var me=gameState.players.find(function(p){return p.isMe;});
+  var en=gameState.players.find(function(p){return !p.isMe;});
+  if(!me||!en)return;
   if(!me||me.dead)return;
   if(e.code==='KeyZ'||e.code==='Space'){if(me.atkTimer<=0){
     if(gameMode==='pvp'){
@@ -931,7 +946,7 @@ document.addEventListener('keydown',function(e){
 });
 document.addEventListener('keyup',function(e){
   keys[e.code]=false;
-  if(e.code==='KeyF'&&gameState){var me=gameState.players[0];if(me)me.blocking=false;}
+  if(e.code==='KeyF'&&gameState){var me2=gameState.players.find(function(p){return p.isMe;});if(me2)me2.blocking=false;}
 });
 
 // ═══════════════════════════════════════════
