@@ -155,7 +155,6 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
       <div class="room-label">ROOM CODE</div>
       <div class="room-code" id="lob-code">&#8212;</div>
       <div class="room-hint">send this to your opponent</div>
-      <div class="room-hint">send this to your opponent</div>
       <button id="copy-link-btn" style="margin-top:10px;width:100%;padding:8px 0;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;text-transform:uppercase">&#128279; COPY INVITE LINK</button>
       <div id="copy-confirm" style="font-size:8px;color:var(--green);letter-spacing:1px;margin-top:4px;min-height:12px;text-align:center"></div>
     </div>
@@ -646,15 +645,26 @@ function updateLocal(gs,p,dt) {
 function lerpRemote(en) {
   if(!remoteState)return;
   var t=0.18;
+  // Smooth position/visuals
   en.x+=(remoteState.x-en.x)*t;en.y+=(remoteState.y-en.y)*t;
   en.dir=remoteState.dir!=null?remoteState.dir:en.dir;
   en.anim=remoteState.anim!=null?remoteState.anim:en.anim;
-  en.moving=!!remoteState.moving;en.hp=remoteState.hp!=null?remoteState.hp:en.hp;
-  en.mp=remoteState.mp!=null?remoteState.mp:en.mp;
-  en.attacking=remoteState.attacking||0;en.rolling=remoteState.rolling||0;
-  en.stunned=Math.max(0,remoteState.stunned||0);en.poisoned=Math.max(0,remoteState.poisoned||0);
-  en.hitFlash=remoteState.hitFlash||0;en.blocking=!!remoteState.blocking;
-  en.dead=!!remoteState.dead;en.wins=remoteState.wins!=null?remoteState.wins:en.wins;
+  en.moving=!!remoteState.moving;
+  en.attacking=remoteState.attacking||0;
+  en.rolling=remoteState.rolling||0;
+  en.blocking=!!remoteState.blocking;
+  // HP/death/wins are authoritative from the remote player themselves
+  if(remoteState.hp!=null) en.hp=remoteState.hp;
+  if(remoteState.mp!=null) en.mp=remoteState.mp;
+  if(remoteState.dead!=null) en.dead=!!remoteState.dead;
+  if(remoteState.wins!=null) en.wins=remoteState.wins;
+  if(remoteState.hitFlash) en.hitFlash=80;
+  if(remoteState.stunned>0) en.stunned=remoteState.stunned;
+  if(remoteState.poisoned>0) en.poisoned=remoteState.poisoned;
+  // Check if remote player just died
+  if(en.dead&&gameState&&gameState.phase==='fighting') {
+    endRound(gameState);
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -806,9 +816,34 @@ function startListeningActions() {
     Object.keys(data).forEach(function(k){
       if(seen[k])return;seen[k]=true;
       var msg=data[k];if(!msg||msg.from===myId)return;
-      if(msg.type==='attack')doAttack(gs,en,me);
-      else if(msg.type==='skill1')doSkill(gs,en,me,1);
-      else if(msg.type==='skill2')doSkill(gs,en,me,2);
+      if(msg.type==='attack'){
+        // Opponent attacked — apply damage to ME (local player)
+        var C5=CLS[en.cls],atkPos=msg.data||{};
+        en.attacking=14;en.atkTimer=C5.atkMs;
+        // Use sent position for range check so it matches opponent's view
+        var expos={x:atkPos.x||en.x,y:atkPos.y||en.y};
+        if(Math.hypot(expos.x-me.x,expos.y-me.y)<C5.atkRange+20) {
+          if(!me.rollInv){
+            if(me.blocking)dealDmg(gs,me,Math.max(1,Math.floor(C5.atkDmg*0.15)),'block');
+            else dealDmg(gs,me,C5.atkDmg+Math.floor(Math.random()*7)-3,'slash');
+          }
+        }
+      }
+      else if(msg.type==='skill1'){
+        var sk1r=CLS[en.cls].s1,skPos1=msg.data||{};
+        en.s1cd=sk1r.cd;
+        // Apply skill effect to me
+        if(sk1r.stun&&Math.hypot((skPos1.x||en.x)-me.x,(skPos1.y||en.y)-me.y)<sk1r.range){dealDmg(gs,me,sk1r.dmg,'bash');me.stunned=sk1r.stun;spawnEfx(gs,'stun',me.x,me.y);}
+        else if(sk1r.proj){var a2=Math.atan2(me.y-(skPos1.y||en.y),me.x-(skPos1.x||en.x));gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:en.cls==='mage'?'fireball':'arrow',x:skPos1.x||en.x,y:skPos1.y||en.y,vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,dmg:sk1r.dmg,dot:sk1r.dot||0,dotDur:sk1r.dotDur||0,range:sk1r.range,traveled:0,alive:true,anim:0});}
+        else if(sk1r.aoe&&Math.hypot((skPos1.x||en.x)-me.x,(skPos1.y||en.y)-me.y)<sk1r.range){dealDmg(gs,me,sk1r.dmg,'aoe');spawnEfx(gs,'aoe',skPos1.x||en.x,skPos1.y||en.y);}
+        spawnEfx(gs,'cast',skPos1.x||en.x,skPos1.y||en.y);
+      }
+      else if(msg.type==='skill2'){
+        var sk2r=CLS[en.cls].s2,skPos2=msg.data||{};
+        en.s2cd=sk2r.cd;
+        if(sk2r.proj){var a3=Math.atan2(me.y-(skPos2.y||en.y),me.x-(skPos2.x||en.x));gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:'arrow',x:skPos2.x||en.x,y:skPos2.y||en.y,vx:Math.cos(a3)*sk2r.speed,vy:Math.sin(a3)*sk2r.speed,dmg:sk2r.dmg,dot:sk2r.dot||0,dotDur:sk2r.dotDur||0,range:sk2r.range,traveled:0,alive:true,anim:0});}
+        spawnEfx(gs,'cast',skPos2.x||en.x,skPos2.y||en.y);
+      }
       else if(msg.type==='roll')startRoll(en);
       else if(msg.type==='rematch'){hideOverlay();gs.players.forEach(function(p){p.wins=0;});resetRound(gs);}
       else if(msg.type==='chat'&&msg.data)sidelog(msg.data.who||'?',msg.data.text||'');
@@ -859,10 +894,27 @@ document.addEventListener('keydown',function(e){
   if(!gameState||gameState.phase!=='fighting')return;
   var me=gameState.players[0],en=gameState.players[1];
   if(!me||me.dead)return;
-  if(e.code==='KeyZ'||e.code==='Space'){if(me.atkTimer<=0){doAttack(gameState,me,en);if(gameMode==='pvp')pushAction('attack');}}
+  if(e.code==='KeyZ'||e.code==='Space'){if(me.atkTimer<=0){
+    if(gameMode==='pvp'){
+      // In PvP: animate locally, push action. Damage applied on opponent's side.
+      var C2=CLS[me.cls];me.attacking=14;me.atkTimer=C2.atkMs;
+      pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y)});
+    } else {doAttack(gameState,me,en);}
+  }}
   if(e.code==='KeyX'){startRoll(me);if(gameMode==='pvp')pushAction('roll');}
-  if(e.code==='KeyC'){doSkill(gameState,me,en,1);if(gameMode==='pvp')pushAction('skill1');}
-  if(e.code==='KeyV'){doSkill(gameState,me,en,2);if(gameMode==='pvp')pushAction('skill2');}
+  if(e.code==='KeyC'){
+    if(gameMode==='pvp'){
+      // Apply MP cost + cooldown locally, push to opponent
+      var C3=CLS[me.cls],sk1=C3.s1;
+      if(me.mp>=sk1.mp){me.mp-=sk1.mp;me.s1cd=sk1.cd;pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y)});spawnEfx(gameState,'cast',me.x,me.y);}
+    } else {doSkill(gameState,me,en,1);}
+  }
+  if(e.code==='KeyV'){
+    if(gameMode==='pvp'){
+      var C4=CLS[me.cls],sk2=C4.s2;
+      if(me.mp>=sk2.mp){me.mp-=sk2.mp;me.s2cd=sk2.cd;pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});spawnEfx(gameState,'cast',me.x,me.y);}
+    } else {doSkill(gameState,me,en,2);}
+  }
   if(e.code==='KeyF')me.blocking=true;
 });
 document.addEventListener('keyup',function(e){
