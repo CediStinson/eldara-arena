@@ -222,6 +222,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <div id="round-banner"></div>
   <div id="conn-bar">OFFLINE</div>
+<div id="debug-panel" style="position:absolute;top:40px;left:8px;background:rgba(0,0,0,0.85);border:1px solid #e8b84b;padding:6px 8px;font-family:Courier New,monospace;font-size:9px;color:#e8b84b;z-index:100;max-width:280px;line-height:1.5">DEBUG</div>
 </div>
 
 <script>
@@ -496,6 +497,7 @@ function dealDmg(gs,target,dmg,type) {
   target.hitFlash=220;
   spawnEfx(gs,type,target.x,target.y);
   sidelog('\u2694',Math.round(dmg)+' dmg \u2192 '+target.name);
+  dbg('DMG '+Math.round(dmg)+' to '+target.name+' hp='+Math.round(target.hp)+'/'+target.maxHp);
   if(target.hp<=0){target.dead=true;target.hp=0;}
   // Immediately broadcast new HP if this is us taking damage
   if(target.isMe&&gameMode==='pvp')pushState(target);
@@ -810,6 +812,8 @@ function pushState(me) {
 
 function pushAction(type,data) {
   // Write to opponent's inbox so they read and delete it themselves
+  dbg('SEND '+type+' to '+enemyIdPvp.slice(0,8));
+  if(!enemyIdPvp){dbg('ERROR: enemyIdPvp empty!');return;}
   fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:type,from:myId,data:data||{},ts:Date.now()});
 }
 
@@ -819,18 +823,29 @@ function startListeningEnemy(enemyId) {
   });
 }
 
+function dbg(msg) {
+  var el=document.getElementById('debug-panel');
+  if(!el)return;
+  var ts=new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  var lines=el.innerHTML.split('<br>');
+  lines.unshift('['+ts+'] '+msg);
+  el.innerHTML=lines.slice(0,12).join('<br>');
+}
+
 function processAction(msg,gs,me,en) {
   if(!msg||!gs||!me||!en)return;
   if(msg.type==='attack'){
     var C5=CLS[en.cls],atkPos=msg.data||{};
     en.attacking=14;
     var expos={x:atkPos.x!=null?atkPos.x:en.x,y:atkPos.y!=null?atkPos.y:en.y};
-    if(Math.hypot(expos.x-me.x,expos.y-me.y)<C5.atkRange+30){
+    var rangeDist=Math.hypot(expos.x-me.x,expos.y-me.y);
+    dbg('ATK recv. dist='+Math.round(rangeDist)+' range='+(C5.atkRange+30)+' rollInv='+me.rollInv);
+    if(rangeDist<C5.atkRange+30){
       if(!me.rollInv){
         if(me.blocking)dealDmg(gs,me,Math.max(1,Math.floor(C5.atkDmg*0.15)),'block');
         else dealDmg(gs,me,C5.atkDmg+Math.floor(Math.random()*7)-3,'slash');
-      }
-    }
+      } else { dbg('Blocked by rollInv!'); }
+    } else { dbg('Out of range - no dmg'); }
   } else if(msg.type==='skill1'){
     var sk1r=CLS[en.cls].s1,sp1=msg.data||{};
     if(sk1r.proj){
@@ -870,6 +885,7 @@ function startListeningActions() {
     if(!gameState)return;
     fbGet(myInbox).then(function(data){
       if(!data)return;
+      dbg('Poll: '+Object.keys(data).length+' entries');
       var gs=gameState;
       var me=gs.players.find(function(p){return p.isMe;});
       var en=gs.players.find(function(p){return !p.isMe;});
@@ -877,8 +893,10 @@ function startListeningActions() {
       var keys=Object.keys(data);
       var newKeys=keys.filter(function(k){return !seenActionKeys[k];});
       if(newKeys.length===0)return;
+      dbg('Inbox: '+newKeys.length+' new msg(s)');
       newKeys.forEach(function(k){
         seenActionKeys[k]=true;
+        dbg('Processing: '+(data[k]&&data[k].type||'?'));
         processAction(data[k],gs,me,en);
       });
       // Delete processed entries
