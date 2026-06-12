@@ -799,7 +799,8 @@ function pushState(me) {
 }
 
 function pushAction(type,data) {
-  fbPush('/rooms/'+roomCode+'/actions',{type:type,from:myId,data:data||{},ts:Date.now()});
+  // Write to opponent's inbox so they read and delete it themselves
+  fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:type,from:myId,data:data||{},ts:Date.now()});
 }
 
 function startListeningEnemy(enemyId) {
@@ -809,46 +810,56 @@ function startListeningEnemy(enemyId) {
 }
 
 function startListeningActions() {
-  var seen={};
-  esActions=fbListen('/rooms/'+roomCode+'/actions',function(data){
+  // Listen to MY inbox — messages sent by opponent TO me
+  var myInbox='/rooms/'+roomCode+'/inbox/'+myId;
+  esActions=fbListen(myInbox,function(data){
     if(!data||!gameState)return;
     var gs=gameState,en=gs.players[1],me=gs.players[0];
-    Object.keys(data).forEach(function(k){
-      if(seen[k])return;seen[k]=true;
-      var msg=data[k];if(!msg||msg.from===myId)return;
+    var keys=Object.keys(data);
+    if(keys.length===0)return;
+    keys.forEach(function(k){
+      var msg=data[k];if(!msg)return;
       if(msg.type==='attack'){
-        // Opponent attacked — apply damage to ME (local player)
+        // Opponent hit me — I apply damage to myself
         var C5=CLS[en.cls],atkPos=msg.data||{};
-        en.attacking=14;en.atkTimer=C5.atkMs;
-        // Use sent position for range check so it matches opponent's view
-        var expos={x:atkPos.x||en.x,y:atkPos.y||en.y};
-        if(Math.hypot(expos.x-me.x,expos.y-me.y)<C5.atkRange+20) {
+        en.attacking=14;
+        var expos={x:atkPos.x!=null?atkPos.x:en.x,y:atkPos.y!=null?atkPos.y:en.y};
+        if(Math.hypot(expos.x-me.x,expos.y-me.y)<C5.atkRange+24){
           if(!me.rollInv){
             if(me.blocking)dealDmg(gs,me,Math.max(1,Math.floor(C5.atkDmg*0.15)),'block');
             else dealDmg(gs,me,C5.atkDmg+Math.floor(Math.random()*7)-3,'slash');
           }
         }
-      }
-      else if(msg.type==='skill1'){
-        var sk1r=CLS[en.cls].s1,skPos1=msg.data||{};
+      } else if(msg.type==='skill1'){
+        var sk1r=CLS[en.cls].s1,sp1=msg.data||{};
         en.s1cd=sk1r.cd;
-        // Apply skill effect to me
-        if(sk1r.stun&&Math.hypot((skPos1.x||en.x)-me.x,(skPos1.y||en.y)-me.y)<sk1r.range){dealDmg(gs,me,sk1r.dmg,'bash');me.stunned=sk1r.stun;spawnEfx(gs,'stun',me.x,me.y);}
-        else if(sk1r.proj){var a2=Math.atan2(me.y-(skPos1.y||en.y),me.x-(skPos1.x||en.x));gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:en.cls==='mage'?'fireball':'arrow',x:skPos1.x||en.x,y:skPos1.y||en.y,vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,dmg:sk1r.dmg,dot:sk1r.dot||0,dotDur:sk1r.dotDur||0,range:sk1r.range,traveled:0,alive:true,anim:0});}
-        else if(sk1r.aoe&&Math.hypot((skPos1.x||en.x)-me.x,(skPos1.y||en.y)-me.y)<sk1r.range){dealDmg(gs,me,sk1r.dmg,'aoe');spawnEfx(gs,'aoe',skPos1.x||en.x,skPos1.y||en.y);}
-        spawnEfx(gs,'cast',skPos1.x||en.x,skPos1.y||en.y);
-      }
-      else if(msg.type==='skill2'){
-        var sk2r=CLS[en.cls].s2,skPos2=msg.data||{};
+        if(sk1r.proj){
+          var a2=Math.atan2(me.y-(sp1.y||en.y),me.x-(sp1.x||en.x));
+          gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:en.cls==='mage'?'fireball':'arrow',x:sp1.x||en.x,y:sp1.y||en.y,vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,dmg:sk1r.dmg,dot:sk1r.dot||0,dotDur:sk1r.dotDur||0,range:sk1r.range,traveled:0,alive:true,anim:0});
+        } else if(sk1r.stun&&Math.hypot((sp1.x||en.x)-me.x,(sp1.y||en.y)-me.y)<sk1r.range){
+          dealDmg(gs,me,sk1r.dmg,'bash');me.stunned=sk1r.stun;spawnEfx(gs,'stun',me.x,me.y);
+        } else if(sk1r.aoe&&Math.hypot((sp1.x||en.x)-me.x,(sp1.y||en.y)-me.y)<sk1r.range){
+          dealDmg(gs,me,sk1r.dmg,'aoe');spawnEfx(gs,'aoe',sp1.x||en.x,sp1.y||en.y);
+        }
+        spawnEfx(gs,'cast',sp1.x||en.x,sp1.y||en.y);
+      } else if(msg.type==='skill2'){
+        var sk2r=CLS[en.cls].s2,sp2=msg.data||{};
         en.s2cd=sk2r.cd;
-        if(sk2r.proj){var a3=Math.atan2(me.y-(skPos2.y||en.y),me.x-(skPos2.x||en.x));gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:'arrow',x:skPos2.x||en.x,y:skPos2.y||en.y,vx:Math.cos(a3)*sk2r.speed,vy:Math.sin(a3)*sk2r.speed,dmg:sk2r.dmg,dot:sk2r.dot||0,dotDur:sk2r.dotDur||0,range:sk2r.range,traveled:0,alive:true,anim:0});}
-        spawnEfx(gs,'cast',skPos2.x||en.x,skPos2.y||en.y);
+        if(sk2r.proj){
+          var a3=Math.atan2(me.y-(sp2.y||en.y),me.x-(sp2.x||en.x));
+          gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:'arrow',x:sp2.x||en.x,y:sp2.y||en.y,vx:Math.cos(a3)*sk2r.speed,vy:Math.sin(a3)*sk2r.speed,dmg:sk2r.dmg,dot:sk2r.dot||0,dotDur:sk2r.dotDur||0,range:sk2r.range,traveled:0,alive:true,anim:0});
+        }
+        spawnEfx(gs,'cast',sp2.x||en.x,sp2.y||en.y);
+      } else if(msg.type==='roll'){
+        startRoll(en);
+      } else if(msg.type==='rematch'){
+        hideOverlay();gs.players.forEach(function(p){p.wins=0;});resetRound(gs);
+      } else if(msg.type==='chat'&&msg.data){
+        sidelog(msg.data.who||'?',msg.data.text||'');
       }
-      else if(msg.type==='roll')startRoll(en);
-      else if(msg.type==='rematch'){hideOverlay();gs.players.forEach(function(p){p.wins=0;});resetRound(gs);}
-      else if(msg.type==='chat'&&msg.data)sidelog(msg.data.who||'?',msg.data.text||'');
     });
-    if(isHost)fbDelete('/rooms/'+roomCode+'/actions');
+    // Delete my inbox after processing — I own it, I clear it
+    fbDelete(myInbox);
   });
 }
 
@@ -870,6 +881,7 @@ function cleanupFB() {
   if(esGuest){esGuest.close();esGuest=null;}
   if(esMatchStart){esMatchStart.close();esMatchStart=null;}
   if(esChat){esChat.close();esChat=null;}
+  if(roomCode)fbDelete('/rooms/'+roomCode+'/inbox/'+myId);
   if(isHost&&roomCode)fbDelete('/rooms/'+roomCode);
 }
 
