@@ -654,7 +654,6 @@ function updateLocal(gs,p,dt) {
 function lerpRemote(en) {
   if(!remoteState)return;
   var t=0.18;
-  // Smooth position/visuals
   en.x+=(remoteState.x-en.x)*t;en.y+=(remoteState.y-en.y)*t;
   en.dir=remoteState.dir!=null?remoteState.dir:en.dir;
   en.anim=remoteState.anim!=null?remoteState.anim:en.anim;
@@ -662,7 +661,6 @@ function lerpRemote(en) {
   en.attacking=remoteState.attacking||0;
   en.rolling=remoteState.rolling||0;
   en.blocking=!!remoteState.blocking;
-  // HP/death/wins are authoritative from the remote player themselves
   if(remoteState.hp!=null) en.hp=remoteState.hp;
   if(remoteState.mp!=null) en.mp=remoteState.mp;
   if(remoteState.dead!=null) en.dead=!!remoteState.dead;
@@ -670,7 +668,28 @@ function lerpRemote(en) {
   if(remoteState.hitFlash) en.hitFlash=80;
   if(remoteState.stunned>0) en.stunned=remoteState.stunned;
   if(remoteState.poisoned>0) en.poisoned=remoteState.poisoned;
-  // Check if remote player just died (only trigger once)
+  // Sync opponent projectiles — show on our screen as visual-only
+  if(gameState && remoteState.projs) {
+    // Remove old remote projs from gs.projs
+    gameState.projs=gameState.projs.filter(function(p){return p.owner!==en.id;});
+    // Add current remote projs as visual-only
+    remoteState.projs.forEach(function(rp){
+      gameState.projs.push({
+        id:rp.id, owner:en.id,
+        type:rp.type||'arrow',
+        x:rp.x, y:rp.y,
+        vx:rp.vx, vy:rp.vy,
+        dmg:0, dot:rp.dot||0, dotDur:0,
+        range:99999, traveled:0,
+        alive:true, anim:0,
+        visualOnly:true
+      });
+    });
+  } else if(gameState && !remoteState.projs) {
+    // No active projs from remote — clear theirs
+    gameState.projs=gameState.projs.filter(function(p){return p.owner!==en.id;});
+  }
+  // Death detection
   if(en.dead&&!en._deathFired&&gameState&&gameState.phase==='fighting'){
     en._deathFired=true;
     endRound(gameState);
@@ -803,12 +822,20 @@ function updateHUD(gs) {
 // FIREBASE REST SYNC
 // ═══════════════════════════════════════════
 function pushState(me) {
+  // Include my active projectiles so opponent can render them
+  var myProjs=[];
+  if(gameState){
+    gameState.projs.filter(function(p){return p.owner===me.id;}).forEach(function(p){
+      myProjs.push({id:p.id,type:p.type,x:Math.round(p.x),y:Math.round(p.y),vx:Math.round(p.vx),vy:Math.round(p.vy),dot:p.dot||0});
+    });
+  }
   fbSet('/rooms/'+roomCode+'/players/'+myId, {
     x:Math.round(me.x),y:Math.round(me.y),dir:me.dir,anim:Math.round(me.anim),
     moving:me.moving,hp:Math.round(me.hp),mp:Math.round(me.mp),
     attacking:me.attacking,rolling:Math.round(me.rolling),
     stunned:Math.round(Math.max(0,me.stunned)),poisoned:Math.round(Math.max(0,me.poisoned)),
-    hitFlash:me.hitFlash>0?1:0,blocking:me.blocking,dead:me.dead,wins:me.wins
+    hitFlash:me.hitFlash>0?1:0,blocking:me.blocking,dead:me.dead,wins:me.wins,
+    projs:myProjs.length>0?myProjs:null
   });
 }
 
