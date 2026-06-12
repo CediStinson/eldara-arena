@@ -491,23 +491,19 @@ function mkGS(arenaKey,me,en) {
 // ═══════════════════════════════════════════
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 
-function dealDmg(gs,target,dmg,type,dotData) {
+function dealDmg(gs,target,dmg,type) {
   if(target.dead)return;
   if(gameMode==='pvp'&&!target.isMe) {
-    // In PvP, we don't own the enemy's HP — send damage to their inbox instead
-    dbg('SEND DMG '+Math.round(dmg)+' to opponent');
-    sendDamage(dmg, type, dotData||null);
-    // Show hit effect locally
-    target.hitFlash=220;
+    // Visual only — real damage handled on their side via inbox
+    target.hitFlash=80;
     spawnEfx(gs,type,target.x,target.y);
     return;
   }
-  // Apply damage to ourselves (we own our own HP)
   target.hp=Math.max(0,target.hp-dmg);
   target.hitFlash=220;
   spawnEfx(gs,type,target.x,target.y);
   sidelog('\u2694',Math.round(dmg)+' dmg \u2192 '+target.name);
-  dbg('DMG '+Math.round(dmg)+' to self hp='+Math.round(target.hp)+'/'+target.maxHp);
+  dbg('DMG '+Math.round(dmg)+' to '+target.name+' hp='+Math.round(target.hp)+'/'+target.maxHp);
   if(target.hp<=0){target.dead=true;target.hp=0;}
   if(target.isMe&&gameMode==='pvp')pushState(target);
   if(target.hp<=0)endRound(gs);
@@ -854,12 +850,6 @@ function pushAction(type,data) {
   fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:type,from:myId,data:data||{},ts:Date.now()});
 }
 
-function sendDamage(dmg, type, extraData) {
-  // Tell opponent to apply damage to themselves
-  if(!enemyIdPvp||gameMode!=='pvp')return;
-  var d=Object.assign({dmg:Math.round(dmg),dtype:type||'hit'},extraData||{});
-  fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:'damage',from:myId,data:d,ts:Date.now()});
-}
 
 function startListeningEnemy(enemyId) {
   esEnemy=fbListen('/rooms/'+roomCode+'/players/'+enemyId,function(data){
@@ -879,50 +869,71 @@ function dbg(msg) {
 function processAction(msg,gs,me,en) {
   if(!msg||!gs||!me||!en)return;
   if(msg.type==='attack'){
-    // Show attack animation on our side. Damage was dealt on attacker's side + HP broadcast.
-    var C5=CLS[en.cls];
+    var C5=CLS[en.cls],atkPos=msg.data||{};
     en.attacking=14;
-    spawnEfx(gs,'slash',en.x,en.y);
-    dbg('ATK anim recv');
+    var expos={x:atkPos.x!=null?atkPos.x:en.x,y:atkPos.y!=null?atkPos.y:en.y};
+    var rdist=Math.hypot(expos.x-me.x,expos.y-me.y);
+    dbg('ATK recv dist='+Math.round(rdist)+' range='+(C5.atkRange+30));
+    spawnEfx(gs,'slash',expos.x,expos.y);
+    if(rdist<C5.atkRange+30&&!me.rollInv){
+      var dmg=me.blocking?Math.max(1,Math.floor(C5.atkDmg*0.15)):C5.atkDmg+Math.floor(Math.random()*7)-3;
+      me.hp=Math.max(0,me.hp-dmg);
+      me.hitFlash=220;
+      spawnEfx(gs,'slash',me.x,me.y);
+      sidelog('\u2694',dmg+' dmg (incoming)');
+      dbg('TOOK '+dmg+' hp now '+Math.round(me.hp));
+      if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}
+      else pushState(me);
+    }
   } else if(msg.type==='skill1'){
-    // Shooter already dealt damage locally + broadcast HP. We just animate on our side.
     var sk1r=CLS[en.cls].s1,sp1=msg.data||{};
     var enPos1={x:sp1.x!=null?sp1.x:en.x,y:sp1.y!=null?sp1.y:en.y};
+    var sdist1=Math.hypot(enPos1.x-me.x,enPos1.y-me.y);
+    dbg('SK1 recv type='+(sk1r.proj?'proj':sk1r.stun?'stun':sk1r.aoe?'aoe':'?'));
     en.s1cd=sk1r.cd;
-    // Show projectile flying toward us (visual only — damage already happened)
-    if(sk1r.proj){
-      var a2=Math.atan2(me.y-enPos1.y,me.x-enPos1.x);
-      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:en.cls==='mage'?'fireball':'arrow',x:enPos1.x,y:enPos1.y,vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,dmg:0,dot:0,dotDur:0,range:sk1r.range,traveled:0,alive:true,anim:0,visualOnly:true});
-    } else if(sk1r.stun){
-      spawnEfx(gs,'stun',me.x,me.y);
-    } else if(sk1r.aoe){
-      spawnEfx(gs,'aoe',enPos1.x,enPos1.y);
-    }
     spawnEfx(gs,'cast',enPos1.x,enPos1.y);
+    if(sk1r.proj){
+      // Spawn projectile aimed at me — deals real damage on hit
+      var a2=Math.atan2(me.y-enPos1.y,me.x-enPos1.x);
+      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,
+        type:en.cls==='mage'?'fireball':'arrow',
+        x:enPos1.x,y:enPos1.y,
+        vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,
+        dmg:sk1r.dmg,dot:sk1r.dot||0,dotDur:sk1r.dotDur||0,
+        range:sk1r.range,traveled:0,alive:true,anim:0});
+    } else if(sk1r.stun&&sdist1<sk1r.range+20){
+      var dmg1=sk1r.dmg;
+      me.hp=Math.max(0,me.hp-dmg1);me.hitFlash=220;me.stunned=sk1r.stun;
+      spawnEfx(gs,'stun',me.x,me.y);sidelog('\u2694',dmg1+' stun dmg');
+      dbg('STUN took '+dmg1);
+      if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}else pushState(me);
+    } else if(sk1r.aoe&&sdist1<sk1r.range+20){
+      var dmg1b=sk1r.dmg;
+      me.hp=Math.max(0,me.hp-dmg1b);me.hitFlash=220;
+      spawnEfx(gs,'aoe',enPos1.x,enPos1.y);sidelog('\u2694',dmg1b+' aoe dmg');
+      dbg('AOE took '+dmg1b);
+      if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}else pushState(me);
+    }
   } else if(msg.type==='skill2'){
-    // Visual only on receiver side — damage already broadcast via HP pushState
     var sk2r=CLS[en.cls].s2,sp2=msg.data||{};
     var enPos3={x:sp2.x!=null?sp2.x:en.x,y:sp2.y!=null?sp2.y:en.y};
+    var sdist2=Math.hypot(enPos3.x-me.x,enPos3.y-me.y);
+    dbg('SK2 recv type='+(sk2r.proj?'proj':sk2r.aoe?'aoe':sk2r.blink?'blink':'?'));
     en.s2cd=sk2r.cd;
+    spawnEfx(gs,'cast',enPos3.x,enPos3.y);
     if(sk2r.proj){
       var a3=Math.atan2(me.y-enPos3.y,me.x-enPos3.x);
-      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:'arrow',x:enPos3.x,y:enPos3.y,vx:Math.cos(a3)*sk2r.speed,vy:Math.sin(a3)*sk2r.speed,dmg:0,dot:0,dotDur:0,range:sk2r.range,traveled:0,alive:true,anim:0,visualOnly:true});
-    } else if(sk2r.aoe){
-      spawnEfx(gs,'aoe',enPos3.x,enPos3.y);
-    }
-    spawnEfx(gs,'cast',enPos3.x,enPos3.y);
-  } else if(msg.type==='damage'){
-    // Opponent dealt damage to us — apply to ourselves
-    var dmgAmt=msg.data&&msg.data.dmg?msg.data.dmg:0;
-    var dmgType=msg.data&&msg.data.dtype?msg.data.dtype:'hit';
-    dbg('RECV DMG '+dmgAmt+' type='+dmgType);
-    if(dmgAmt>0&&me&&!me.dead){
-      me.hp=Math.max(0,me.hp-dmgAmt);
-      me.hitFlash=220;
-      spawnEfx(gs,dmgType,me.x,me.y);
-      sidelog('\u2694',dmgAmt+' dmg (incoming)');
-      if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}
-      if(gameMode==='pvp')pushState(me);
+      gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,type:'arrow',
+        x:enPos3.x,y:enPos3.y,
+        vx:Math.cos(a3)*sk2r.speed,vy:Math.sin(a3)*sk2r.speed,
+        dmg:sk2r.dmg,dot:sk2r.dot||0,dotDur:sk2r.dotDur||0,
+        range:sk2r.range,traveled:0,alive:true,anim:0});
+    } else if(sk2r.aoe&&sdist2<sk2r.range+20){
+      var dmg2=sk2r.dmg;
+      me.hp=Math.max(0,me.hp-dmg2);me.hitFlash=220;
+      spawnEfx(gs,'aoe',enPos3.x,enPos3.y);sidelog('\u2694',dmg2+' whirl dmg');
+      dbg('WHIRL took '+dmg2);
+      if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}else pushState(me);
     }
   } else if(msg.type==='roll'){
     startRoll(en);
