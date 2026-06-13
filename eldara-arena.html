@@ -155,7 +155,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .auth-btn:disabled{opacity:.4;cursor:not-allowed}
 .auth-divider{text-align:center;font-size:8px;color:var(--dim);letter-spacing:2px}
 /* Profile badge top-right ingame */
-#profile-badge{position:absolute;top:8px;right:8px;font-size:8px;letter-spacing:1px;color:var(--dim);pointer-events:none;z-index:61;text-align:right}
+#profile-badge{position:absolute;bottom:60px;right:12px;font-size:8px;letter-spacing:1px;color:var(--dim);pointer-events:none;z-index:61;text-align:right}
 #conn-bar{position:absolute;top:8px;left:8px;top:8px;left:8px;font-size:8px;letter-spacing:2px;padding:3px 7px;border:1px solid var(--border);color:var(--dim);z-index:60;pointer-events:none}
 #conn-bar.online{border-color:var(--green);color:var(--green)}
 
@@ -476,7 +476,7 @@ function updateProfileBadge() {
     el.innerHTML = 'GUEST';
   } else {
     var xpW = getXP('warrior'), xpM = getXP('mage'), xpR = getXP('ranger');
-    el.innerHTML = displayName + '<br><span style="color:var(--dim)">W:' + xpW.level + ' M:' + xpM.level + ' R:' + xpR.level + '</span>';
+    el.innerHTML = displayName + '<br><span style="color:var(--dim)">W:' + xpW.level + ' M:' + xpM.level + ' Ro:' + xpR.level + '</span>';
   }
 }
 
@@ -1761,6 +1761,8 @@ function resetRound(gs) {
   }
   gs.projs=[];gs.effects=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
+  if(gameMode==='pvp'){seenActionKeys={};} // clear inbox cache so new actions process
+  var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
   showBanner('ROUND '+gs.round);updateHUD(gs);
 }
 
@@ -2010,11 +2012,11 @@ function processAction(msg,gs,me,en) {
       // Both ready — host starts the match
       if(st){st.style.display='block';st.textContent='Starting...';}
       if(isHost){
+        pvpRematchReady=false; // reset for next rematch
         var ak3=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
-        // Update our own class in gameState
         var meR3=gs.players.find(function(p){return p.isMe;});
         if(meR3)meR3.cls=myClass;
-        pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass});
+        pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,guestCls:en?en.cls:''});
         gs.arena=ARENAS[ak3];gs.arenaKey=ak3;
         gs.players.forEach(function(p){p.wins=0;});
         hideOverlay();resetRound(gs);
@@ -2035,18 +2037,24 @@ function processAction(msg,gs,me,en) {
     var meR4=gs.players.find(function(p){return p.isMe;});
     if(meR4)meR4.cls=myClass;
     gs.players.forEach(function(p){p.wins=0;});
+    pvpRematchReady=false; // reset for next rematch
     hideOverlay();resetRound(gs);
   } else if(msg.type==='opponent_left'){
-    // Opponent left — you win, no rematch button
+    // Opponent left — you win
+    var meW=gs.players.find(function(p){return p.isMe;});
     if(gs.phase!=='gameOver'){
       gs.phase='gameOver';
-      var meW=gs.players.find(function(p){return p.isMe;});
       if(meW) awardMatchXP(meW.cls,true,true);
       showBanner('Opponent left!');
       setTimeout(function(){
         document.getElementById('ov-rematch').style.display='none';
         showOverlay('VICTORY','Opponent disconnected.');
       },800);
+    } else {
+      // Match was already over but opponent left before rematch — just close overlay cleanly
+      document.getElementById('ov-rematch').style.display='none';
+      var st=document.getElementById('ov-rematch-status');
+      if(st){st.style.display='block';st.textContent='Opponent left the lobby.';}
     }
   }
 }
@@ -2417,7 +2425,7 @@ document.getElementById('btn-start-train').addEventListener('click',function(){
   document.getElementById('train-overlay').style.display='none';
   cleanupFB(); // make sure no lingering PvP connections
   roomCode=null;
-  myName=CLS[myClass].name.toUpperCase();
+  myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   launchTraining();
 });
 document.getElementById('setup-back').addEventListener('click',function(){showScreen('title-screen');});
@@ -2524,6 +2532,7 @@ function launchTraining(continuing) {
   var en=mkPlayer('ai',aiClass,aiName,arena.sp2,false);
   en.level=aiLevel; // random tier appearance
   gameState=mkGS(ak,me,en);gameMode='training';
+  myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   document.getElementById('conn-bar').textContent='TRAINING';
   showScreen('game-screen');hideOverlay();resizeCanvas();updateHUD(gameState);
   // First game gets pregame timer; subsequent games start immediately
@@ -2539,13 +2548,14 @@ function launchTraining(continuing) {
 document.getElementById('ov-rematch').addEventListener('click',function(){
   if(!gameState)return;
   if(gameMode!=='pvp'){hideOverlay();resetRound(gameState);return;}
-  // PvP: signal ready for rematch with chosen class
   var btn=document.getElementById('ov-rematch');
   btn.disabled=true;btn.textContent='WAITING...';
   var st=document.getElementById('ov-rematch-status');
   if(st){st.style.display='block';st.textContent='Waiting for opponent...';}
   pvpRematchReady=true;
   pushAction('rematch_ready',{cls:myClass});
+  // If we already received opponent's ready before clicking (race condition), start now
+  // This is handled in processAction
 });
 // Class picker in overlay
 var pvpRematchReady=false;
@@ -2714,7 +2724,8 @@ function awardMatchXP(cls, won, isPvP) {
   var base=isPvP?(won?80:30):(won?20:5);
   var d=addXP(cls,base);
   var tier=getTier(cls,d.level);
-  sidelog('★','+'+ base+' XP → '+cls+' Lv.'+d.level);
+  var clsDisplay=cls==='ranger'?'Rogue':cls.charAt(0).toUpperCase()+cls.slice(1);
+  sidelog('★','+'+base+' XP → '+clsDisplay+' Lv.'+d.level);
   // Refresh sprite previews on setup screen if visible
   refreshCharCards();
   return d;
@@ -2931,8 +2942,8 @@ document.getElementById('btn-leave-game').addEventListener('click',function(){
     if(!gameState)return; // already left
     saveUserProfile();
     // Only notify opponent if we're in an active PvP game
-    if(gameMode==='pvp'&&enemyIdPvp&&gameState.phase!=='gameOver'){
-      pushAction('opponent_left',{});
+    if(gameMode==='pvp'&&enemyIdPvp){
+      pushAction('opponent_left',{}); // always notify, opponent handles phase check
     }
     // Award XP for leaving (loss)
     var meL=gameState.players.find(function(p){return p.isMe;});
