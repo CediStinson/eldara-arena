@@ -119,6 +119,24 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .ov-btns{display:flex;gap:10px}
 #round-banner{position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);font-size:20px;letter-spacing:8px;color:var(--gold);text-shadow:0 0 20px #e8b84b;pointer-events:none;opacity:0;transition:opacity .4s;z-index:40;text-transform:uppercase;white-space:nowrap}
 
+/* AUTH SCREEN */
+#auth-screen{background:radial-gradient(ellipse at 50% 60%,#1a0d2e 0%,#0a0a0f 70%)}
+.auth-box{background:rgba(10,8,20,0.97);border:1px solid var(--border);padding:36px 40px;width:380px;display:flex;flex-direction:column;gap:12px}
+.auth-logo{font-size:22px;font-weight:900;letter-spacing:5px;color:var(--gold);text-align:center;margin-bottom:4px}
+.auth-sub{font-size:9px;letter-spacing:4px;color:var(--dim);text-align:center;margin-bottom:8px}
+.auth-tabs{display:flex;border:1px solid var(--border);margin-bottom:4px}
+.auth-tab{flex:1;padding:9px;background:transparent;border:none;color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;text-transform:uppercase}
+.auth-tab.active{background:rgba(232,184,75,.1);color:var(--gold)}
+.auth-input{width:100%;background:#0a0a0f;border:1px solid var(--border);color:var(--text);font-family:'Courier New',monospace;font-size:13px;padding:10px 12px;outline:none;letter-spacing:1px}
+.auth-input:focus{border-color:var(--gold)}
+.auth-input::placeholder{color:var(--dim);font-size:11px;letter-spacing:1px}
+.auth-err{color:#e74c3c;font-size:9px;letter-spacing:1px;min-height:12px;text-align:center}
+.auth-btn{width:100%;padding:12px;background:linear-gradient(180deg,rgba(232,184,75,0.15),rgba(232,184,75,0.05));border:1px solid var(--gold);color:var(--gold);font-family:'Courier New',monospace;font-size:11px;letter-spacing:3px;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.auth-btn:hover{background:rgba(232,184,75,0.2)}
+.auth-btn:disabled{opacity:.4;cursor:not-allowed}
+.auth-divider{text-align:center;font-size:8px;color:var(--dim);letter-spacing:2px}
+/* Profile badge top-right ingame */
+#profile-badge{position:absolute;top:8px;right:8px;font-size:8px;letter-spacing:1px;color:var(--dim);pointer-events:none;z-index:61;text-align:right}
 #conn-bar{position:absolute;top:8px;left:8px;top:8px;left:8px;font-size:8px;letter-spacing:2px;padding:3px 7px;border:1px solid var(--border);color:var(--dim);z-index:60;pointer-events:none}
 #conn-bar.online{border-color:var(--green);color:var(--green)}
 
@@ -127,8 +145,29 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 </head>
 <body>
 
+<!-- AUTH -->
+<div class="screen active" id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">ELDARA ARENA</div>
+    <div class="auth-sub">sign in to save your progress</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-login">SIGN IN</button>
+      <button class="auth-tab" id="auth-tab-register">CREATE ACCOUNT</button>
+    </div>
+    <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email">
+    <input class="auth-input" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password">
+    <div id="auth-username-wrap" style="display:none">
+      <input class="auth-input" id="auth-username" placeholder="Display name (shown in game)" maxlength="14" style="text-transform:uppercase">
+    </div>
+    <div class="auth-err" id="auth-err"></div>
+    <button class="auth-btn" id="auth-submit">ENTER THE ARENA</button>
+    <div class="auth-divider">&#9135;&#9135;&#9135; or &#9135;&#9135;&#9135;</div>
+    <button class="auth-btn" id="auth-guest" style="border-color:var(--border);color:var(--dim)">PLAY AS GUEST</button>
+  </div>
+</div>
+
 <!-- TITLE -->
-<div class="screen active" id="title-screen">
+<div class="screen" id="title-screen">
   <canvas id="title-canvas" width="400" height="110"></canvas>
   <div class="title-logo">ELDARA ARENA</div>
   <div class="title-sub">fight &middot; dodge &middot; conquer</div>
@@ -136,7 +175,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <button class="menu-btn primary" id="btn-pvp">&#9876; Online PvP</button>
     <button class="menu-btn" id="btn-train">&#128481; Training vs AI</button>
   </div>
-  <div style="position:absolute;bottom:14px;font-size:8px;color:var(--dim);letter-spacing:2px">Benjamin Siedler 2026</div>
+  <div style="position:absolute;bottom:14px;font-size:8px;color:var(--dim);letter-spacing:2px">WASD=MOVE &nbsp; G=ATTACK &nbsp; SPC=DASH &nbsp; H/J=SKILLS &nbsp; X=ROLL &nbsp; F=BLOCK</div>
 </div>
 
 <!-- SETUP -->
@@ -208,8 +247,9 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div class="sp-sec">
       <div class="sp-lbl">YOU</div>
       <div class="pname" id="sp-myname">Hero</div>
-      <div class="bar-row"><div class="blbl">HP</div><div class="btrack"><div class="bfill hp" id="sp-myhp" style="width:100%"></div></div><div class="bval" id="sp-myhp-v">100</div></div>
-      <div class="bar-row"><div class="blbl">MP</div><div class="btrack"><div class="bfill mp" id="sp-mymp" style="width:100%"></div></div><div class="bval" id="sp-mymp-v">50</div></div>
+      <div style="font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:3px" id="sp-mylevel">Lv.1</div>
+      <div style="height:3px;background:rgba(255,255,255,0.07);margin-bottom:4px;border-radius:2px"><div id="sp-myxp" style="height:100%;background:#9a6aff;border-radius:2px;width:0%;transition:width .4s"></div></div>
+      <div class="bar-row"><div class="blbl">HP</div><div class="btrack"><div class="bfill hp" id="sp-myhp" style="width:100%"></div></div><div class="bval" id="sp-myhp-v">100</div></div><div class="bval" id="sp-mymp-v">50</div></div>
       <div class="status-chips" id="sp-mystatus"></div>
       <!-- skills moved to bottom bar -->
     </div>
@@ -224,9 +264,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
       <div class="kb-grid">
         <div class="kb-row"><div class="kkey">WASD</div>move</div>
         <div class="kb-row"><div class="kkey">G</div>attack</div>
-        <div class="kb-row"><div class="kkey">X</div>roll</div>
+        <div class="kb-row"><div class="kkey">SPC</div>dash/charge</div>
         <div class="kb-row"><div class="kkey">H</div>skill 1</div>
         <div class="kb-row"><div class="kkey">J</div>skill 2</div>
+        <div class="kb-row"><div class="kkey">X</div>roll</div>
         <div class="kb-row"><div class="kkey">F</div>block</div>
       </div>
     </div>
@@ -247,12 +288,14 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div id="round-banner"></div>
   <div id="skillbar">
     <div class="sk-big attack-slot" id="skb-atk"><div class="sk-name">ATTACK</div><div class="sk-icon" id="skb-atk-icon">&#9876;</div><div class="sk-key">G</div></div>
-    <div class="sk-big s1-slot" id="skb-s1"><div class="sk-name" id="skb-s1-name">SKILL 1</div><div class="sk-icon" id="skb-s1-icon">?</div><div class="sk-key">G</div></div>
+    <div class="sk-big s1-slot" id="skb-s1"><div class="sk-name" id="skb-s1-name">SKILL 1</div><div class="sk-icon" id="skb-s1-icon">?</div><div class="sk-key">H</div></div>
     <div class="sk-big s2-slot" id="skb-s2"><div class="sk-name" id="skb-s2-name">SKILL 2</div><div class="sk-icon" id="skb-s2-icon">?</div><div class="sk-key">J</div></div>
+    <div class="sk-big" id="skb-move" style="border-color:#8a5a20"><div class="sk-name" id="skb-move-name">MOVE</div><div class="sk-icon" id="skb-move-icon">&#9889;</div><div class="sk-key">SPC</div></div>
     <div class="sk-big" id="skb-roll" style="border-color:#2a6a4a"><div class="sk-name">ROLL</div><div class="sk-icon">&#128168;</div><div class="sk-key">X</div></div>
     <div class="sk-big" id="skb-block" style="border-color:#2a4a6a"><div class="sk-name">BLOCK</div><div class="sk-icon">&#128737;</div><div class="sk-key">F</div></div>
   </div>
   <div id="conn-bar">OFFLINE</div>
+  <div id="profile-badge"></div>
 
 
 <div id="debug-panel" style="position:absolute;top:40px;left:8px;background:rgba(0,0,0,0.85);border:1px solid #e8b84b;padding:6px 8px;font-family:Courier New,monospace;font-size:9px;color:#e8b84b;z-index:100;max-width:280px;line-height:1.5">DEBUG</div>
@@ -266,35 +309,132 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 // FIREBASE REST API — no SDK needed
 // ═══════════════════════════════════════════
 var FB_BASE = 'https://eldara-arena-default-rtdb.europe-west1.firebasedatabase.app';
+var FB_AUTH = 'https://identitytoolkit.googleapis.com/v1';
+var FB_KEY = 'AIzaSyAq1J5dOJE94SGZ982fHJrxc5f_5xe6Wjc';
 
-// PUT: set a value at a path
-function fbSet(path, data) {
-  return fetch(FB_BASE + path + '.json', {
+// Current auth state
+var authToken = null;
+var authUid = null;
+var authEmail = null;
+var displayName = '';
+var isGuest = false;
+
+function fbAuthPost(endpoint, body) {
+  return fetch(FB_AUTH + endpoint + '?key=' + FB_KEY, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  }).then(function(r){return r.json();});
+}
+
+function fbSetAuth(path, data) {
+  var url = FB_BASE + path + '.json' + (authToken ? '?auth=' + authToken : '');
+  return fetch(url, {
     method: 'PUT',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify(data)
   }).catch(function(){});
 }
 
-// POST: push a new child at a path
-function fbPush(path, data) {
-  return fetch(FB_BASE + path + '.json', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(data)
+function fbGetAuth(path) {
+  var url = FB_BASE + path + '.json' + (authToken ? '?auth=' + authToken : '');
+  return fetch(url).then(function(r){return r.json();}).catch(function(){return null;});
+}
+
+function signIn(email, pass) {
+  return fbAuthPost('/accounts:signInWithPassword', {
+    email: email, password: pass, returnSecureToken: true
+  });
+}
+
+function signUp(email, pass) {
+  return fbAuthPost('/accounts:signUp', {
+    email: email, password: pass, returnSecureToken: true
+  });
+}
+
+function onAuthSuccess(result, uname) {
+  authToken = result.idToken;
+  authUid = result.localId;
+  authEmail = result.email;
+  isGuest = false;
+  displayName = uname || result.displayName || result.email.split('@')[0].toUpperCase().substring(0,12);
+  myName = displayName;
+  // Save token to sessionStorage for refresh
+  try {
+    sessionStorage.setItem('eldara_token', authToken);
+    sessionStorage.setItem('eldara_uid', authUid);
+    sessionStorage.setItem('eldara_name', displayName);
+  } catch(e) {}
+  loadUserProfile();
+}
+
+function loadUserProfile() {
+  fbGetAuth('/users/' + authUid + '/profile').then(function(data) {
+    if (data && data.displayName) {
+      displayName = data.displayName;
+      myName = displayName;
+    }
+    // Load class XP data
+    return fbGetAuth('/users/' + authUid + '/classes');
+  }).then(function(data) {
+    if (data) {
+      // Merge Firebase data into local cache
+      ['warrior','mage','ranger'].forEach(function(cls) {
+        if (data[cls]) {
+          try { localStorage.setItem('eldara_cls_' + cls, JSON.stringify(data[cls])); } catch(e) {}
+        }
+      });
+    }
+    showScreen('title-screen');
+    updateProfileBadge();
+  }).catch(function() {
+    showScreen('title-screen');
+  });
+}
+
+function saveUserProfile() {
+  if (!authUid || isGuest) return;
+  var classes = {};
+  ['warrior','mage','ranger'].forEach(function(cls) {
+    try { classes[cls] = JSON.parse(localStorage.getItem('eldara_cls_'+cls)||'{}'); } catch(e) {}
+  });
+  fbSetAuth('/users/' + authUid + '/profile', {
+    displayName: displayName,
+    lastSeen: Date.now()
+  }).catch(function(){});
+  fbSetAuth('/users/' + authUid + '/classes', classes).catch(function(){});
+}
+
+function updateProfileBadge() {
+  var el = document.getElementById('profile-badge');
+  if (!el) return;
+  if (isGuest) {
+    el.innerHTML = 'GUEST';
+  } else {
+    var xpW = getXP('warrior'), xpM = getXP('mage'), xpR = getXP('ranger');
+    el.innerHTML = displayName + '<br><span style="color:var(--dim)">W:' + xpW.level + ' M:' + xpM.level + ' R:' + xpR.level + '</span>';
+  }
+}
+
+// PUT: set a value at a path
+function authParam(){return authToken?'?auth='+authToken:'';}
+function fbSet(path, data) {
+  return fetch(FB_BASE+path+'.json'+authParam(), {
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)
   }).catch(function(){});
 }
-
-// GET: read once
-function fbGet(path) {
-  return fetch(FB_BASE + path + '.json')
-    .then(function(r){return r.json();})
-    .catch(function(){return null;});
+function fbPush(path, data) {
+  return fetch(FB_BASE+path+'.json'+authParam(), {
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)
+  }).catch(function(){});
 }
-
-// DELETE: remove a path
+function fbGet(path) {
+  return fetch(FB_BASE+path+'.json'+authParam())
+    .then(function(r){return r.json();}).catch(function(){return null;});
+}
 function fbDelete(path) {
-  return fetch(FB_BASE + path + '.json', {method:'DELETE'}).catch(function(){});
+  return fetch(FB_BASE+path+'.json'+authParam(),{method:'DELETE'}).catch(function(){});
 }
 
 // LISTEN: real-time via SSE (Firebase supports text/event-stream)
@@ -321,66 +461,99 @@ function px(ctx, gx, gy, color, w, h) {
 }
 
 // ── Warrior (battle-scarred knight) ──
-function drawWarrior(ctx, x, y, dir, anim, flash) {
+function drawWarrior(ctx, x, y, dir, anim, flash, level) {
+  level=level||1;
   ctx.save(); ctx.translate(x, y);
   if(dir===2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.15)*0.5, leg=Math.sin(anim*0.3)*1.2;
   var sw=(anim>0&&anim<12)?Math.sin(anim*0.5)*6:0;
 
-  // Tattered crimson cloak behind
-  px(ctx,-4,2+bob,'#6a0808',8,10);
-  px(ctx,-4,2+bob,'#8b1010',7,8);
-  px(ctx,-3,10+bob,'#5a0808',6,3); // ragged hem
-  px(ctx,-5,8+bob,'#4a0606',2,5);
+  // ── WARRIOR TIER BODY (level-dependent) ──
+  var wT=level<10?0:level<25?1:level<50?2:level<75?3:level<100?4:5;
 
-  // Plate armor body — aged, dark steel with gold trim
-  px(ctx,-3,0+bob,'#2a2e36',6,9);   // armor base
-  px(ctx,-2,0+bob,'#3a4050',4,8);   // armor mid
-  px(ctx,-1,1+bob,'#50606e',2,4);   // chest highlight
-  px(ctx,-3,0+bob,'#c8a030',1,1);   // left gold trim
-  px(ctx,2,0+bob,'#c8a030',1,1);    // right gold trim
-  // Pauldrons (shoulders) — broad, imposing
-  px(ctx,-5,-2+bob,'#2a2e36',3,4);
-  px(ctx, 2,-2+bob,'#2a2e36',3,4);
-  px(ctx,-5,-2+bob,'#4a5060',1,2);  // pauldron highlight left
-  px(ctx, 4,-2+bob,'#4a5060',1,2);  // pauldron highlight right
-  // Gorget / neck guard
-  px(ctx,-2,-1+bob,'#3a3a42',4,2);
-  // Belt — thick leather with iron buckle
-  px(ctx,-3,8+bob,'#1a1008',6,2);
-  px(ctx,-1,8+bob,'#808080',2,1);   // buckle
-  px(ctx,-3,8+bob,'#c8a030',1,1);px(ctx,2,8+bob,'#c8a030',1,1); // belt studs
+  // Cape — only from tier 2+
+  if(wT>=2){px(ctx,-4,2+bob,'#6a0808',8,10);px(ctx,-4,2+bob,'#8b1010',7,8);px(ctx,-3,10+bob,'#5a0808',6,3);}
 
-  // Gauntlets + arms
-  px(ctx,-5,1+bob,'#2a2e36',2,7);   // left arm plate
-  px(ctx, 3,1+bob,'#2a2e36',2,7);   // right arm plate
-  px(ctx,-5,1+bob,'#3a4050',1,5);   // arm highlight
-  px(ctx,-5,7+bob,'#2a2020',2,2);   // left gauntlet
-  px(ctx, 3,7+bob,'#2a2020',2,2);   // right gauntlet
+  // BODY ARMOR
+  if(wT===0){ // Tier 0: rough cloth shirt
+    px(ctx,-3,0+bob,'#5a4a38',5,9);px(ctx,-2,0+bob,'#6a5a48',3,8);
+    px(ctx,-3,0+bob,'#4a3a28',1,8);px(ctx,2,0+bob,'#4a3a28',1,8);
+    px(ctx,-3,8+bob,'#3a2a18',6,1); // cloth belt
+  } else if(wT===1){ // Tier 1: leather vest
+    px(ctx,-3,0+bob,'#4a3018',6,9);px(ctx,-2,0+bob,'#6a5028',4,8);px(ctx,-1,1+bob,'#8a7038',2,4);
+    px(ctx,-3,8+bob,'#2a1a08',6,1);px(ctx,-1,8+bob,'#707070',2,1);
+  } else if(wT===2){ // Tier 2: chainmail
+    px(ctx,-3,0+bob,'#505868',6,9);px(ctx,-2,0+bob,'#606878',4,8);
+    px(ctx,-1,1+bob,'#707888',2,4);
+    // chain pattern
+    px(ctx,-3,3+bob,'#404858',6,1);px(ctx,-3,6+bob,'#404858',6,1);
+    px(ctx,-3,8+bob,'#303840',6,1);px(ctx,-1,8+bob,'#909090',2,1);
+  } else { // Tier 3+: plate armor
+    if(wT>=3){px(ctx,-5,8+bob,'#4a0606',2,5);}// cloak side
+    px(ctx,-3,0+bob,'#2a2e36',6,9);px(ctx,-2,0+bob,'#3a4050',4,8);px(ctx,-1,1+bob,'#50606e',2,4);
+    px(ctx,-3,0+bob,wT>=5?'#c8a030':'#888',1,1);px(ctx,2,0+bob,wT>=5?'#c8a030':'#888',1,1);
+    px(ctx,-2,-1+bob,'#3a3a42',4,2); // gorget
+    px(ctx,-3,8+bob,'#1a1008',6,2);px(ctx,-1,8+bob,'#808080',2,1);
+    px(ctx,-3,8+bob,wT>=5?'#c8a030':'#555',1,1);px(ctx,2,8+bob,wT>=5?'#c8a030':'#555',1,1);
+  }
 
-  // Greaves + legs
-  px(ctx,-3,10+bob+leg,'#2a2e36',2,6);
-  px(ctx, 1,10+bob-leg,'#2a2e36',2,6);
-  px(ctx,-3,10+bob+leg,'#3a4050',1,4); // leg highlight
-  // Sabatons (armored boots) — chunky
-  px(ctx,-4,15+bob+leg,'#2a2e36',4,3);
-  px(ctx, 1,15+bob-leg,'#2a2e36',4,3);
-  px(ctx,-3,16+bob+leg,'#1a1a22',3,1);
-  px(ctx, 1,16+bob-leg,'#1a1a22',3,1);
+  // PAULDRONS — tier 3+
+  if(wT>=3){
+    px(ctx,-5,-2+bob,'#2a2e36',3,4);px(ctx,2,-2+bob,'#2a2e36',3,4);
+    px(ctx,-5,-2+bob,'#4a5060',1,2);px(ctx,4,-2+bob,'#4a5060',1,2);
+    if(wT>=5){px(ctx,-6,-2+bob,'#c8a030',1,2);px(ctx,5,-2+bob,'#c8a030',1,2);}
+  }
 
-  // Helmet — full visor, battle-worn
-  px(ctx,-3,-7+bob,'#2a2e36',6,6);  // helm base
-  px(ctx,-2,-6+bob,'#3a4050',4,5);  // helm mid
-  px(ctx,-3,-7+bob,'#50606e',1,2);  // helm highlight
-  // Visor slit — glowing blue eyes (enchanted armor)
-  px(ctx,-2,-4+bob,'#080c10',4,2);  // visor dark
-  px(ctx,-2,-4+bob,'rgba(60,140,220,0.9)',1,1); // left eye glow
-  px(ctx, 0,-4+bob,'rgba(60,140,220,0.9)',1,1); // right eye glow
-  // Helm crest / plume — red
-  px(ctx,-1,-10+bob,'#8b1010',2,4);
-  px(ctx,-1,-9+bob,'#aa2020',2,3);
-  // Gold trim on helm
-  px(ctx,-3,-7+bob,'#c8a030',6,1);
+  // ARMS
+  if(wT<=1){ // bare/cloth arms
+    px(ctx,-5,1+bob,'#d4a76a',2,6);px(ctx,3,1+bob,'#d4a76a',2,6);
+    if(wT===1){px(ctx,-5,1+bob,'#4a3018',2,2);px(ctx,3,1+bob,'#4a3018',2,2);}
+  } else { // armored arms
+    px(ctx,-5,1+bob,'#2a2e36',2,7);px(ctx,3,1+bob,'#2a2e36',2,7);
+    px(ctx,-5,1+bob,'#3a4050',1,5);
+    if(wT>=4){px(ctx,-5,7+bob,'#2a2020',2,2);px(ctx,3,7+bob,'#2a2020',2,2);}
+    else{px(ctx,-5,7+bob,'#d4a76a',2,2);px(ctx,3,7+bob,'#d4a76a',2,2);}
+  }
+
+  // LEGS
+  if(wT<=1){ // cloth/leather legs
+    px(ctx,-3,10+bob+leg,'#4a3828',2,6);px(ctx,1,10+bob-leg,'#4a3828',2,6);
+  } else {
+    px(ctx,-3,10+bob+leg,'#2a2e36',2,6);px(ctx,1,10+bob-leg,'#2a2e36',2,6);
+    px(ctx,-3,10+bob+leg,'#3a4050',1,4);
+  }
+
+  // BOOTS
+  if(wT<=0){ // cloth wrappings
+    px(ctx,-3,15+bob+leg,'#4a3828',3,2);px(ctx,1,15+bob-leg,'#4a3828',3,2);
+  } else if(wT===1){ // leather boots
+    px(ctx,-4,15+bob+leg,'#3a2010',4,2);px(ctx,1,15+bob-leg,'#3a2010',4,2);
+  } else { // plate sabatons
+    px(ctx,-4,15+bob+leg,'#2a2e36',4,3);px(ctx,1,15+bob-leg,'#2a2e36',4,3);
+    px(ctx,-3,16+bob+leg,'#1a1a22',3,1);px(ctx,1,16+bob-leg,'#1a1a22',3,1);
+    if(wT>=5){px(ctx,-4,15+bob+leg,'#c8a030',1,1);px(ctx,4,15+bob-leg,'#c8a030',1,1);}
+  }
+
+  // ── HELM (tier-dependent) ──
+  if(wT===0){ // cloth hood
+    px(ctx,-2,-7+bob,'#5a4a38',4,6);px(ctx,-3,-6+bob,'#4a3a28',1,4);px(ctx,2,-6+bob,'#4a3a28',1,4);
+    px(ctx,-1,-5+bob,'#d4a76a',2,3); // bare face
+    px(ctx,-1,-4+bob,'#101010',2,1); // eyes
+  } else if(wT===1){ // leather cap
+    px(ctx,-2,-7+bob,'#4a3018',4,5);px(ctx,-1,-7+bob,'#6a5028',2,4);
+    px(ctx,-1,-5+bob,'#d4a76a',2,3);px(ctx,-1,-4+bob,'#101010',2,1);
+    px(ctx,-2,-7+bob,'#2a1808',4,1);
+  } else if(wT===2){ // chainmail coif
+    px(ctx,-3,-7+bob,'#505868',5,6);px(ctx,-2,-6+bob,'#606878',3,5);
+    px(ctx,-1,-5+bob,'#d4a76a',2,2);px(ctx,-1,-4+bob,'#101010',2,1);
+    px(ctx,-3,-7+bob,'#404858',5,1);
+  } else { // full plate helm
+    px(ctx,-3,-7+bob,'#2a2e36',6,6);px(ctx,-2,-6+bob,'#3a4050',4,5);px(ctx,-3,-7+bob,'#50606e',1,2);
+    px(ctx,-2,-4+bob,'#080c10',4,2);
+    px(ctx,-2,-4+bob,'rgba(60,140,220,0.9)',1,1);px(ctx,0,-4+bob,'rgba(60,140,220,0.9)',1,1);
+    if(wT>=3){px(ctx,-1,-10+bob,'#8b1010',2,4);px(ctx,-1,-9+bob,'#aa2020',2,3);}
+    px(ctx,-3,-7+bob,wT>=5?'#c8a030':'#555',6,1);
+  }
 
   // Great sword — right hand, worn blade (rotated 180°: tip up, pommel down)
   var gx=4+sw*0.3;
@@ -410,63 +583,53 @@ function drawWarrior(ctx, x, y, dir, anim, flash) {
 }
 
 // ── Mage (ancient arcane scholar) ──
-function drawMage(ctx, x, y, dir, anim, flash) {
+function drawMage(ctx, x, y, dir, anim, flash, level) {
+  level=level||1;
   ctx.save(); ctx.translate(x, y);
   if(dir===2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.12)*0.6;
   var oy=Math.sin(anim*0.08)*2;     // orb float
   var rv=Math.sin(anim*0.06)*1;     // robe sway
 
-  // Long robe — deep midnight blue with arcane trim
-  px(ctx,-3,0+bob,'#0e0c28',6,13);   // robe base
-  px(ctx,-2,0+bob,'#1a1848',4,12);   // robe body
-  px(ctx,-1,1+bob,'#2820608',2,6);   // robe center highlight (typo-safe, just ignored)
-  px(ctx,-1,1+bob,'#282068',2,6);    // robe center highlight
-  // Arcane rune trim on robe — glowing purple edges
-  px(ctx,-3,0+bob,'#5a20a0',1,12);   // left trim glow
-  px(ctx, 2,0+bob,'#5a20a0',1,12);   // right trim glow
-  // Robe hem — slightly flared with gold runes
-  px(ctx,-4,11+bob+rv,'#0e0c28',8,4);
-  px(ctx,-4,13+bob+rv,'#3a1888',8,1); // rune line at hem
-  px(ctx,-3,13+bob+rv,'#c8a030',1,1);px(ctx,-1,13+bob+rv,'#c8a030',1,1);
-  px(ctx,1,13+bob+rv,'#c8a030',1,1);px(ctx,3,13+bob+rv,'#c8a030',1,1);
+    // ── MAGE TIER BODY (level-dependent) ──
+  var mT=level<15?0:level<35?1:level<60?2:level<85?3:4;
+  var robeBase=mT===0?'#2a2618':mT===1?'#1a2030':mT===2?'#141838':mT===3?'#0e0c28':'#0a0820';
+  var robeMid=mT===0?'#3a3628':mT===1?'#283050':mT===2?'#1c2060':'#1a1848';
+  var robeHi=mT===0?'#4a4438':mT===1?'#384070':mT===2?'#2c3080':'#282068';
+  var trimColor=mT<=1?'#804010':mT===2?'#303890':'#5a20a0';
+  px(ctx,-3,0+bob,robeBase,6,13);px(ctx,-2,0+bob,robeMid,4,12);px(ctx,-1,1+bob,robeHi,2,6);
+  if(mT>=2){px(ctx,-3,0+bob,trimColor,1,12);px(ctx,2,0+bob,trimColor,1,12);}
+  px(ctx,-4,11+bob+rv,robeBase,8,4);
+  if(mT>=3){
+    px(ctx,-4,13+bob+rv,'#3a1888',8,1);
+    px(ctx,-3,13+bob+rv,'#c8a030',1,1);px(ctx,-1,13+bob+rv,'#c8a030',1,1);
+    px(ctx,1,13+bob+rv,'#c8a030',1,1);px(ctx,3,13+bob+rv,'#c8a030',1,1);
+  }
+  px(ctx,-5,0+bob,robeBase,2,10);px(ctx,3,0+bob,robeBase,2,10);
+  if(mT>=2){px(ctx,-5,0+bob,trimColor,1,8);}
+  px(ctx,-5,9+bob,'#c8a060',2,2);px(ctx,3,9+bob,'#c8a060',2,2);
+  px(ctx,-2,14+bob,'#0a0818',2,3);px(ctx,0,14+bob,'#0a0818',2,3);
 
-  // Wide sleeves
-  px(ctx,-5,0+bob,'#0e0c28',2,10);
-  px(ctx, 3,0+bob,'#0e0c28',2,10);
-  px(ctx,-5,0+bob,'#5a20a0',1,8);    // sleeve glow left
-  // Hands emerging from sleeves
-  px(ctx,-5,9+bob,'#c8a060',2,2);
-  px(ctx, 3,9+bob,'#c8a060',2,2);
-
-  // Legs barely visible under robe — dark slippers
-  px(ctx,-2,14+bob,'#0a0818',2,3);
-  px(ctx, 0,14+bob,'#0a0818',2,3);
-
-  // Head — ancient, bearded, wise
-  px(ctx,-2,-6+bob,'#c8a060',4,5);   // face
-  // Bushy white eyebrows
-  px(ctx,-2,-4+bob,'#e0e0e0',2,1);
-  px(ctx, 0,-4+bob,'#e0e0e0',2,1);
-  // Deep-set eyes — glowing amber (arcane sight)
-  px(ctx,-2,-3+bob,'rgba(220,160,20,0.95)',1,1);
-  px(ctx, 0,-3+bob,'rgba(220,160,20,0.95)',1,1);
-  // Long white beard
-  px(ctx,-2,-1+bob,'#d8d8d8',4,3);   // beard top
-  px(ctx,-2, 2+bob,'#c8c8c8',4,5);   // beard long
-  px(ctx,-1, 6+bob,'#b8b8b8',2,3);   // beard tip
-  // Nose
-  px(ctx,-1,-2+bob,'#b8906a',1,1);
-
-  // Grand pointed hat — dark with star pattern
-  px(ctx,-3,-10+bob,'#0e0c28',6,5);  // hat brim
-  px(ctx,-2,-14+bob,'#1a1848',4,5);  // hat mid
-  px(ctx,-1,-18+bob,'#0e0c28',2,5);  // hat tip
-  px(ctx,-3,-10+bob,'#5a20a0',6,1);  // hat brim glow
-  // Stars on hat
-  px(ctx,-1,-13+bob,'#e8b84b',1,1);
-  px(ctx, 1,-16+bob,'#e8b84b',1,1);
-  px(ctx,-2,-16+bob,'rgba(200,160,255,0.8)',1,1);
+  // ── MAGE HEAD/HAT (tier-dependent) ──
+  var eyeColor=mT>=3?'rgba(220,160,20,0.95)':'rgba(80,160,220,0.7)';
+  px(ctx,-2,-6+bob,'#c8a060',4,5); // face
+  px(ctx,-2,-3+bob,eyeColor,1,1);px(ctx,0,-3+bob,eyeColor,1,1); // eyes
+  px(ctx,-1,-2+bob,'#b8906a',1,1); // nose
+  if(mT>=2){px(ctx,-2,-4+bob,'#e0e0e0',2,1);px(ctx,0,-4+bob,'#e0e0e0',2,1);} // brows
+  if(mT>=3){px(ctx,-2,-1+bob,'#d8d8d8',4,3);px(ctx,-2,2+bob,'#c8c8c8',4,5);px(ctx,-1,6+bob,'#b8b8b8',2,3);} // beard
+  if(mT===0){ // simple cloth cap
+    px(ctx,-2,-9+bob,'#5a4838',4,4);px(ctx,-3,-8+bob,'#4a3828',1,3);px(ctx,2,-8+bob,'#4a3828',1,3);
+  } else if(mT===1){ // basic pointed hat, brown
+    px(ctx,-3,-9+bob,'#3a2818',6,4);px(ctx,-2,-13+bob,'#2a1808',4,5);px(ctx,-1,-17+bob,'#1a0800',2,4);
+    px(ctx,-3,-9+bob,'#4a3828',6,1);
+  } else { // grand magical hat
+    px(ctx,-3,-10+bob,mT>=4?'#0a0820':'#0e0c28',6,5);
+    px(ctx,-2,-14+bob,mT>=4?'#14104a':'#1a1848',4,5);
+    px(ctx,-1,-18+bob,mT>=4?'#0a0820':'#0e0c28',2,5);
+    px(ctx,-3,-10+bob,mT>=4?'#7a30c0':'#5a20a0',6,1);
+    px(ctx,-1,-13+bob,'#e8b84b',1,1);px(ctx,1,-16+bob,'#e8b84b',1,1);
+    if(mT>=4){px(ctx,-2,-16+bob,'rgba(200,160,255,0.8)',1,1);}
+  }
 
   // Staff — gnarled ancient wood with levitating crystal
   px(ctx, 4, 0+bob,'#3a2808',1,14);  // staff shaft dark
@@ -487,7 +650,8 @@ function drawMage(ctx, x, y, dir, anim, flash) {
 }
 
 // ── Ranger (female elf) ──
-function drawRanger(ctx, x, y, dir, anim, flash) {
+function drawRanger(ctx, x, y, dir, anim, flash, level) {
+  level=level||1;
   ctx.save(); ctx.translate(x, y);
   if(dir!==2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.18)*0.5, leg=Math.sin(anim*0.35)*1.2;
@@ -497,35 +661,44 @@ function drawRanger(ctx, x, y, dir, anim, flash) {
   px(ctx,2,-8+bob,'#b8c0a0',1,16);  // right hair strand
   px(ctx,-1,-7+bob,'#d8e0c0',1,14); // middle hair
 
-  // Slim tunic body — narrower than warrior (feminine silhouette)
-  px(ctx,-2,0+bob,'#2a4a2a',4,8);   // main tunic dark
-  px(ctx,-2,0+bob,'#3a6a3a',3,7);   // tunic mid
-  px(ctx,-1,1+bob,'#4a8a4a',1,4);   // tunic highlight
-  // Leather chest piece
-  px(ctx,-2,0+bob,'#5a3a18',4,3);
-  px(ctx,-1,0+bob,'#7a5a28',2,2);
-  // Belt with gem
-  px(ctx,-2,7+bob,'#3a2a0a',4,1);
-  px(ctx,-1,7+bob,'#60a060',2,1);   // emerald belt gem
+  // ── RANGER TIER BODY (level-dependent) ──
+  var rT=level<20?0:level<45?1:level<75?2:3;
 
-  // Slim arms
-  px(ctx,-4,1+bob,'#2a4a2a',2,6);   // left arm sleeve
-  px(ctx,2,1+bob,'#2a4a2a',2,6);    // right arm sleeve
-  px(ctx,-4,6+bob,'#d4a76a',2,2);   // left hand skin
-  px(ctx,2,6+bob,'#d4a76a',2,2);    // right hand skin
-
-  // Skirt / tunic lower flare (slightly wider)
-  px(ctx,-3,8+bob,'#2a4a2a',6,3);
-  px(ctx,-3,9+bob,'#1e3a1e',6,2);
-
-  // Legs — slim, with light leather boots
-  px(ctx,-3,11+bob+leg,'#1e3020',2,5);
-  px(ctx,1,11+bob-leg,'#1e3020',2,5);
-  // Boots
-  px(ctx,-4,15+bob+leg,'#3a2010',3,2);
-  px(ctx,1,15+bob-leg,'#3a2010',3,2);
-  px(ctx,-3,15+bob+leg,'#5a3820',2,1);
-  px(ctx,1,15+bob-leg,'#5a3820',2,1);
+  if(rT===0){ // Scout: simple cloth wrap
+    px(ctx,-2,0+bob,'#7a6a50',4,5);px(ctx,-2,0+bob,'#9a8a68',3,4);
+    px(ctx,-1,2+bob,'#d4a76a',2,3); // visible skin
+    px(ctx,-2,5+bob,'#d4a76a',4,2); // midriff
+    px(ctx,-2,7+bob,'#4a3a28',4,1); // simple belt
+    px(ctx,-4,1+bob,'#d4a76a',2,6);px(ctx,2,1+bob,'#d4a76a',2,6); // bare arms
+    px(ctx,-3,8+bob,'#3a2a18',5,4); // cloth shorts
+    px(ctx,-3,12+bob+leg,'#d4a76a',2,6);px(ctx,1,12+bob-leg,'#d4a76a',2,6);
+    px(ctx,-3,17+bob+leg,'#3a2010',3,1);px(ctx,1,17+bob-leg,'#3a2010',3,1);
+  } else if(rT===1){ // Huntress: leather top + shorts
+    px(ctx,-2,0+bob,'#5a3a18',4,4);px(ctx,-2,0+bob,'#7a5a28',3,3);px(ctx,-1,0+bob,'#9a7a40',1,2);
+    px(ctx,-1,2+bob,'#d4a76a',2,2);px(ctx,-1,1+bob,'#c89458',2,1);
+    px(ctx,-2,4+bob,'#d4a76a',4,3);px(ctx,-1,5+bob,'#c89458',2,1);
+    px(ctx,-2,7+bob,'#3a2a0a',4,1);px(ctx,-1,7+bob,'#60a060',2,1);
+    px(ctx,-4,1+bob,'#d4a76a',2,6);px(ctx,2,1+bob,'#d4a76a',2,6);
+    px(ctx,-4,1+bob,'#5a3a18',2,2);px(ctx,2,1+bob,'#5a3a18',2,2);
+    px(ctx,-3,8+bob,'#2a1a0a',5,3);px(ctx,-2,8+bob,'#3a2a10',3,2);
+    px(ctx,-3,11+bob+leg,'#d4a76a',2,7);px(ctx,1,11+bob-leg,'#d4a76a',2,7);
+    px(ctx,-3,17+bob+leg,'#3a1a0a',3,1);px(ctx,1,17+bob-leg,'#3a1a0a',3,1);
+  } else { // Warden/Shadowstrider: studded leather + leggings
+    px(ctx,-2,0+bob,'#2a4a2a',4,5);px(ctx,-2,0+bob,'#3a6a3a',3,4);px(ctx,-1,0+bob,'#4a8a4a',1,2);
+    px(ctx,-1,2+bob,'#d4a76a',2,2);
+    px(ctx,-2,4+bob,'#d4a76a',4,2);
+    px(ctx,-2,6+bob,'#2a4a2a',4,2); // armor mid section
+    px(ctx,-2,8+bob,'#1a2a10',4,1);px(ctx,-1,8+bob,rT>=3?'#60a060':'#808060',2,1);
+    // Arm bracers with studs
+    px(ctx,-4,1+bob,'#d4a76a',2,6);px(ctx,2,1+bob,'#d4a76a',2,6);
+    px(ctx,-4,1+bob,'#2a4a2a',2,3);px(ctx,2,1+bob,'#2a4a2a',2,3);
+    if(rT>=3){px(ctx,-4,1+bob,'#60a060',1,1);px(ctx,3,1+bob,'#60a060',1,1);}// gem studs
+    // Shorts w/ legging extensions
+    px(ctx,-3,9+bob,'#1a2a10',5,3);
+    px(ctx,-3,12+bob+leg,'#2a3a18',2,6);px(ctx,1,12+bob-leg,'#2a3a18',2,6);
+    px(ctx,-3,17+bob+leg,'#1a2a10',3,2);px(ctx,1,17+bob-leg,'#1a2a10',3,2);
+    if(rT>=3){px(ctx,-3,17+bob+leg,'#60a060',1,1);px(ctx,3,17+bob-leg,'#60a060',1,1);}
+  }
 
   // Head — slightly smaller, more delicate
   px(ctx,-2,-6+bob,'#d4a76a',4,4);  // face
@@ -668,17 +841,20 @@ function drawArena(ctx, arena, tick) {
 // ═══════════════════════════════════════════
 var CLS = {
   warrior:{name:'Warrior',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Slash',color:'#6a7a8a',
-    hp:120,mp:40,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
-    s1:{name:'Shield Bash',icon:'\uD83D\uDEE1',mp:12,cd:4200,range:58,dmg:18,stun:1100},
-    s2:{name:'Whirlwind',icon:'\uD83C\uDF00',mp:20,cd:7000,range:65,dmg:32,aoe:true}},
+    hp:120,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
+    s1:{name:'Shield Bash',icon:'\uD83D\uDEE1',cd:4200,range:58,dmg:18,stun:1100},
+    s2:{name:'Whirlwind',icon:'\uD83C\uDF00',cd:7000,range:65,dmg:32,aoe:true},
+    move:{name:'War Charge',icon:'\uD83D\uDCA5',cd:6000,charge:true,chargeDur:800,dmgReduce:0.4}},
   mage:{name:'Mage',icon:'\uD83D\uDD2E',atkIcon:'\uD83E\uDDCA',atkLabel:'Ice Shard',color:'#3a30a0',
-    hp:80,mp:100,spd:2.2,atkDmg:10,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
-    s1:{name:'Fireball',icon:'\uD83D\uDD25',mp:20,cd:2800,dmg:35,proj:true,speed:340,range:230},
-    s2:{name:'Blink',icon:'\uD83D\uDCA8',mp:15,cd:5000,blink:85}},
+    hp:80,spd:2.2,atkDmg:10,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
+    s1:{name:'Fireball',icon:'\uD83D\uDD25',cd:2800,dmg:35,proj:true,speed:340,range:230},
+    s2:{name:'Frost Nova',icon:'\u2744',cd:8000,nova:true,dmg:20,range:80},
+    move:{name:'Blink',icon:'\uD83D\uDCA8',cd:4000,blink:90}},
   ranger:{name:'Ranger',icon:'\uD83C\uDFF9',atkIcon:'\uD83C\uDFF9',atkLabel:'Arrow',color:'#4a3a20',
-    hp:95,mp:60,spd:3.1,atkDmg:18,atkRange:220,atkMs:1000,atkType:'proj',atkSpeed:420,
-    s1:{name:'Poison Shot',icon:'\u2620',mp:15,cd:3500,dmg:12,dot:9,dotDur:3800,proj:true,speed:380,range:225},
-    s2:{name:'Smoke Roll',icon:'\uD83D\uDCA8',mp:10,cd:4200,smoke:true,invMs:750}}
+    hp:95,spd:3.1,atkDmg:18,atkRange:220,atkMs:1000,atkType:'proj',atkSpeed:420,
+    s1:{name:'Snare Trap',icon:'\uD83D\uDEA8',cd:2500,trap:true,trapDur:1000,trapMax:3},
+    s2:{name:'Smoke Bomb',icon:'\uD83D\uDCA8',cd:5000,smoke:true,invMs:600},
+    move:{name:'Gale Rush',icon:'\uD83C\uDF2C',cd:7000,gale:true,galeDur:1200,galeSpd:2.2}}
 };
 
 // ═══════════════════════════════════════════
@@ -698,19 +874,23 @@ var pushThrottle=0;
 
 function mkPlayer(id,cls,name,spawn,isMe) {
   var C=CLS[cls];
-  return {id:id,name:name,cls:cls,isMe:isMe,
+  var clsLevel=getLevel(isMe?cls:cls); // use actual level for local player
+  return {id:id,name:name,cls:cls,isMe:isMe,level:isMe?clsLevel:1,
     x:spawn.x*TILE+TILE/2,y:spawn.y*TILE+TILE/2,
-    vx:0,vy:0,hp:C.hp,maxHp:C.hp,mp:C.mp,maxMp:C.mp,
+    vx:0,vy:0,hp:C.hp,maxHp:C.hp,
     dir:isMe?3:2,anim:0,moving:false,
     atkTimer:0,attacking:0,rollTimer:0,rolling:0,rollInv:false,rollDir:{x:1,y:0},
     blocking:false,s1cd:0,s2cd:0,stunned:0,poisoned:0,poisonDmg:0,poisonTimer:0,
-    chargeTime:0,charging:false,
+    bowChargeTime:0,bowCharging:false,
     frost:0,frostTimer:0,frosted:false,frostedTimer:0,
+    moveCd:0,warCharging:false,chargeTimer:0,chargeTarget:null,
+    galing:false,galeTimer:0,
+    blinking:false,
     hitFlash:0,dead:false,wins:0,projId:0};
 }
 
 function mkGS(arenaKey,me,en) {
-  return {arena:ARENAS[arenaKey],arenaKey:arenaKey,players:[me,en],projs:[],effects:[],smokes:[],
+  return {arena:ARENAS[arenaKey],arenaKey:arenaKey,players:[me,en],projs:[],effects:[],smokes:[],traps:[],
     tick:0,phase:'fighting',countdown:0,roundTimer:99,roundMs:0,round:1};
 }
 
@@ -727,7 +907,9 @@ function dealDmg(gs,target,dmg,type) {
     spawnEfx(gs,type,target.x,target.y);
     return;
   }
-  target.hp=Math.max(0,target.hp-dmg);
+  var finalDmg=Math.round(dmg*(target.warCharging&&target.dmgReduce?(1-target.dmgReduce):1));
+  target.hp=Math.max(0,target.hp-finalDmg);
+  dmg=finalDmg;
   target.hitFlash=220;
   spawnEfx(gs,type,target.x,target.y);
   sidelog('\u2694',Math.round(dmg)+' dmg \u2192 '+target.name);
@@ -754,6 +936,36 @@ function applyFrost(gs, target) {
     sidelog('❄', target.name + ' FROZEN!');
     // Push state if this is us
     if(target.isMe && gameMode==='pvp') pushState(target);
+  }
+}
+
+function doMoveAbility(gs,user,target) {
+  var C=CLS[user.cls];
+  var mv=C.move;if(!mv)return;
+  if(user.moveCd>0)return;
+  user.moveCd=mv.cd;
+  if(mv.charge) {
+    // Warrior charge — turn red, reduce damage taken, rush toward target
+    user.warCharging=true;user.chargeTimer=mv.chargeDur;
+    user.dmgReduce=mv.dmgReduce;
+    spawnEfx(gs,'charge_start',user.x,user.y);
+    // Set velocity directly toward target — very fast
+    var dx=target.x-user.x,dy=target.y-user.y,d=Math.hypot(dx,dy)||1;
+    user.chargeVx=(dx/d)*C.spd*3.5;user.chargeVy=(dy/d)*C.spd*3.5;
+  } else if(mv.blink) {
+    // Mage blink
+    var mag=Math.hypot(user.vx,user.vy)||1;
+    var bdx=user.vx?user.vx/mag:1,bdy=user.vy?user.vy/mag:0;
+    user.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,user.x+bdx*mv.blink));
+    user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,user.y+bdy*mv.blink));
+    user.rollInv=true;setTimeout(function(){user.rollInv=false;},200);
+    spawnEfx(gs,'blink',user.x,user.y);
+  } else if(mv.gale) {
+    // Ranger gale rush — white, fast
+    user.galing=true;user.galeTimer=mv.galeDur;
+    user.rollInv=true;
+    spawnEfx(gs,'gale_start',user.x,user.y);
+    setTimeout(function(){user.rollInv=false;},mv.galeDur*0.6);
   }
 }
 
@@ -802,10 +1014,30 @@ function fireRangerArrow(gs,attacker,target,range) {
 function doSkill(gs,user,target,num) {
   var C=CLS[user.cls], sk=num===1?C.s1:C.s2;
   var cd=num===1?user.s1cd:user.s2cd;
-  if(cd>0){sidelog('CD',sk.name+' on cooldown!');return;}
-  if(user.mp<sk.mp){sidelog('MP','Not enough MP!');return;}
-  user.mp-=sk.mp;
+  if(cd>0){sidelog('⏳',sk.name+' on cooldown!');return;}
   if(num===1)user.s1cd=sk.cd;else user.s2cd=sk.cd;
+  if(sk.trap){
+    // Place a trap at current position (max 3 active at a time per player)
+    var myTraps=gs.traps.filter(function(t){return t.owner===user.id;});
+    if(myTraps.length>=sk.trapMax){
+      // Remove oldest trap
+      var oldest=myTraps[0];
+      gs.traps.splice(gs.traps.indexOf(oldest),1);
+    }
+    gs.traps.push({
+      id:user.id+'_t'+(Date.now()),
+      owner:user.id,
+      x:user.x, y:user.y,
+      life:30000, // 30s before decay
+      trapDur:sk.trapDur,
+      triggered:false,
+      triggerTimer:0,
+      visible:false // invisible to enemy, visible to owner
+    });
+    spawnEfx(gs,'trap_place',user.x,user.y);
+    sidelog('\uD83D\uDEA8','Trap placed! ('+Math.min(myTraps.length+1,sk.trapMax)+'/'+sk.trapMax+')');
+    return;
+  }
   if(sk.proj) {
     var angle=Math.atan2(target.y-user.y,target.x-user.x);
     gs.projs.push({id:user.id+'_'+(user.projId++),owner:user.id,
@@ -828,6 +1060,15 @@ function doSkill(gs,user,target,num) {
     startRoll(user);user.rollInv=true;
     setTimeout(function(){user.rollInv=false;},sk.invMs);
     spawnEfx(gs,'smoke',user.x,user.y);
+  } else if(sk.nova) {
+    // Frost Nova — AOE freeze burst around caster
+    if(Math.hypot(user.x-target.x,user.y-target.y)<sk.range+20){
+      dealDmg(gs,target,sk.dmg,'aoe');
+      target.stunned=1200;
+      applyFrost(gs,target);applyFrost(gs,target);applyFrost(gs,target);// instant 3 stacks
+      gs.effects.push({type:'frost_burst',x:user.x,y:user.y,life:900,max:900,anim:0});
+      sidelog('❄',user.name+' FROST NOVA!');
+    }
   }
 }
 
@@ -939,14 +1180,22 @@ function update(gs,dt) {
   for(var bi=0;bi<both.length;bi++) {
     var p=both[bi];if(p.dead)continue;
     if(p.atkTimer>0)p.atkTimer-=dt;if(p.attacking>0)p.attacking-=2;
-    if(p.charging)p.chargeTime+=dt;
+    if(p.bowCharging)p.bowChargeTime+=dt;
     // Frostbite stack decay
     if(p.frost>0){p.frostTimer-=dt;if(p.frostTimer<=0){p.frost=0;p.frostTimer=0;}}
     if(p.frosted>0){p.frostedTimer-=dt;if(p.frostedTimer<=0){p.frosted=false;p.frostedTimer=0;p.stunned=0;}}
+    if(p.moveCd>0)p.moveCd-=dt;
+    // Warrior charge tick
+    if(p.warCharging){
+      p.chargeTimer-=dt;
+      if(p.chargeTimer<=0){p.warCharging=false;p.dmgReduce=0;p.chargeVx=0;p.chargeVy=0;}
+      else{p.x+=p.chargeVx*(dt/16);p.y+=p.chargeVy*(dt/16);resolveX(gs.arena,p);resolveY(gs.arena,p);}
+    }
+    // Ranger gale tick
+    if(p.galing){p.galeTimer-=dt;if(p.galeTimer<=0){p.galing=false;}}
     if(p.rollTimer>0)p.rollTimer-=dt;if(p.rolling>0){p.rolling-=dt;if(p.rolling<=0)p.rolling=0;}
     if(p.stunned>0)p.stunned-=dt;if(p.s1cd>0)p.s1cd-=dt;if(p.s2cd>0)p.s2cd-=dt;if(p.hitFlash>0)p.hitFlash-=dt;
     if(p.poisoned>0){p.poisoned-=dt;p.poisonTimer-=dt;if(p.poisonTimer<=0){p.poisonTimer=850;dealDmg(gs,p,p.poisonDmg,'poison');}}
-    p.mp=Math.min(p.maxMp,p.mp+p.maxMp*0.006*(dt/1000)*60);
     if(isPit(gs.arena,p.x,p.y-COLL_OFFSET_Y)){dealDmg(gs,p,3,'lava');var sp=p.isMe?gs.arena.sp1:gs.arena.sp2;p.x=sp.x*TILE+TILE/2;p.y=sp.y*TILE+TILE/2;}
     if(isTrap(gs.arena,p.x,p.y-COLL_OFFSET_Y,gs.tick))dealDmg(gs,p,9,'spike');
     p.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,p.x));
@@ -971,13 +1220,40 @@ function update(gs,dt) {
   }
   for(var j=gs.effects.length-1;j>=0;j--){gs.effects[j].life-=dt;gs.effects[j].anim++;if(gs.effects[j].life<=0)gs.effects.splice(j,1);}
   for(var k=gs.smokes.length-1;k>=0;k--){gs.smokes[k].life-=dt;if(gs.smokes[k].life<=0)gs.smokes.splice(k,1);}
+  // Tick traps
+  var me2=gs.players.find(function(p){return p.isMe;});
+  var en2=gs.players.find(function(p){return !p.isMe;});
+  for(var ti=gs.traps.length-1;ti>=0;ti--){
+    var trap=gs.traps[ti];
+    trap.life-=dt;
+    if(trap.life<=0){gs.traps.splice(ti,1);continue;}
+    if(trap.triggered){
+      trap.triggerTimer-=dt;
+      if(trap.triggerTimer<=0)gs.traps.splice(ti,1);
+      continue;
+    }
+    // Only the trap owner checks for collision (they send the trigger to opponent)
+    if(trap.owner!==myId)continue;
+    var trapTarget=en2;
+    if(trapTarget&&!trapTarget.dead&&Math.hypot(trapTarget.x-trap.x,trapTarget.y-trap.y)<22){
+      trap.triggered=true;trap.triggerTimer=600;
+      spawnEfx(gs,'trap_trigger',trap.x,trap.y);
+      sidelog('\uD83D\uDEA8',trapTarget.name+' caught in trap!');
+      if(gameMode==='pvp'){
+        pushAction('trap_trigger',{tid:trap.id,tx:trap.x,ty:trap.y});
+      } else {
+        // Training — apply stun to AI directly
+        trapTarget.stunned=1000;
+      }
+    }
+  }
   updateHUD(gs);
   if(gameMode==='pvp'){pushThrottle+=dt;if(pushThrottle>80){pushThrottle=0;pushState(me);}}
 }
 
 function updateLocal(gs,p,dt) {
   if(p.stunned>0||p.dead)return;
-  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1);
+  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+C.move.galeSpd):1);
   p.vx=0;p.vy=0;var moved=false;
   if(keys['KeyW']||keys['ArrowUp']){p.vy=-spd;p.dir=1;moved=true;}
   if(keys['KeyS']||keys['ArrowDown']){p.vy=spd;p.dir=0;moved=true;}
@@ -1007,8 +1283,11 @@ function lerpRemote(en) {
   en.blocking=!!remoteState.blocking;
   if(remoteState.frost!=null) en.frost=remoteState.frost;
   if(remoteState.frosted!=null) en.frosted=!!remoteState.frosted;
+  if(remoteState.warCharging!=null) en.warCharging=!!remoteState.warCharging;
+  if(remoteState.bowCharging!=null) en.bowCharging=!!remoteState.bowCharging;
+  if(remoteState.galing!=null) en.galing=!!remoteState.galing;
+  if(remoteState.moveCd!=null) en.moveCd=remoteState.moveCd;
   if(remoteState.hp!=null) en.hp=remoteState.hp;
-  if(remoteState.mp!=null) en.mp=remoteState.mp;
   if(remoteState.dead!=null) en.dead=!!remoteState.dead;
   if(remoteState.wins!=null) en.wins=remoteState.wins;
   if(remoteState.hitFlash) en.hitFlash=80;
@@ -1053,6 +1332,31 @@ function draw(gs) {
   gctx.save();gctx.translate(ox,oy);
   drawArena(gctx,gs.arena,gs.tick);
   for(var si=0;si<gs.smokes.length;si++){var sm=gs.smokes[si];gctx.fillStyle='rgba(80,80,95,'+(sm.life/sm.max*0.48)+')';gctx.beginPath();gctx.arc(sm.x,sm.y,68,0,Math.PI*2);gctx.fill();}
+  // Draw traps
+  for(var ti2=0;ti2<gs.traps.length;ti2++){
+    var tr=gs.traps[ti2];
+    var isMyTrap=(tr.owner===myId);
+    if(!isMyTrap&&!tr.triggered)continue; // enemy can't see owner's active traps
+    if(tr.triggered){
+      // Triggered — show snare burst
+      var ta=Math.min(1,tr.triggerTimer/600);
+      gctx.strokeStyle='rgba(180,120,40,'+ta+')';gctx.lineWidth=2;
+      for(var tv=0;tv<6;tv++){var tang=tv/6*Math.PI*2;gctx.beginPath();gctx.moveTo(tr.x,tr.y);gctx.lineTo(tr.x+Math.cos(tang)*18*ta,tr.y+Math.sin(tang)*18*ta);gctx.stroke();}
+      gctx.fillStyle='rgba(200,150,50,'+ta*0.4+')';gctx.beginPath();gctx.arc(tr.x,tr.y,20,0,Math.PI*2);gctx.fill();
+    } else {
+      // Visible only to owner — small subtle indicator
+      var pulse=Math.sin(gs.tick*0.08)*0.2+0.5;
+      // Outer ring (subtle)
+      gctx.strokeStyle='rgba(180,140,40,'+pulse*0.5+')';gctx.lineWidth=1;
+      gctx.beginPath();gctx.arc(tr.x,tr.y,12,0,Math.PI*2);gctx.stroke();
+      // Inner X mark
+      gctx.strokeStyle='rgba(220,160,40,'+pulse*0.8+')';gctx.lineWidth=1.5;
+      gctx.beginPath();gctx.moveTo(tr.x-6,tr.y-6);gctx.lineTo(tr.x+6,tr.y+6);gctx.stroke();
+      gctx.beginPath();gctx.moveTo(tr.x+6,tr.y-6);gctx.lineTo(tr.x-6,tr.y+6);gctx.stroke();
+      // Tiny center dot
+      gctx.fillStyle='rgba(240,180,60,'+pulse+')';gctx.beginPath();gctx.arc(tr.x,tr.y,2.5,0,Math.PI*2);gctx.fill();
+    }
+  }
   for(var ei=0;ei<gs.effects.length;ei++) {
     var ef=gs.effects[ei],a=ef.life/ef.max;
     gctx.globalAlpha=Math.max(0,a);
@@ -1062,6 +1366,17 @@ function draw(gs) {
     else if(ef.type==='stun'){gctx.fillStyle='#f39c12';gctx.font='13px serif';gctx.textAlign='center';gctx.fillText('\u2605',ef.x+Math.cos(ef.anim*0.28)*18,ef.y-36+Math.sin(ef.anim*0.28)*6);}
     else if(ef.type==='impact'||ef.type==='splat'||ef.type==='proj'){gctx.fillStyle='rgba(220,80,20,0.6)';for(var pi=0;pi<5;pi++){var ang=pi/5*Math.PI*2+ef.anim*0.12,rr=(1-a)*26;gctx.beginPath();gctx.arc(ef.x+Math.cos(ang)*rr,ef.y+Math.sin(ang)*rr,4,0,Math.PI*2);gctx.fill();}}
     else if(ef.type==='blink'){gctx.fillStyle='rgba(122,74,240,0.55)';gctx.beginPath();gctx.arc(ef.x,ef.y,30*(1-a+0.05),0,Math.PI*2);gctx.fill();}
+    else if(ef.type==='charge_start'){gctx.fillStyle='rgba(220,30,0,'+a*0.7+')';gctx.beginPath();gctx.arc(ef.x,ef.y,40*(1-a+0.05),0,Math.PI*2);gctx.fill();}
+    else if(ef.type==='trap_place'){gctx.strokeStyle='rgba(200,160,40,'+a+')';gctx.lineWidth=1.5;gctx.beginPath();gctx.arc(ef.x,ef.y,16*(1-a+0.1),0,Math.PI*2);gctx.stroke();}
+    else if(ef.type==='trap_trigger'){
+      gctx.fillStyle='rgba(200,140,20,'+a*0.5+')';gctx.beginPath();gctx.arc(ef.x,ef.y,28*(1-a+0.05),0,Math.PI*2);gctx.fill();
+      gctx.strokeStyle='rgba(240,180,40,'+a+')';gctx.lineWidth=2;
+      for(var ti3=0;ti3<8;ti3++){var ta2=ti3/8*Math.PI*2;var tr2=(1-a)*24;gctx.beginPath();gctx.moveTo(ef.x,ef.y);gctx.lineTo(ef.x+Math.cos(ta2)*tr2,ef.y+Math.sin(ta2)*tr2);gctx.stroke();}
+    }
+    else if(ef.type==='gale_start'){
+      gctx.strokeStyle='rgba(200,240,255,'+a*0.8+')';gctx.lineWidth=3;
+      for(var gi2=0;gi2<4;gi2++){gctx.beginPath();gctx.arc(ef.x,ef.y,20+gi2*12+(1-a)*30,0,Math.PI*2);gctx.stroke();}
+    }
     else if(ef.type==='frost_burst'){
       gctx.fillStyle='rgba(80,180,255,0.6)';gctx.beginPath();gctx.arc(ef.x,ef.y,36*(1-a+0.05),0,Math.PI*2);gctx.fill();
       for(var fi=0;fi<8;fi++){var fang=fi/8*Math.PI*2+ef.anim*0.05;var fr=(1-a)*30;gctx.fillStyle='rgba(180,230,255,0.85)';gctx.beginPath();gctx.moveTo(ef.x+Math.cos(fang)*4,ef.y+Math.sin(fang)*4);gctx.lineTo(ef.x+Math.cos(fang+0.2)*fr*0.4,ef.y+Math.sin(fang+0.2)*fr*0.4);gctx.lineTo(ef.x+Math.cos(fang)*fr,ef.y+Math.sin(fang)*fr);gctx.lineTo(ef.x+Math.cos(fang-0.2)*fr*0.4,ef.y+Math.sin(fang-0.2)*fr*0.4);gctx.closePath();gctx.fill();}
@@ -1071,12 +1386,12 @@ function draw(gs) {
   }
   for(var pl=0;pl<gs.players.length;pl++) {
     var p=gs.players[pl];
-    if(p.dead){gctx.globalAlpha=0.3;DRAW[p.cls](gctx,p.x,p.y,p.dir,0,false);gctx.globalAlpha=1;continue;}
-    if(p.rolling>0){gctx.globalAlpha=0.2;DRAW[p.cls](gctx,p.x-p.rollDir.x*26,p.y-p.rollDir.y*26,p.dir,p.anim,false);gctx.globalAlpha=1;}
+    if(p.dead){gctx.globalAlpha=0.3;DRAW[p.cls](gctx,p.x,p.y,p.dir,0,false,p.level||1);gctx.globalAlpha=1;continue;}
+    if(p.rolling>0){gctx.globalAlpha=0.2;DRAW[p.cls](gctx,p.x-p.rollDir.x*26,p.y-p.rollDir.y*26,p.dir,p.anim,false,p.level||1);gctx.globalAlpha=1;}
     if(p.blocking){gctx.fillStyle='rgba(40,120,220,0.2)';gctx.beginPath();gctx.arc(p.x,p.y,28,0,Math.PI*2);gctx.fill();gctx.strokeStyle='rgba(60,140,240,0.5)';gctx.lineWidth=2;gctx.stroke();}
     if(p.poisoned>0){gctx.fillStyle='rgba(40,180,40,0.12)';gctx.beginPath();gctx.arc(p.x,p.y,24+Math.sin(gs.tick*0.14)*3,0,Math.PI*2);gctx.fill();}
     if(p.stunned>0)gctx.globalAlpha=0.6;
-    DRAW[p.cls](gctx,p.x,p.y,p.dir,p.anim,p.hitFlash>0);
+    DRAW[p.cls](gctx,p.x,p.y,p.dir,p.anim,p.hitFlash>0,p.level||1);
     gctx.globalAlpha=1;
     gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-30,p.y-56,60,14);
     gctx.fillStyle=p.isMe?'#e8b84b':'#cc5555';
@@ -1093,15 +1408,42 @@ function draw(gs) {
         gctx.strokeStyle='rgba(160,220,255,0.8)';gctx.lineWidth=0.5;gctx.stroke();
       }
       if(p.frosted){
-        // Frozen — pulsing blue overlay on character
         var frostAlpha=0.25+Math.sin(gs.tick*0.2)*0.1;
         gctx.fillStyle='rgba(80,160,255,'+frostAlpha+')';
         gctx.fillRect(p.x-22,p.y-60,44,80);
       }
     }
+    // Warrior charge — red flash overlay
+    if(p.warCharging&&!p.dead){
+      gctx.fillStyle='rgba(200,20,20,0.3)';gctx.fillRect(p.x-20,p.y-55,42,75);
+      // Red particles streaming behind
+      var chAngle=Math.atan2(p.chargeVy,p.chargeVx)+Math.PI;
+      for(var ci2=0;ci2<3;ci2++){
+        var cpa=chAngle+(Math.random()-0.5)*0.8;
+        var cpr=10+Math.random()*20;
+        gctx.fillStyle='rgba(220,60,0,'+(0.4+Math.random()*0.4)+')';
+        gctx.beginPath();gctx.arc(p.x+Math.cos(cpa)*cpr,p.y+Math.sin(cpa)*cpr,3+Math.random()*3,0,Math.PI*2);gctx.fill();
+      }
+    }
+    // Ranger gale rush — white glow + wind rings
+    if(p.galing&&!p.dead){
+      gctx.fillStyle='rgba(255,255,255,0.18)';gctx.fillRect(p.x-22,p.y-60,46,80);
+      var gPct=p.galeTimer/CLS.ranger.move.galeDur;
+      gctx.strokeStyle='rgba(200,240,255,'+(gPct*0.7)+')';gctx.lineWidth=2;
+      for(var gi=0;gi<3;gi++){
+        var gr=18+gi*14+(gs.tick*2+gi*20)%40;
+        gctx.beginPath();gctx.arc(p.x,p.y-20,gr,0,Math.PI*2);gctx.stroke();
+      }
+    }
+    // Movecooldown indicator — small icon above name tag
+    if(p.isMe&&p.moveCd>0&&!p.dead){
+      var mvPct=1-Math.min(1,p.moveCd/CLS[p.cls].move.cd);
+      gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(p.x-6,p.y-78,12,4);
+      gctx.fillStyle='#e8b84b';gctx.fillRect(p.x-6,p.y-78,12*mvPct,4);
+    }
     // Ranger charge indicator — 4 horizontal stripes on top of HP bar
-    if(p.isMe&&p.cls==='ranger'&&p.charging){
-      var chPct=Math.min(1,p.chargeTime/1500);
+    if(p.isMe&&p.cls==='ranger'&&p.bowCharging){
+      var chPct=Math.min(1,p.bowChargeTime/1500);
       var stripeW=10,gap=2,totalW=4*stripeW+3*gap; // 46px
       var startX=p.x-totalW/2;
       var barY=p.y-69; // 2px above the hp bar
@@ -1168,7 +1510,13 @@ function endRound(gs) {
   if(gs.phase==='gameOver')return;
   var dead=gs.players.find(function(p){return p.dead;});
   var alive=gs.players.find(function(p){return !p.dead;});
-  if(alive){alive.wins++;showBanner(alive.name+' WINS ROUND!');}else showBanner('DRAW!');
+  if(alive){alive.wins++;showBanner(alive.name+' WINS ROUND!');}
+  // Award XP at end of each round
+  var meR=gs.players.find(function(p){return p.isMe;});
+  if(meR){
+    var wonRound=alive&&alive.isMe;
+    awardMatchXP(meR.cls, wonRound, gameMode==='pvp');
+  }else showBanner('DRAW!');
   var winner=gs.players.find(function(p){return p.wins>=2;});
   if(winner){gs.phase='gameOver';setTimeout(function(){showOverlay(winner.isMe?'VICTORY':'DEFEAT',winner.name+' wins the match!');},900);return;}
   gs.phase='countdown';gs.countdown=3200;
@@ -1182,11 +1530,12 @@ function resetRound(gs) {
     var p=gs.players[i],C2=CLS[p.cls],sp=p.isMe?gs.arena.sp1:gs.arena.sp2;
     var C=C2;
     p.x=sp.x*TILE+TILE/2;p.y=sp.y*TILE+TILE/2;
-    p.hp=C.hp;p.mp=C.mp;p.dead=false;
+    p.hp=C.hp;p.dead=false;
     p.stunned=0;p.poisoned=0;p.rolling=0;p.attacking=0;p.hitFlash=0;p.blocking=false;p.s1cd=0;p.s2cd=0;p.atkTimer=0;
     p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;
+    p.moveCd=0;p.warCharging=false;p.bowCharging=false;p.bowChargeTime=0;p.chargeTimer=0;p.galing=false;p.galeTimer=0;p.dmgReduce=0;
   }
-  gs.projs=[];gs.effects=[];gs.smokes=[];
+  gs.projs=[];gs.effects=[];gs.smokes=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
   showBanner('ROUND '+gs.round);updateHUD(gs);
 }
@@ -1203,9 +1552,11 @@ function updateHUD(gs) {
   var en=gs.players.find(function(p){return !p.isMe;});
   if(!me||!en)return;
   var C=CLS[me.cls];
+  var xpD=getXP(me.cls);var tierD=getTier(me.cls,xpD.level);
   document.getElementById('sp-myname').textContent=me.name+(me.wins?' ('+me.wins+'\u2605)':'');
+  document.getElementById('sp-mylevel').textContent='Lv.'+xpD.level+' '+tierD.name;
+  document.getElementById('sp-myxp').style.width=Math.min(100,Math.round(xpD.xp/xpForLevel(xpD.level)*100))+'%';
   document.getElementById('sp-myhp').style.width=(me.hp/me.maxHp*100)+'%';document.getElementById('sp-myhp-v').textContent=Math.ceil(me.hp)+'/'+me.maxHp;
-  document.getElementById('sp-mymp').style.width=(me.mp/me.maxMp*100)+'%';document.getElementById('sp-mymp-v').textContent=Math.ceil(me.mp)+'/'+me.maxMp;
   document.getElementById('sp-enname').textContent=en.name+(en.wins?' ('+en.wins+'\u2605)':'');
   document.getElementById('sp-enhp').style.width=(en.hp/en.maxHp*100)+'%';document.getElementById('sp-enhp-v').textContent=Math.ceil(en.hp)+'/'+en.maxHp;
   function mkSt(id,p){var el=document.getElementById(id);el.innerHTML='';if(p.stunned>0)el.innerHTML+='<span class="schip stun">STUN</span>';if(p.poisoned>0)el.innerHTML+='<span class="schip poison">PSN</span>';if(p.blocking)el.innerHTML+='<span class="schip shield">BLK</span>';}
@@ -1252,6 +1603,18 @@ function updateHUD(gs) {
       s2el.classList.add('on-cd');
     } else {if(s2cd)s2cd.remove();s2el.classList.remove('on-cd');}
   }
+  // Move ability slot
+  var mvEl=document.getElementById('skb-move');
+  if(mvEl&&C.move){
+    mvEl.querySelector('.sk-icon').innerHTML=C.move.icon;
+    mvEl.querySelector('.sk-name').textContent=C.move.name.toUpperCase();
+    var mvcd=mvEl.querySelector('.sk-cd');
+    if(me.moveCd>0){
+      if(!mvcd){var d4=document.createElement('div');d4.className='sk-cd';mvEl.appendChild(d4);}
+      mvEl.querySelector('.sk-cd').textContent=Math.ceil(me.moveCd/1000)+'s';
+      mvEl.classList.add('on-cd');
+    } else {if(mvcd)mvcd.remove();mvEl.classList.remove('on-cd');}
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1267,11 +1630,11 @@ function pushState(me) {
   }
   fbSet('/rooms/'+roomCode+'/players/'+myId, {
     x:Math.round(me.x),y:Math.round(me.y),dir:me.dir,anim:Math.round(me.anim),
-    moving:me.moving,hp:Math.round(me.hp),mp:Math.round(me.mp),
-    attacking:me.attacking,rolling:Math.round(me.rolling),
+    moving:me.moving,hp:Math.round(me.hp),    attacking:me.attacking,rolling:Math.round(me.rolling),
     stunned:Math.round(Math.max(0,me.stunned)),poisoned:Math.round(Math.max(0,me.poisoned)),
     hitFlash:me.hitFlash>0?1:0,blocking:me.blocking,dead:me.dead,wins:me.wins,
     frost:me.frost||0,frosted:me.frosted||false,
+    warCharging:me.warCharging||false,bowCharging:me.bowCharging||false,galing:me.galing||false,moveCd:Math.round(me.moveCd||0),
     projs:myProjs.length>0?myProjs:null
   });
 }
@@ -1331,8 +1694,16 @@ function processAction(msg,gs,me,en) {
     var sk1r=CLS[en.cls].s1,sp1=msg.data||{};
     var enPos1={x:sp1.x!=null?sp1.x:en.x,y:sp1.y!=null?sp1.y:en.y};
     var sdist1=Math.hypot(enPos1.x-me.x,enPos1.y-me.y);
-    dbg('SK1 recv type='+(sk1r.proj?'proj':sk1r.stun?'stun':sk1r.aoe?'aoe':'?'));
     en.s1cd=sk1r.cd;
+    // Trap placement — register on our side (we can't see it, but need it for trigger sync)
+    if(sk1r.trap&&sp1.x!=null){
+      var myTraps2=gs.traps.filter(function(t){return t.owner===en.id;});
+      if(myTraps2.length>=3){var old2=myTraps2[0];gs.traps.splice(gs.traps.indexOf(old2),1);}
+      gs.traps.push({id:en.id+'_t'+(Date.now()),owner:en.id,x:sp1.x,y:sp1.y,
+        life:30000,trapDur:1000,triggered:false,triggerTimer:0});
+      return; // no further processing for trap
+    }
+    dbg('SK1 recv type='+(sk1r.proj?'proj':sk1r.stun?'stun':sk1r.aoe?'aoe':'?'));
     spawnEfx(gs,'cast',enPos1.x,enPos1.y);
     if(sk1r.proj){
       // Spawn projectile aimed at me — deals real damage on hit
@@ -1379,6 +1750,11 @@ function processAction(msg,gs,me,en) {
     }
   } else if(msg.type==='roll'){
     startRoll(en);
+  } else if(msg.type==='move'){
+    doMoveAbility(gs,en,me);
+  } else if(msg.type==='trap_trigger'){
+    // Visual trigger on our side
+    if(msg.data)spawnEfx(gs,'trap_trigger',msg.data.tx||en.x,msg.data.ty||en.y);
   } else if(msg.type==='rematch'){
     hideOverlay();gs.players.forEach(function(p){p.wins=0;});resetRound(gs);
   } else if(msg.type==='chat'&&msg.data){
@@ -1460,7 +1836,7 @@ document.addEventListener('keydown',function(e){
   var tag=document.activeElement&&document.activeElement.tagName;
   var isTyping=(tag==='INPUT'||tag==='TEXTAREA');
   if(!isTyping){
-    var acted=['KeyG','KeyX','KeyH','KeyJ','KeyF','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
+    var acted=['KeyG','KeyX','KeyH','KeyJ','KeyF','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
     if(acted.indexOf(e.code)>=0)e.preventDefault();
   }
   if(keys[e.code])return;keys[e.code]=true;
@@ -1473,7 +1849,7 @@ document.addEventListener('keydown',function(e){
   if(e.code==='KeyG'){
     if(me.atkTimer<=0){
       if(me.cls==='ranger'){
-        me.charging=true;me.chargeTime=0;
+        me.bowCharging=true;me.bowChargeTime=0;
       } else {
         doAttack(gameState,me,en);
         if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y)});
@@ -1490,6 +1866,10 @@ document.addEventListener('keydown',function(e){
     if(gameMode==='pvp')pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});
   }
   if(e.code==='KeyF')me.blocking=true;
+  if(e.code==='Space'){
+    doMoveAbility(gameState,me,en);
+    if(gameMode==='pvp')pushAction('move',{x:Math.round(me.x),y:Math.round(me.y)});
+  }
 });
 document.addEventListener('keyup',function(e){
   keys[e.code]=false;
@@ -1499,15 +1879,15 @@ document.addEventListener('keyup',function(e){
   if(e.code==='KeyG'&&gameState){
     var me3=gameState.players.find(function(p){return p.isMe;});
     var en3=gameState.players.find(function(p){return !p.isMe;});
-    if(me3&&en3&&me3.cls==='ranger'&&me3.charging&&me3.atkTimer<=0){
-      me3.charging=false;
+    if(me3&&en3&&me3.cls==='ranger'&&me3.bowCharging&&me3.atkTimer<=0){
+      me3.bowCharging=false;
       // Scale range by charge time: min 80px, max 320px over 1.5s hold
-      var charge=Math.min(me3.chargeTime,1500);
+      var charge=Math.min(me3.bowChargeTime,1500);
       var chargedRange=80+Math.floor((charge/1500)*240);
       fireRangerArrow(gameState,me3,en3,chargedRange);
       if(gameMode==='pvp')pushAction('attack',{x:Math.round(me3.x),y:Math.round(me3.y),chargedRange:chargedRange});
     }
-    if(me3)me3.charging=false;
+    if(me3)me3.bowCharging=false;
   }
 });
 
@@ -1529,6 +1909,7 @@ function buildClassInfoHTML(cls) {
   html+='<span class="ss">'+C.s1.dmg+' dmg &middot; '+(C.s1.cd/1000).toFixed(1)+'s cd &middot; '+C.s1.mp+' mp';
   if(C.s1.stun) html+=' &middot; stuns '+(C.s1.stun/1000).toFixed(1)+'s';
   if(C.s1.dot) html+=' &middot; poisons';
+  if(C.s1.trap) html+=' &middot; '+C.s1.trapMax+' traps max &middot; invisible to enemy';
   if(C.s1.blink) html+=' &middot; blinks '+C.s1.blink+'px';
   html+='</span></div>';
   html+='<div class="cip-skill"><span class="sn">'+C.s2.name+'</span> [J] &nbsp;';
@@ -1573,7 +1954,7 @@ var SPRITE_W=90, SPRITE_H=110;
     // Idle bob animation
     animT+=0.04;
     var drawFn=DRAW[cls];
-    if(drawFn) drawFn(cctx,SPRITE_W/2,SPRITE_H*0.58,3,Math.sin(animT)*4,false);
+    if(drawFn) drawFn(cctx,SPRITE_W/2,SPRITE_H*0.58,3,Math.sin(animT)*4,false,getLevel(cls));
     requestAnimationFrame(animCard);
   }
   animCard();
@@ -1676,6 +2057,7 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
   showScreen('game-screen');hideOverlay();resizeCanvas();
   startListeningEnemy(enId);startListeningActions();
+  updateProfileBadge();
   updateHUD(gameState);showBanner('ROUND 1 \u2014 FIGHT!');
 }
 
@@ -1691,7 +2073,8 @@ function launchTraining() {
 }
 
 document.getElementById('ov-rematch').addEventListener('click',function(){if(!gameState)return;hideOverlay();gameState.players.forEach(function(p){p.wins=0;});resetRound(gameState);if(gameMode==='pvp')pushAction('rematch');});
-document.getElementById('ov-menu').addEventListener('click',function(){hideOverlay();gameState=null;cleanupFB();showScreen('title-screen');});
+document.getElementById('ov-menu').addEventListener('click',function(){
+  saveUserProfile();hideOverlay();gameState=null;cleanupFB();showScreen('title-screen');});
 
 // Chat
 document.getElementById('lob-chat-send').addEventListener('click',sendLobbyChat);
@@ -1726,6 +2109,200 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
 })();
 
 
+
+// ══ XP & TIER SYSTEM ══
+
+function getClassData(cls) {
+  try { return JSON.parse(localStorage.getItem('eldara_cls_'+cls)||'{}'); }
+  catch(e){return {};}
+}
+function saveClassData(cls, data) {
+  try { localStorage.setItem('eldara_cls_'+cls, JSON.stringify(data)); } catch(e){}
+  // Also sync to Firebase if logged in
+  if (authUid && !isGuest) {
+    fbSetAuth('/users/'+authUid+'/classes/'+cls, data).catch(function(){});
+  }
+}
+function getLevel(cls) {
+  var d=getClassData(cls);
+  return d.level||1;
+}
+function getXP(cls) {
+  var d=getClassData(cls);
+  return {xp:d.xp||0, level:d.level||1, xpNext:xpForLevel(d.level||1)};
+}
+function xpForLevel(lvl) {
+  return lvl*100;
+}
+function addXP(cls, amount) {
+  var d=getClassData(cls);
+  d.level=d.level||1; d.xp=d.xp||0;
+  d.xp+=amount;
+  while(d.xp>=xpForLevel(d.level)&&d.level<100){
+    d.xp-=xpForLevel(d.level);
+    d.level++;
+  }
+  if(d.level>=100){d.xp=0;}
+  saveClassData(cls,d);
+  return d;
+}
+
+function getTier(cls,level) {
+  var tiers={
+    warrior:[
+      {min:1,  name:'Conscript'},
+      {min:10, name:'Footsoldier'},
+      {min:25, name:'Knight'},
+      {min:50, name:'Champion'},
+      {min:75, name:'Paladin'},
+      {min:100,name:'Warlord'}
+    ],
+    mage:[
+      {min:1,  name:'Apprentice'},
+      {min:15, name:'Scholar'},
+      {min:35, name:'Arcanist'},
+      {min:60, name:'Archmage'},
+      {min:85, name:'Sorcerer Supreme'}
+    ],
+    ranger:[
+      {min:1,  name:'Scout'},
+      {min:20, name:'Huntress'},
+      {min:45, name:'Warden'},
+      {min:75, name:'Shadowstrider'}
+    ]
+  };
+  var t=tiers[cls]||tiers.warrior;
+  var result=t[0];
+  for(var i=0;i<t.length;i++){if(level>=t[i].min)result=t[i];}
+  return result;
+}
+
+// Award XP at end of round
+function awardMatchXP(cls, won, isPvP) {
+  var base=isPvP?(won?80:30):(won?20:5);
+  var d=addXP(cls,base);
+  var tier=getTier(cls,d.level);
+  sidelog('★','+'+ base+' XP | '+cls+' Lv.'+d.level+' ('+tier.name+')');
+  // Refresh sprite previews on setup screen if visible
+  refreshCharCards();
+  return d;
+}
+
+// ── AUTH SCREEN WIRING ──
+var authMode2 = 'login';
+
+function showAuthError(msg) {
+  document.getElementById('auth-err').textContent = msg;
+}
+
+document.getElementById('auth-tab-login').addEventListener('click', function() {
+  authMode2 = 'login';
+  document.getElementById('auth-tab-login').classList.add('active');
+  document.getElementById('auth-tab-register').classList.remove('active');
+  document.getElementById('auth-username-wrap').style.display = 'none';
+  document.getElementById('auth-submit').textContent = 'ENTER THE ARENA';
+  document.getElementById('auth-err').textContent = '';
+});
+
+document.getElementById('auth-tab-register').addEventListener('click', function() {
+  authMode2 = 'register';
+  document.getElementById('auth-tab-register').classList.add('active');
+  document.getElementById('auth-tab-login').classList.remove('active');
+  document.getElementById('auth-username-wrap').style.display = 'block';
+  document.getElementById('auth-submit').textContent = 'CREATE ACCOUNT';
+  document.getElementById('auth-err').textContent = '';
+});
+
+document.getElementById('auth-submit').addEventListener('click', function() {
+  var email = document.getElementById('auth-email').value.trim();
+  var pass = document.getElementById('auth-pass').value;
+  var uname = document.getElementById('auth-username').value.trim().toUpperCase().substring(0,12);
+  var btn = document.getElementById('auth-submit');
+  if (!email || !pass) { showAuthError('Please fill in all fields.'); return; }
+  if (pass.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  if (authMode2 === 'register' && !uname) { showAuthError('Please enter a display name.'); return; }
+  btn.disabled = true;
+  btn.textContent = 'CONNECTING...';
+  var promise = authMode2 === 'register' ? signUp(email, pass) : signIn(email, pass);
+  promise.then(function(result) {
+    if (result.error) {
+      var msg = result.error.message || 'Error';
+      if (msg === 'EMAIL_EXISTS') msg = 'Email already in use.';
+      else if (msg === 'INVALID_EMAIL') msg = 'Invalid email address.';
+      else if (msg === 'INVALID_LOGIN_CREDENTIALS' || msg === 'INVALID_PASSWORD') msg = 'Wrong email or password.';
+      else if (msg === 'USER_NOT_FOUND') msg = 'No account found with that email.';
+      else if (msg.indexOf('WEAK_PASSWORD') >= 0) msg = 'Password too weak (min 6 chars).';
+      showAuthError(msg);
+      btn.disabled = false;
+      btn.textContent = authMode2 === 'register' ? 'CREATE ACCOUNT' : 'ENTER THE ARENA';
+      return;
+    }
+    if (authMode2 === 'register') {
+      // Save display name to Firebase
+      fbSetAuth('/users/'+result.localId+'/profile', {
+        displayName: uname, email: email, created: Date.now()
+      }).then(function() {
+        onAuthSuccess(result, uname);
+      });
+    } else {
+      onAuthSuccess(result, '');
+    }
+  }).catch(function(e) {
+    showAuthError('Connection error. Check your internet.');
+    btn.disabled = false;
+    btn.textContent = 'ENTER THE ARENA';
+  });
+});
+
+document.getElementById('auth-guest').addEventListener('click', function() {
+  isGuest = true;
+  authUid = null;
+  authToken = null;
+  myName = 'GUEST';
+  displayName = 'GUEST';
+  showScreen('title-screen');
+});
+
+// Enter key on auth inputs
+['auth-email','auth-pass','auth-username'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('auth-submit').click();
+  });
+});
+
+// Try restore session from sessionStorage
+(function() {
+  try {
+    var tok = sessionStorage.getItem('eldara_token');
+    var uid = sessionStorage.getItem('eldara_uid');
+    var name = sessionStorage.getItem('eldara_name');
+    if (tok && uid) {
+      authToken = tok; authUid = uid;
+      displayName = name || 'HERO'; myName = displayName;
+      isGuest = false;
+      loadUserProfile();
+      return;
+    }
+  } catch(e) {}
+  // No session — stay on auth screen
+})();
+
+// Save XP to Firebase after each match
+var _origAwardXP = awardMatchXP;
+awardMatchXP = function(cls, won, isPvP) {
+  var result = _origAwardXP(cls, won, isPvP);
+  updateProfileBadge();
+  // saveClassData already syncs to Firebase inside addXP
+  return result;
+};
+
+function refreshCharCards(){
+  // Re-draw card canvases with current levels (called after XP gain)
+  ['warrior','mage','ranger'].forEach(function(cls){
+    // cards are animating via RAF already — level updates on next frame
+  });
+}
 
 function resizeCanvas(){canvas=document.getElementById('arena-canvas');CW=window.innerWidth-210;CH=window.innerHeight;canvas.width=CW;canvas.height=CH;gctx=canvas.getContext('2d');gctx.imageSmoothingEnabled=false;}
 window.addEventListener('resize',resizeCanvas);
