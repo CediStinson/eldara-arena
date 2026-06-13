@@ -306,8 +306,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div class="sk-big s1-slot" id="skb-s1"><div class="sk-name" id="skb-s1-name">SKILL 1</div><div class="sk-icon" id="skb-s1-icon">?</div><div class="sk-key">H</div></div>
     <div class="sk-big s2-slot" id="skb-s2"><div class="sk-name" id="skb-s2-name">SKILL 2</div><div class="sk-icon" id="skb-s2-icon">?</div><div class="sk-key">J</div></div>
     <div class="sk-big" id="skb-move" style="border-color:#8a5a20"><div class="sk-name" id="skb-move-name">MOVE</div><div class="sk-icon" id="skb-move-icon">&#9889;</div><div class="sk-key">SPC</div></div>
-    <div class="sk-big" id="skb-roll" style="border-color:#2a6a4a"><div class="sk-name">ROLL</div><div class="sk-icon">&#128168;</div><div class="sk-key">X</div></div>
-    <div class="sk-big" id="skb-block" style="border-color:#2a4a6a"><div class="sk-name">BLOCK</div><div class="sk-icon">&#128737;</div><div class="sk-key">F</div></div>
+
   </div>
   <div id="conn-bar">OFFLINE</div>
   <div id="profile-badge"></div>
@@ -667,105 +666,85 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
 // ── Ranger (female elf) ──
 function drawRanger(ctx, x, y, dir, anim, flash, level) {
   level=level||1;
+  var rT=level<20?0:level<45?1:level<75?2:3;
   ctx.save(); ctx.translate(x, y);
   if(dir!==2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.18)*0.5, leg=Math.sin(anim*0.35)*1.2;
 
-  // Long flowing silver hair behind body
-  px(ctx,-2,-8+bob,'#c8d0b0',1,18); // left hair strand
-  px(ctx,2,-8+bob,'#b8c0a0',1,16);  // right hair strand
-  px(ctx,-1,-7+bob,'#d8e0c0',1,14); // middle hair
+  // Hair strands behind (subtle, not huge)
+  px(ctx,2,-5+bob,'#c89a18',1,11);
+  px(ctx,3,-4+bob,'#b88a10',1,8);
+  px(ctx,-2,-5+bob,'#dab828',1,9);
 
-  // ── RANGER TIER BODY (level-dependent) ──
-  var rT=level<20?0:level<45?1:level<75?2:3;
+  // Face compact
+  px(ctx,-1,-5+bob,'#e8b87a',3,4);
+  // Eyes green
+  px(ctx,-1,-4+bob,'#101010',1,1); px(ctx,1,-4+bob,'#101010',1,1);
+  px(ctx,-1,-4+bob,'rgba(50,170,50,0.9)',1,1); px(ctx,1,-4+bob,'rgba(50,170,50,0.9)',1,1);
+  // Nose + lips
+  px(ctx,0,-2+bob,'#c89060',1,1);
+  px(ctx,-1,-1+bob,'#c06050',2,1);
 
-  if(rT===0){ // Scout: simple cloth wrap
-    px(ctx,-2,0+bob,'#7a6a50',4,5);px(ctx,-2,0+bob,'#9a8a68',3,4);
-    px(ctx,-1,2+bob,'#d4a76a',2,3); // visible skin
-    px(ctx,-2,5+bob,'#d4a76a',4,2); // midriff
-    px(ctx,-2,7+bob,'#4a3a28',4,1); // simple belt
-    px(ctx,-4,1+bob,'#d4a76a',2,6);px(ctx,2,1+bob,'#d4a76a',2,6); // bare arms
-    px(ctx,-3,8+bob,'#3a2a18',5,4); // cloth shorts
-    px(ctx,-3,12+bob+leg,'#d4a76a',2,6);px(ctx,1,12+bob-leg,'#d4a76a',2,6);
-    px(ctx,-3,17+bob+leg,'#3a2010',3,1);px(ctx,1,17+bob-leg,'#3a2010',3,1);
-  } else if(rT===1){ // Huntress: leather top + shorts
-    px(ctx,-2,0+bob,'#5a3a18',4,4);px(ctx,-2,0+bob,'#7a5a28',3,3);px(ctx,-1,0+bob,'#9a7a40',1,2);
-    px(ctx,-1,2+bob,'#d4a76a',2,2);px(ctx,-1,1+bob,'#c89458',2,1);
-    px(ctx,-2,4+bob,'#d4a76a',4,3);px(ctx,-1,5+bob,'#c89458',2,1);
-    px(ctx,-2,7+bob,'#3a2a0a',4,1);px(ctx,-1,7+bob,'#60a060',2,1);
-    px(ctx,-4,1+bob,'#d4a76a',2,6);px(ctx,2,1+bob,'#d4a76a',2,6);
-    px(ctx,-4,1+bob,'#5a3a18',2,2);px(ctx,2,1+bob,'#5a3a18',2,2);
-    px(ctx,-3,8+bob,'#2a1a0a',5,3);px(ctx,-2,8+bob,'#3a2a10',3,2);
-    px(ctx,-3,11+bob+leg,'#d4a76a',2,7);px(ctx,1,11+bob-leg,'#d4a76a',2,7);
-    px(ctx,-3,17+bob+leg,'#3a1a0a',3,1);px(ctx,1,17+bob-leg,'#3a1a0a',3,1);
-  } else { // Warden/Shadowstrider: studded leather + leggings
-    px(ctx,-2,0+bob,'#2a4a2a',4,5);px(ctx,-2,0+bob,'#3a6a3a',3,4);px(ctx,-1,0+bob,'#4a8a4a',1,2);
-    px(ctx,-1,2+bob,'#d4a76a',2,2);
-    px(ctx,-2,4+bob,'#d4a76a',4,2);
-    px(ctx,-2,6+bob,'#2a4a2a',4,2); // armor mid section
-    px(ctx,-2,8+bob,'#1a2a10',4,1);px(ctx,-1,8+bob,rT>=3?'#60a060':'#808060',2,1);
-    // Arm bracers with studs
-    px(ctx,-4,1+bob,'#d4a76a',2,6);px(ctx,2,1+bob,'#d4a76a',2,6);
-    px(ctx,-4,1+bob,'#2a4a2a',2,3);px(ctx,2,1+bob,'#2a4a2a',2,3);
-    if(rT>=3){px(ctx,-4,1+bob,'#60a060',1,1);px(ctx,3,1+bob,'#60a060',1,1);}// gem studs
-    // Shorts w/ legging extensions
-    px(ctx,-3,9+bob,'#1a2a10',5,3);
-    px(ctx,-3,12+bob+leg,'#2a3a18',2,6);px(ctx,1,12+bob-leg,'#2a3a18',2,6);
-    px(ctx,-3,17+bob+leg,'#1a2a10',3,2);px(ctx,1,17+bob-leg,'#1a2a10',3,2);
-    if(rT>=3){px(ctx,-3,17+bob+leg,'#60a060',1,1);px(ctx,3,17+bob-leg,'#60a060',1,1);}
+  // Blonde hair neat
+  px(ctx,-1,-8+bob,'#d4a820',3,4);
+  px(ctx,-2,-7+bob,'#c89a18',1,2);
+  px(ctx,2,-7+bob,'#c89a18',1,2);
+  // Swashbuckler hat brim
+  px(ctx,-2,-8+bob,'#2a1808',5,1);
+  px(ctx,-1,-9+bob,'#3a2010',3,2);
+  // Hat feather
+  px(ctx,2,-10+bob,'#c8a030',1,3);
+  px(ctx,2,-11+bob,'#e8b840',1,1);
+
+  // BODY
+  if(rT===0){
+    px(ctx,-2,0+bob,'#c8b090',4,4);
+    px(ctx,-1,1+bob,'#d8c0a0',2,3);
+    px(ctx,-2,4+bob,'#303020',4,5);
+    px(ctx,-2,8+bob,'#282010',4,1);
+    px(ctx,-1,8+bob,'#c8a030',2,1);
+  } else if(rT===1){
+    px(ctx,-2,0+bob,'#e8d8c0',3,4);
+    px(ctx,-2,0+bob,'#6a3a10',4,5);
+    px(ctx,-1,1+bob,'#8a5020',2,3);
+    px(ctx,-1,0+bob,'#e8d8c0',2,1);
+    px(ctx,-2,5+bob,'#282010',4,4);
+    px(ctx,-2,8+bob,'#4a3010',4,1);
+    px(ctx,-1,8+bob,'#e8b830',2,1);
+  } else {
+    px(ctx,-3,0+bob,'#3a1e08',7,9);
+    px(ctx,-2,0+bob,'#5a2e10',5,8);
+    px(ctx,-1,1+bob,'#e8d8c0',2,5);
+    px(ctx,-3,0+bob,'#c8a030',1,1); px(ctx,3,0+bob,'#c8a030',1,1);
+    px(ctx,-3,8+bob,'#c8a030',7,1);
+    px(ctx,-2,5+bob,'#201810',4,4);
+    px(ctx,-2,8+bob,'#6a3a10',4,1);
+    px(ctx,-1,8+bob,'#f0c840',2,1);
+    if(rT>=3){px(ctx,-5,-1+bob,'#c8a030',2,2); px(ctx,3,-1+bob,'#c8a030',2,2);}
   }
 
-  // Head — slightly smaller, more delicate
-  px(ctx,-2,-6+bob,'#d4a76a',4,4);  // face
-  // Pointed elf ears
-  px(ctx,-4,-4+bob,'#d4a76a',2,1);  // left ear point
-  px(ctx,3,-4+bob,'#d4a76a',1,1);   // right ear point
-  // Eyes — large almond-shaped elf eyes
-  px(ctx,-2,-5+bob,'#101010',1,1);
-  px(ctx,0,-5+bob,'#101010',1,1);
-  px(ctx,-2,-5+bob,'rgba(80,200,120,0.8)',1,1); // green iris left
-  px(ctx,0,-5+bob,'rgba(80,200,120,0.8)',1,1);  // green iris right
-  // Small nose & lips
-  px(ctx,-1,-3+bob,'#c09060',1,1);  // nose
-  px(ctx,-1,-2+bob,'#b06060',2,1);  // lips
+  // Arms
+  if(rT<=0){px(ctx,-4,1+bob,'#e8b87a',2,6);px(ctx,2,1+bob,'#e8b87a',2,6);}
+  else if(rT===1){px(ctx,-4,1+bob,'#e8b87a',2,6);px(ctx,2,1+bob,'#e8b87a',2,6);px(ctx,-4,1+bob,'#6a3a10',2,3);px(ctx,2,1+bob,'#6a3a10',2,3);}
+  else{px(ctx,-4,1+bob,'#4a2808',2,7);px(ctx,2,1+bob,'#4a2808',2,7);px(ctx,-4,7+bob,'#e8b87a',2,2);px(ctx,2,7+bob,'#e8b87a',2,2);}
 
-  // Hair on top — dark forest green with silver streaks
-  px(ctx,-2,-9+bob,'#1a3a1a',4,3);  // hair base
-  px(ctx,-3,-8+bob,'#1a3a1a',1,4);  // left side
-  px(ctx,2,-8+bob,'#1a3a1a',1,3);   // right side
-  // Silver streak
-  px(ctx,-1,-9+bob,'#c0c8a0',1,4);
-  // Leaf crown / headband
-  px(ctx,-3,-9+bob,'#3a6a2a',1,1);
-  px(ctx,2,-9+bob,'#3a6a2a',1,1);
-  px(ctx,-1,-10+bob,'#4a8a3a',2,1);
-  px(ctx,0,-11+bob,'#3a7a2a',1,1);  // leaf tip
+  // Legs + thigh boots
+  px(ctx,-3,10+bob+leg,'#202010',2,4);px(ctx,1,10+bob-leg,'#202010',2,4);
+  px(ctx,-4,13+bob+leg,'#2a1808',3,6);px(ctx,1,13+bob-leg,'#2a1808',3,6);
+  px(ctx,-3,14+bob+leg,'#3c2010',2,4);px(ctx,1,14+bob-leg,'#3c2010',2,4);
+  px(ctx,-4,18+bob+leg,'#1e1008',3,1);px(ctx,1,18+bob-leg,'#1e1008',3,1);
+  if(rT>=2){px(ctx,-4,13+bob+leg,'#c8a030',1,1);px(ctx,3,13+bob-leg,'#c8a030',1,1);}
 
-  // Quiver on back (right side)
-  px(ctx,3,-2+bob,'#5a3010',2,8);
-  px(ctx,3,-1+bob,'#7a4a20',1,6);
-  // Arrow tips in quiver
-  px(ctx,3,-3+bob,'#c0c8d0',1,1);
-  px(ctx,4,-3+bob,'#c0c8d0',1,1);
+  // Rapier
+  px(ctx,4,3+bob,'#c8a030',1,4);
+  px(ctx,4,2+bob,'#e8d080',2,1);
+  px(ctx,3,6+bob,'#c8a030',3,1);
+  px(ctx,5,-6+bob,'#d0d8e0',1,13);
+  px(ctx,6,-6+bob,'#f0f8ff',1,11);
+  px(ctx,5,-7+bob,'#ffffff',1,1);
+  px(ctx,3,6+bob,'#e8d080',1,1);px(ctx,6,6+bob,'#e8d080',1,1);
 
-  // Bow (left hand)
-  ctx.strokeStyle='#6a4820';ctx.lineWidth=S*0.9;ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(-5*S,(0+bob)*S);ctx.quadraticCurveTo(-9*S,(6+bob)*S,-5*S,(12+bob)*S);ctx.stroke();
-  ctx.strokeStyle='#d0c890';ctx.lineWidth=Math.max(1,S*0.35);
-  ctx.beginPath();ctx.moveTo(-5*S,(0+bob)*S);ctx.lineTo(-5*S,(12+bob)*S);ctx.stroke();
-
-  // Arrow nocked (only when not attacking)
-  if(anim<4){
-    ctx.strokeStyle='#6a4010';ctx.lineWidth=Math.max(1,S*0.5);
-    ctx.beginPath();ctx.moveTo(-5*S,(6+bob)*S);ctx.lineTo(2*S,(5+bob)*S);ctx.stroke();
-    px(ctx,1,4.5+bob,'#c0c8d0',1,1);
-    // Fletching
-    ctx.strokeStyle='#8a3030';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(-5*S,(6+bob)*S);ctx.lineTo(-4*S,(4+bob)*S);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(-5*S,(6+bob)*S);ctx.lineTo(-4*S,(8+bob)*S);ctx.stroke();
-  }
-
-  if(flash){ctx.fillStyle='rgba(255,80,80,0.35)';ctx.fillRect(-6*S,-12*S,16*S,32*S);}
+  if(flash){ctx.fillStyle='rgba(255,80,80,0.35)';ctx.fillRect(-5*S,-11*S,13*S,33*S);}
   ctx.restore();
 }
 
@@ -858,18 +837,18 @@ var CLS = {
   warrior:{name:'Warrior',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Slash',color:'#6a7a8a',
     hp:120,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
     s1:{name:'Shield Bash',icon:'\uD83D\uDEE1',cd:4200,range:58,dmg:18,stun:1100},
-    s2:{name:'Whirlwind',icon:'\uD83C\uDF00',cd:7000,range:65,dmg:32,aoe:true},
+    s2:{name:'Shield Wall',icon:'\uD83D\uDEE1',cd:12000,shield:true,shieldHp:30},
     move:{name:'War Charge',icon:'\uD83D\uDCA5',cd:6000,charge:true,chargeDur:800,dmgReduce:0.4}},
   mage:{name:'Mage',icon:'\uD83D\uDD2E',atkIcon:'\uD83E\uDDCA',atkLabel:'Ice Shard',color:'#3a30a0',
     hp:80,spd:2.2,atkDmg:10,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
     s1:{name:'Fireball',icon:'\uD83D\uDD25',cd:2800,dmg:35,proj:true,speed:340,range:230},
     s2:{name:'Frost Nova',icon:'\u2744',cd:8000,nova:true,dmg:20,range:80},
     move:{name:'Blink',icon:'\uD83D\uDCA8',cd:4000,blink:90}},
-  ranger:{name:'Ranger',icon:'\uD83C\uDFF9',atkIcon:'\uD83C\uDFF9',atkLabel:'Arrow',color:'#4a3a20',
-    hp:95,spd:3.1,atkDmg:18,atkRange:220,atkMs:1000,atkType:'proj',atkSpeed:420,
-    s1:{name:'Snare Trap',icon:'\uD83D\uDEA8',cd:2500,trap:true,trapDur:1000,trapMax:3},
-    s2:{name:'Smoke Bomb',icon:'\uD83D\uDCA8',cd:5000,smoke:true,invMs:600},
-    move:{name:'Gale Rush',icon:'\uD83C\uDF2C',cd:7000,gale:true,galeDur:1200,galeSpd:2.2}}
+  ranger:{name:'Rogue',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Rapier',color:'#8a6a20',
+    hp:105,spd:3.0,atkDmg:12,atkRange:58,atkMs:240,atkType:'melee',
+    s1:{name:'Headbutt',icon:'\u26A1',cd:5500,dmg:12,range:56,stun:1100},
+    s2:{name:'Stealth',icon:'\u25CF',cd:11000,stealth:true,stealthDur:7000,spdMult:0.65},
+    move:{name:'Shadow Step',icon:'\u27A1',cd:5000,shadowStep:true,stepRange:280,stepDmg:12}}
 };
 
 // ═══════════════════════════════════════════
@@ -897,6 +876,7 @@ function mkPlayer(id,cls,name,spawn,isMe) {
     atkTimer:0,attacking:0,rollTimer:0,rolling:0,rollInv:false,rollDir:{x:1,y:0},
     blocking:false,s1cd:0,s2cd:0,stunned:0,poisoned:0,poisonDmg:0,poisonTimer:0,
     bowChargeTime:0,bowCharging:false,
+    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,
     frost:0,frostTimer:0,frosted:false,frostedTimer:0,
     moveCd:0,warCharging:false,chargeTimer:0,chargeTarget:null,
     galing:false,galeTimer:0,
@@ -916,6 +896,7 @@ function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 
 function dealDmg(gs,target,dmg,type) {
   if(target.dead)return;
+  if(target.stealthed)return;
   if(gameMode==='pvp'&&!target.isMe) {
     // Visual only — real damage handled on their side via inbox
     target.hitFlash=80;
@@ -923,6 +904,11 @@ function dealDmg(gs,target,dmg,type) {
     return;
   }
   var finalDmg=Math.round(dmg*(target.warCharging&&target.dmgReduce?(1-target.dmgReduce):1));
+  if(target.shieldHp>0){
+    var absorbed=Math.min(target.shieldHp,finalDmg);
+    target.shieldHp-=absorbed;
+    finalDmg=Math.max(0,finalDmg-absorbed);
+  }
   target.hp=Math.max(0,target.hp-finalDmg);
   dmg=finalDmg;
   target.hitFlash=220;
@@ -968,13 +954,30 @@ function doMoveAbility(gs,user,target) {
     var dx=target.x-user.x,dy=target.y-user.y,d=Math.hypot(dx,dy)||1;
     user.chargeVx=(dx/d)*C.spd*3.5;user.chargeVy=(dy/d)*C.spd*3.5;
   } else if(mv.blink) {
-    // Mage blink
     var mag=Math.hypot(user.vx,user.vy)||1;
     var bdx=user.vx?user.vx/mag:1,bdy=user.vy?user.vy/mag:0;
     user.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,user.x+bdx*mv.blink));
     user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,user.y+bdy*mv.blink));
     user.rollInv=true;setTimeout(function(){user.rollInv=false;},200);
     spawnEfx(gs,'blink',user.x,user.y);
+  } else if(mv.shadowStep) {
+    var stepTarget=target;
+    var stepDist=Math.hypot(stepTarget.x-user.x,stepTarget.y-user.y);
+    if(stepDist<=mv.stepRange){
+      var wasStealthed=user.stealthed;
+      var ang=Math.atan2(user.y-stepTarget.y,user.x-stepTarget.x);
+      user.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,stepTarget.x+Math.cos(ang)*45));
+      user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,stepTarget.y+Math.sin(ang)*45));
+      spawnEfx(gs,'blink',user.x,user.y);
+      if(user.stealthed){user.stealthed=false;user.stealthTimer=0;user.rollInv=false;}
+      if(wasStealthed&&!stepTarget.rollInv){
+        stepTarget.stunned=1400;
+        dealDmg(gs,stepTarget,CLS[user.cls].s1.dmg,'bash');
+        spawnEfx(gs,'stun',stepTarget.x,stepTarget.y);
+        sidelog('!!','Ambush! +stun');
+      }
+      sidelog('>>',user.name+' shadow steps!');
+    } else {sidelog('>>','Too far! ('+Math.round(stepDist)+'px)');}
   } else if(mv.gale) {
     // Ranger gale rush — white, fast
     user.galing=true;user.galeTimer=mv.galeDur;
@@ -1001,12 +1004,11 @@ function doAttack(gs,attacker,target) {
       dmg:C.atkDmg,dot:0,dotDur:0,
       range:C.atkRange,traveled:0,alive:true,anim:0
     });
-  } else {
-    // Warrior: melee slash
+    } else {
     if(dist(attacker,target)<C.atkRange+10) {
       if(target.rollInv)return;
-      if(target.blocking)dealDmg(gs,target,Math.max(1,Math.floor(C.atkDmg*0.15)),'block');
-      else dealDmg(gs,target,C.atkDmg+Math.floor(Math.random()*7)-3,'slash');
+      if(target.blocking){dealDmg(gs,target,Math.max(1,Math.floor(C.atkDmg*0.15)),'block');}
+      else dealDmg(gs,target,C.atkDmg+Math.floor(Math.random()*4)-1,'slash');
     }
   }
 }
@@ -1075,6 +1077,25 @@ function doSkill(gs,user,target,num) {
     startRoll(user);user.rollInv=true;
     setTimeout(function(){user.rollInv=false;},sk.invMs);
     spawnEfx(gs,'smoke',user.x,user.y);
+  } else if(sk.disarm||sk.stun) {
+    if(dist(user,target)<(sk.range||55)+10&&!target.rollInv){
+      if(sk.dmg)dealDmg(gs,target,sk.dmg,'bash');
+      target.stunned=sk.stun||900;
+      spawnEfx(gs,'stun',target.x,target.y);
+      sidelog('!!',target.name+' stunned!');
+    }
+  } else if(sk.stealth) {
+    user.stealthed=true;user.stealthTimer=sk.stealthDur;user.rollInv=true;
+    gs.smokes.push({x:user.x,y:user.y,life:800,max:800});
+    spawnEfx(gs,'blink',user.x,user.y);
+    sidelog('**',user.name+' enters stealth!');
+  } else if(sk.shield) {
+    if(user.shieldHp<=0){
+      user.shieldHp=sk.shieldHp;
+      spawnEfx(gs,'shield_up',user.x,user.y);
+      sidelog('[]',user.name+' shield up! (+'+sk.shieldHp+')');
+      if(user.isMe&&gameMode==='pvp')pushState(user);
+    }
   } else if(sk.nova) {
     // Frost Nova — AOE freeze burst around caster
     if(Math.hypot(user.x-target.x,user.y-target.y)<sk.range+20){
@@ -1198,6 +1219,8 @@ function update(gs,dt) {
     if(p.bowCharging)p.bowChargeTime+=dt;
     // Frostbite stack decay
     if(p.frost>0){p.frostTimer-=dt;if(p.frostTimer<=0){p.frost=0;p.frostTimer=0;}}
+    if(p.stealthTimer>0){p.stealthTimer-=dt;if(p.stealthTimer<=0){p.stealthed=false;p.stealthTimer=0;p.rollInv=false;}}
+    if(p.disarmed>0)p.disarmed-=dt;
     if(p.frosted>0){p.frostedTimer-=dt;if(p.frostedTimer<=0){p.frosted=false;p.frostedTimer=0;p.stunned=0;}}
     if(p.moveCd>0)p.moveCd-=dt;
     // Warrior charge tick
@@ -1268,7 +1291,7 @@ function update(gs,dt) {
 
 function updateLocal(gs,p,dt) {
   if(p.stunned>0||p.dead)return;
-  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+C.move.galeSpd):1);
+  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+C.move.galeSpd):1)*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1);
   p.vx=0;p.vy=0;var moved=false;
   if(keys['KeyW']||keys['ArrowUp']){p.vy=-spd;p.dir=1;moved=true;}
   if(keys['KeyS']||keys['ArrowDown']){p.vy=spd;p.dir=0;moved=true;}
@@ -1297,6 +1320,8 @@ function lerpRemote(en) {
   en.rolling=remoteState.rolling||0;
   en.blocking=!!remoteState.blocking;
   if(remoteState.frost!=null) en.frost=remoteState.frost;
+  if(remoteState.stealthed!=null) en.stealthed=!!remoteState.stealthed;
+  if(remoteState.shieldHp!=null) en.shieldHp=remoteState.shieldHp;
   if(remoteState.frosted!=null) en.frosted=!!remoteState.frosted;
   if(remoteState.warCharging!=null) en.warCharging=!!remoteState.warCharging;
   if(remoteState.bowCharging!=null) en.bowCharging=!!remoteState.bowCharging;
@@ -1381,6 +1406,7 @@ function draw(gs) {
     else if(ef.type==='stun'){gctx.fillStyle='#f39c12';gctx.font='13px serif';gctx.textAlign='center';gctx.fillText('\u2605',ef.x+Math.cos(ef.anim*0.28)*18,ef.y-36+Math.sin(ef.anim*0.28)*6);}
     else if(ef.type==='impact'||ef.type==='splat'||ef.type==='proj'){gctx.fillStyle='rgba(220,80,20,0.6)';for(var pi=0;pi<5;pi++){var ang=pi/5*Math.PI*2+ef.anim*0.12,rr=(1-a)*26;gctx.beginPath();gctx.arc(ef.x+Math.cos(ang)*rr,ef.y+Math.sin(ang)*rr,4,0,Math.PI*2);gctx.fill();}}
     else if(ef.type==='blink'){gctx.fillStyle='rgba(122,74,240,0.55)';gctx.beginPath();gctx.arc(ef.x,ef.y,30*(1-a+0.05),0,Math.PI*2);gctx.fill();}
+    else if(ef.type==='shield_up'){gctx.strokeStyle='rgba(100,140,255,'+a+')';gctx.lineWidth=3;for(var si2=0;si2<3;si2++){gctx.beginPath();gctx.arc(ef.x,ef.y,20+si2*12+(1-a)*8,0,Math.PI*2);gctx.stroke();}}
     else if(ef.type==='charge_start'){gctx.fillStyle='rgba(220,30,0,'+a*0.7+')';gctx.beginPath();gctx.arc(ef.x,ef.y,40*(1-a+0.05),0,Math.PI*2);gctx.fill();}
     else if(ef.type==='trap_place'){gctx.strokeStyle='rgba(200,160,40,'+a+')';gctx.lineWidth=1.5;gctx.beginPath();gctx.arc(ef.x,ef.y,16*(1-a+0.1),0,Math.PI*2);gctx.stroke();}
     else if(ef.type==='trap_trigger'){
@@ -1549,7 +1575,7 @@ function resetRound(gs) {
     p.stunned=0;p.poisoned=0;p.rolling=0;p.attacking=0;p.hitFlash=0;p.blocking=false;p.s1cd=0;p.s2cd=0;p.atkTimer=0;
     p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;
     if(p.isMe)p.level=getLevel(p.cls); // refresh level each round
-    p.moveCd=0;p.warCharging=false;p.bowCharging=false;p.bowChargeTime=0;p.chargeTimer=0;p.galing=false;p.galeTimer=0;p.dmgReduce=0;
+    p.moveCd=0;p.warCharging=false;p.bowCharging=false;p.bowChargeTime=0;p.chargeTimer=0;p.galing=false;p.galeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.disarmed=0;p.shieldHp=0;
   }
   gs.projs=[];gs.effects=[];gs.smokes=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
@@ -1649,7 +1675,7 @@ function pushState(me) {
     moving:me.moving,hp:Math.round(me.hp),    attacking:me.attacking,rolling:Math.round(me.rolling),
     stunned:Math.round(Math.max(0,me.stunned)),poisoned:Math.round(Math.max(0,me.poisoned)),
     hitFlash:me.hitFlash>0?1:0,blocking:me.blocking,dead:me.dead,wins:me.wins,
-    frost:me.frost||0,frosted:me.frosted||false,
+    frost:me.frost||0,frosted:me.frosted||false,stealthed:me.stealthed||false,disarmed:Math.round(me.disarmed||0),shieldHp:Math.round(me.shieldHp||0),
     warCharging:me.warCharging||false,bowCharging:me.bowCharging||false,galing:me.galing||false,moveCd:Math.round(me.moveCd||0),
     projs:myProjs.length>0?myProjs:null
   });
@@ -1852,7 +1878,7 @@ document.addEventListener('keydown',function(e){
   var tag=document.activeElement&&document.activeElement.tagName;
   var isTyping=(tag==='INPUT'||tag==='TEXTAREA');
   if(!isTyping){
-    var acted=['KeyG','KeyX','KeyH','KeyJ','KeyF','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
+    var acted=['KeyG','KeyH','KeyJ','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
     if(acted.indexOf(e.code)>=0)e.preventDefault();
   }
   if(keys[e.code])return;keys[e.code]=true;
@@ -1863,16 +1889,12 @@ document.addEventListener('keydown',function(e){
   if(!me||!en)return;
   if(!me||me.dead)return;
   if(e.code==='KeyG'){
-    if(me.atkTimer<=0){
-      if(me.cls==='ranger'){
-        me.bowCharging=true;me.bowChargeTime=0;
-      } else {
-        doAttack(gameState,me,en);
-        if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y)});
-      }
+    if(me.atkTimer<=0&&!me.disarmed){
+      doAttack(gameState,me,en);
+      if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y)});
     }
   }
-  if(e.code==='KeyX'){startRoll(me);if(gameMode==='pvp')pushAction('roll');}
+
   if(e.code==='KeyH'){
     doSkill(gameState,me,en,1);
     if(gameMode==='pvp')pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y)});
@@ -1881,7 +1903,7 @@ document.addEventListener('keydown',function(e){
     doSkill(gameState,me,en,2);
     if(gameMode==='pvp')pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});
   }
-  if(e.code==='KeyF')me.blocking=true;
+
   if(e.code==='Space'){
     doMoveAbility(gameState,me,en);
     if(gameMode==='pvp')pushAction('move',{x:Math.round(me.x),y:Math.round(me.y)});
@@ -1891,20 +1913,8 @@ document.addEventListener('keyup',function(e){
   keys[e.code]=false;
   var tag2=document.activeElement&&document.activeElement.tagName;
   if(tag2==='INPUT'||tag2==='TEXTAREA')return;
-  if(e.code==='KeyF'&&gameState){var me2=gameState.players.find(function(p){return p.isMe;});if(me2)me2.blocking=false;}
-  if(e.code==='KeyG'&&gameState){
-    var me3=gameState.players.find(function(p){return p.isMe;});
-    var en3=gameState.players.find(function(p){return !p.isMe;});
-    if(me3&&en3&&me3.cls==='ranger'&&me3.bowCharging&&me3.atkTimer<=0){
-      me3.bowCharging=false;
-      // Scale range by charge time: min 80px, max 320px over 1.5s hold
-      var charge=Math.min(me3.bowChargeTime,1500);
-      var chargedRange=80+Math.floor((charge/1500)*240);
-      fireRangerArrow(gameState,me3,en3,chargedRange);
-      if(gameMode==='pvp')pushAction('attack',{x:Math.round(me3.x),y:Math.round(me3.y),chargedRange:chargedRange});
-    }
-    if(me3)me3.bowCharging=false;
-  }
+
+
 });
 
 // ═══════════════════════════════════════════
