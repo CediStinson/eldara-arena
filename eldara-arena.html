@@ -1861,7 +1861,9 @@ function updateAI(gs,ai,target,dt) {
 // UPDATE
 // ═══════════════════════════════════════════
 function update(gs,dt) {
-  if(!gs||gs.phase==='gameOver')return;
+  // Allow rematch/lobby messages even during gameOver
+  var isRematchMsg=msg&&(msg.type==='rematch_ready'||msg.type==='rematch_start'||msg.type==='opponent_left'||msg.type==='opponent_left_lobby');
+  if(!gs||(gs.phase==='gameOver'&&!isRematchMsg))return;
   gs.tick++;
   if(gs.phase==='pregame'){
     gs.countdown-=dt;
@@ -3291,8 +3293,10 @@ function doStartRematch(guestCls){
   gameState.arena=ARENAS[ak3];gameState.arenaKey=ak3;
   gameState.players.forEach(function(p){p.wins=0;});
   pvpRematchReady=false;
-  // Send start to guest via inbox
+  opponentRematchReady=false;
+  // Send start to guest via inbox — retry a few times to ensure delivery
   pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass});
+  setTimeout(function(){if(gameState&&gameState.phase==='fighting')return;pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass});},300);
   hideOverlay();resetRound(gameState);
 }
 // Class picker in overlay
@@ -3332,10 +3336,10 @@ document.querySelectorAll('.lob-cls-btn').forEach(function(btn){
       b.style.borderColor=b.dataset.cls===myClass?'var(--gold)':'var(--border)';
       b.style.color=b.dataset.cls===myClass?'var(--gold)':'var(--dim)';
     });
-    // Notify opponent of class change via chat system message
-    if(roomCode&&enemyIdPvp){
-      var clsDisplay=myClass==='ranger'?'Rogue':myClass.charAt(0).toUpperCase()+myClass.slice(1);
-      addLobbyMsg('System',myName+' switched to '+clsDisplay,true);
+    // Also update gameState if in game
+    if(gameState){
+      var meP=gameState.players.find(function(p){return p.isMe;});
+      if(meP)meP.cls=myClass;
     }
   });
 });
@@ -3348,7 +3352,7 @@ function updateLobbyClassBtns(){
 }
 document.getElementById('lob-chat-send').addEventListener('click',sendLobbyChat);
 document.getElementById('lob-chat-inp').addEventListener('keydown',function(e){if(e.key==='Enter')sendLobbyChat();});
-function sendLobbyChat(){var inp=document.getElementById('lob-chat-inp'),txt=inp.value.trim();inp.value='';if(!txt)return;addLobbyMsg(myName,txt,false);if(roomCode)fbPush('/rooms/'+roomCode+'/chat',{name:myName,text:txt,from:myId,ts:Date.now()});}
+function sendLobbyChat(){var inp=document.getElementById('lob-chat-inp'),txt=inp.value.trim();inp.value='';if(!txt)return;if(roomCode)fbPush('/rooms/'+roomCode+'/chat',{name:myName,text:txt,from:myId,ts:Date.now()});}
 
 document.getElementById('side-chat-send').addEventListener('click',sendSideChat);
 document.getElementById('side-chat-inp').addEventListener('keydown',function(e){if(e.key==='Enter')sendSideChat();});
