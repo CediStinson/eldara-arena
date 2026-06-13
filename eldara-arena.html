@@ -1352,26 +1352,26 @@ function lerpRemote(en) {
   if(remoteState.wins!=null) en.wins=remoteState.wins;
   if(remoteState.hitFlash) en.hitFlash=80;
   if(remoteState.stunned>0) en.stunned=remoteState.stunned;
-  // Sync opponent projectiles — show on our screen as visual-only
-  if(gameState && remoteState.projs) {
-    // Remove old remote projs from gs.projs
-    gameState.projs=gameState.projs.filter(function(p){return p.owner!==en.id;});
-    // Add current remote projs as visual-only
-    remoteState.projs.forEach(function(rp){
-      gameState.projs.push({
-        id:rp.id, owner:en.id,
-        type:rp.type||'arrow',
-        x:rp.x, y:rp.y,
-        vx:rp.vx, vy:rp.vy,
-        dmg:0, dot:rp.dot||0, dotDur:0,
-        range:99999, traveled:0,
-        alive:true, anim:0,
-        visualOnly:true
-      });
+  // Sync opponent projectiles for rendering only
+  // Only remove/replace visual-only projs — never touch real damage projs from processAction
+  if(gameState){
+    gameState.projs=gameState.projs.filter(function(p){
+      return p.owner!==en.id||!p.visualOnly; // keep real projs, remove old visuals
     });
-  } else if(gameState && !remoteState.projs) {
-    // No active projs from remote — clear theirs
-    gameState.projs=gameState.projs.filter(function(p){return p.owner!==en.id;});
+    if(remoteState.projs){
+      remoteState.projs.forEach(function(rp){
+        // Only add if not already tracked as a real proj
+        var exists=gameState.projs.some(function(p){return p.id===rp.id&&!p.visualOnly;});
+        if(!exists){
+          gameState.projs.push({
+            id:rp.id,owner:en.id,type:rp.type||'arrow',
+            x:rp.x,y:rp.y,vx:rp.vx,vy:rp.vy,
+            dmg:0,dot:0,dotDur:0,range:99999,traveled:0,
+            alive:true,anim:0,visualOnly:true
+          });
+        }
+      });
+    }
   }
   // Death detection
   if(en.dead&&!en._deathFired&&gameState&&gameState.phase==='fighting'){
