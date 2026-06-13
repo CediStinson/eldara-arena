@@ -1538,7 +1538,7 @@ function mkPlayer(id,cls,name,spawn,isMe) {
     dir:isMe?3:2,anim:0,moving:false,
     atkTimer:0,attacking:0,rollTimer:0,rolling:0,rollInv:false,rollDir:{x:1,y:0},
     blocking:false,s1cd:0,s2cd:0,stunned:0,poisoned:0,poisonDmg:0,poisonTimer:0,
-    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,frostSlow:0,burning:false,burnTimer:0,burnTick:0,
+    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,frostSlow:0,burning:false,burnTimer:0,burnTick:0,redEyes:false,
     frost:0,frostTimer:0,frosted:false,frostedTimer:0,
     moveCd:0,warCharging:false,chargeTimer:0,chargeTarget:null,
     galing:false,galeTimer:0,
@@ -3159,6 +3159,7 @@ document.getElementById('setup-confirm').addEventListener('click',function(){
       esGuest=fbListen('/rooms/'+roomCode+'/guest',function(data){
         if(!data)return;
         enemyNamePvp=data.name;enemyClsPvp=data.cls;enemyIdPvp=data.id;
+        if(gameState){var enP=gameState.players.find(function(p){return !p.isMe;});if(enP){enP.redEyes=data.redEyes||false;}}
         document.getElementById('lob-status').textContent=data.name+' joined! Start when ready.';
         updateLobbyPlayers([{name:myName,you:true},{name:data.name}]);
         document.getElementById('lob-start').style.display='block';
@@ -3217,14 +3218,16 @@ document.getElementById('lob-back').addEventListener('click',function(){cleanupF
 function launchPvP(arenaKey,hostId,hostName,hostCls) {
   var arena=ARENAS[arenaKey]||ARENAS.crypt;
   var iAmHost=(myId===hostId);
-  // Ensure enemyIdPvp is always set correctly
   if(!iAmHost&&hostId){enemyIdPvp=hostId;}
-  var me=mkPlayer(myId,myClass,myName,iAmHost?arena.sp1:arena.sp2,true);
+  var meClass=myClass||'warrior';
+  var me=mkPlayer(myId,meClass,myName||'Player',iAmHost?arena.sp1:arena.sp2,true);
+  me.redEyes=hasRedEyes(meClass);
   var enId=iAmHost?enemyIdPvp:hostId;
-  var enName=iAmHost?enemyNamePvp:hostName;
-  var enCls=iAmHost?enemyClsPvp:hostCls;
-  if(!enId){console.error('PvP launch: enId is empty! iAmHost='+iAmHost);return;}
+  var enName=(iAmHost?enemyNamePvp:hostName)||'Opponent';
+  var enCls=(iAmHost?enemyClsPvp:hostCls)||'warrior';
+  if(!enId){addLobbyMsg('System','Error: opponent ID missing',true);return;}
   var en=mkPlayer(enId,enCls,enName,iAmHost?arena.sp2:arena.sp1,false);
+  gameMode='pvp';
   gameState=mkGS(arenaKey,me,en);
   document.getElementById('sp-myname').textContent=myName;
   document.getElementById('sp-enname').textContent=enName;
@@ -3240,6 +3243,7 @@ function launchTraining(continuing) {
   var ak=(lockedArena&&ARENAS[lockedArena])?lockedArena:ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
   var arena=ARENAS[ak];
   var me=mkPlayer(myId,myClass,myName,arena.sp1,true);
+  me.redEyes=hasRedEyes(myClass);
   var aiCls=['warrior','mage','ranger'];
   var aiClass=aiCls[Math.floor(Math.random()*aiCls.length)];
   // Random armor level for AI (0-99 so we see different tiers)
