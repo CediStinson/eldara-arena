@@ -1718,7 +1718,7 @@ function doAttack(gs,attacker,target) {
       if(dist(attacker,target)<C.atkRange+10) {
         if(target.rollInv)return;
         var wBonus=attacker.warCryBuff>0?1.2:1;
-        var sneak=hadStealthFirstHit?1.5:1;
+        var sneak=hadStealthFirstHit?2.5:1;
         dealDmg(gs,target,Math.round((C.atkDmg+Math.floor(Math.random()*4)-1)*wBonus*sneak),'slash');
       }
     }
@@ -2242,6 +2242,22 @@ function draw(gs) {
       gctx.restore();
     }
     gctx.globalAlpha=1;
+    // Stealth bar (rogue only, while stealthed — drains to empty)
+    if(p.isMe&&p.cls==='ranger'&&p.stealthed&&p.stealthTimer>0){
+      var stealthMax=CLS.ranger.s2&&CLS.ranger.s2.stealth||7000;
+      var stealthRatio=p.stealthTimer/stealthMax;
+      var sbW=48,sbX=p.x-24,sbY=p.y-72;
+      gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(sbX,sbY,sbW,5);
+      // Color shifts red as timer drains
+      var sr=Math.floor(80+175*(1-stealthRatio)),sg2=Math.floor(200*stealthRatio),sb2=Math.floor(80+120*stealthRatio);
+      gctx.fillStyle='rgba('+sr+','+sg2+','+sb2+',0.85)';
+      gctx.fillRect(sbX,sbY,sbW*stealthRatio,5);
+      // Pulsing border when low
+      if(stealthRatio<0.3){
+        gctx.strokeStyle='rgba(255,80,80,'+(0.4+Math.sin(Date.now()*0.02)*0.4)+')';
+        gctx.lineWidth=1;gctx.strokeRect(sbX,sbY,sbW,5);
+      }
+    }
     // Fireball charge bar (mage only, while charging)
     if(p.isMe&&p.cls==='mage'&&p.fireballCharging&&p.fireballCharge>0){
       gctx.globalAlpha=1;
@@ -2353,36 +2369,33 @@ function draw(gs) {
         // Icicle freeze — solid ice block with spikes
         var frostPulse=0.7+Math.sin(gs.tick*0.15)*0.3;
         // Ice block body
-        gctx.fillStyle='rgba(140,210,255,0.55)';gctx.fillRect(p.x-22,p.y-60,44,78);
-        gctx.fillStyle='rgba(180,235,255,0.35)';gctx.fillRect(p.x-18,p.y-56,36,68);
+        gctx.fillStyle='rgba(140,210,255,0.55)';gctx.fillRect(p.x-22,p.y-55,44,78);
+        gctx.fillStyle='rgba(180,235,255,0.35)';gctx.fillRect(p.x-18,p.y-51,36,68);
         // Ice shine streak
-        gctx.fillStyle='rgba(255,255,255,0.5)';gctx.fillRect(p.x-14,p.y-54,6,60);
-        gctx.fillStyle='rgba(255,255,255,0.25)';gctx.fillRect(p.x-6,p.y-50,3,50);
+        gctx.fillStyle='rgba(255,255,255,0.5)';gctx.fillRect(p.x-14,p.y-49,6,60);
+        gctx.fillStyle='rgba(255,255,255,0.25)';gctx.fillRect(p.x-6,p.y-45,3,50);
         // Icicle spikes on top
         gctx.fillStyle='rgba(160,220,255,0.9)';
         var spikes=[{x:-16,h:14},{x:-8,h:20},{x:0,h:16},{x:8,h:22},{x:16,h:12}];
         spikes.forEach(function(sp){
           gctx.beginPath();
-          gctx.moveTo(p.x+sp.x-4,p.y-60);
-          gctx.lineTo(p.x+sp.x+4,p.y-60);
-          gctx.lineTo(p.x+sp.x,p.y-60-sp.h);
+          gctx.moveTo(p.x+sp.x-4,p.y-55);
+          gctx.lineTo(p.x+sp.x+4,p.y-55);
+          gctx.lineTo(p.x+sp.x,p.y-55-sp.h);
           gctx.closePath();gctx.fill();
-          // Shine on spike
           gctx.fillStyle='rgba(220,245,255,0.7)';
           gctx.beginPath();
-          gctx.moveTo(p.x+sp.x-1,p.y-60);
-          gctx.lineTo(p.x+sp.x+1,p.y-60);
-          gctx.lineTo(p.x+sp.x,p.y-60-sp.h*0.6);
+          gctx.moveTo(p.x+sp.x-1,p.y-55);
+          gctx.lineTo(p.x+sp.x+1,p.y-55);
+          gctx.lineTo(p.x+sp.x,p.y-55-sp.h*0.6);
           gctx.closePath();gctx.fill();
           gctx.fillStyle='rgba(160,220,255,0.9)';
         });
-        // Crack lines in ice
         gctx.strokeStyle='rgba(180,230,255,0.4)';gctx.lineWidth=1;
-        gctx.beginPath();gctx.moveTo(p.x-10,p.y-55);gctx.lineTo(p.x+5,p.y-30);gctx.stroke();
-        gctx.beginPath();gctx.moveTo(p.x+8,p.y-40);gctx.lineTo(p.x-4,p.y-15);gctx.stroke();
-        // Pulsing outer glow
+        gctx.beginPath();gctx.moveTo(p.x-10,p.y-50);gctx.lineTo(p.x+5,p.y-25);gctx.stroke();
+        gctx.beginPath();gctx.moveTo(p.x+8,p.y-35);gctx.lineTo(p.x-4,p.y-10);gctx.stroke();
         gctx.strokeStyle='rgba(100,200,255,'+(frostPulse*0.5)+')';gctx.lineWidth=2;
-        gctx.strokeRect(p.x-23,p.y-61,46,80);
+        gctx.strokeRect(p.x-23,p.y-56,46,80);
       }
     }
     // Warrior charge — red flash overlay
@@ -2465,6 +2478,7 @@ function endRound(gs) {
   if(meR){
     awardMatchXP(meR.cls, wonRound, gameMode==='pvp');
     incrementGamesPlayed(meR.cls);
+    if(wonRound)incrementGamesWon(meR.cls);
     if(gameMode==='pvp'&&wonRound&&dead&&!dead.isMe){
       var kills=incrementPvPKills(meR.cls);
       if(kills===100){showBanner('RED EYES UNLOCKED!');setRedEyes(meR.cls,true);}
@@ -2672,7 +2686,8 @@ function processAction(msg,gs,me,en) {
       // Melee — check frost shield, then apply damage
       spawnEfx(gs,'slash',expos.x,expos.y);
       if(!me.stealthed){
-        var dmg=C5.atkDmg+Math.floor(Math.random()*4)-1;
+        var sneakMult=atkPos.sneak?2.5:1;
+        var dmg=Math.round((C5.atkDmg+Math.floor(Math.random()*4)-1)*sneakMult);
         if(me.arcaneShield>0&&me.arcaneShieldHits>0){
           me.arcaneShieldHits--;
           if(me.arcaneShieldHits<=0){me.arcaneShield=0;me.arcaneShieldHits=0;}
@@ -2924,8 +2939,9 @@ document.addEventListener('keydown',function(e){
   if(!me||me.dead)return;
   if(e.code==='KeyG'){
     if(me.atkTimer<=0&&!me.disarmed&&!me.stunned){
+      var wasSneak=me.stealthed&&me.stealthFirstHit;
       doAttack(gameState,me,en);
-      if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y),cls:me.cls});
+      if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y),cls:me.cls,sneak:wasSneak});
     }
   }
 
@@ -3608,15 +3624,10 @@ function getClassData(cls) {
   try { return JSON.parse(localStorage.getItem('eldara_cls_'+cls)||'{}'); }
   catch(e){return {};}
 }
-function getGamesPlayed(cls){
-  var d=getClassData(cls);return d.games||0;
-}
-function incrementGamesPlayed(cls){
-  var d=getClassData(cls);
-  d.games=(d.games||0)+1;
-  saveClassData(cls,d);
-  return d.games;
-}
+function getGamesPlayed(cls){var d=getClassData(cls);return d.games||0;}
+function incrementGamesPlayed(cls){var d=getClassData(cls);d.games=(d.games||0)+1;saveClassData(cls,d);return d.games;}
+function getGamesWon(cls){var d=getClassData(cls);return d.wins||0;}
+function incrementGamesWon(cls){var d=getClassData(cls);d.wins=(d.wins||0)+1;saveClassData(cls,d);return d.wins;}
 function getRedEyePos(cls,level){
   // Returns array of [gridX,gridY] for eye pixels (relative to sprite center)
   if(cls==='warrior'){
@@ -3630,7 +3641,7 @@ function getRedEyePos(cls,level){
   }
 }
 function getWeaponTier(cls){
-  var g=getGamesPlayed(cls);
+  var g=getGamesWon(cls);
   return g>=150?3:g>=75?2:g>=25?1:0;
 }
 function getPvPKills(cls){
@@ -3992,19 +4003,19 @@ var ACHIEVEMENTS = [
   // GENERAL
   // WARRIOR WEAPON ACHIEVEMENTS
   {id:'ww0',cls:'warrior',tier:0,name:'Blade of Burden',desc:'Starting weapon — Rusty Shortsword',icon:'\u2694',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'ww1',cls:'warrior',tier:0,name:'First Steps',desc:'Play 25 games as Warrior — Iron Sword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'ww2',cls:'warrior',tier:0,name:'Veteran Blade',desc:'Play 75 games as Warrior — Steel Greatsword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'ww3',cls:'warrior',tier:0,name:'Warlord Edge',desc:'Play 150 games as Warrior — Legendary Blade unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'ww1',cls:'warrior',tier:0,name:'First Steps',desc:'Win 25 games as Warrior — Iron Sword unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'ww2',cls:'warrior',tier:0,name:'Veteran Blade',desc:'Win 75 games as Warrior — Steel Greatsword unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'ww3',cls:'warrior',tier:0,name:'Warlord Edge',desc:'Win 150 games as Warrior — Legendary Blade unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // MAGE WEAPON ACHIEVEMENTS
   {id:'mw0',cls:'mage',tier:0,name:'Apprentice Stick',desc:'Starting weapon — Gnarled Wooden Staff',icon:'\u2728',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'mw1',cls:'mage',tier:0,name:'Apprentice Staff',desc:'Play 25 games as Mage — Iron Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'mw2',cls:'mage',tier:0,name:'Crystal Focus',desc:'Play 75 games as Mage — Crystal Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'mw3',cls:'mage',tier:0,name:'Arcane Catalyst',desc:'Play 150 games as Mage — Legendary Arcane Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'mw1',cls:'mage',tier:0,name:'Apprentice Staff',desc:'Win 25 games as Mage — Iron Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'mw2',cls:'mage',tier:0,name:'Crystal Focus',desc:'Win 75 games as Mage — Crystal Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'mw3',cls:'mage',tier:0,name:'Arcane Catalyst',desc:'Win 150 games as Mage — Legendary Arcane Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // ROGUE WEAPON ACHIEVEMENTS
   {id:'rw0',cls:'ranger',tier:0,name:'Street Knife',desc:'Starting weapon — Plain Short Knife',icon:'\u2020',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'rw1',cls:'ranger',tier:0,name:'Street Fighter',desc:'Play 25 games as Rogue — Iron Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'rw2',cls:'ranger',tier:0,name:'Blade Dancer',desc:'Play 75 games as Rogue — Fine Steel Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'rw3',cls:'ranger',tier:0,name:'Phantom Blade',desc:'Play 150 games as Rogue — Legendary Rapier + Ornate Dagger unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'rw1',cls:'ranger',tier:0,name:'Street Fighter',desc:'Win 25 games as Rogue — Iron Rapier unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'rw2',cls:'ranger',tier:0,name:'Blade Dancer',desc:'Win 75 games as Rogue — Fine Steel Rapier unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'rw3',cls:'ranger',tier:0,name:'Phantom Blade',desc:'Win 150 games as Rogue — Legendary Rapier + Ornate Dagger unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // GENERAL
   // PVP KILL ACHIEVEMENTS
   {id:'kw',cls:'warrior',tier:0,name:'Warlord Fury',desc:'Kill 100 players as Warrior — Red Eyes unlocked',icon:'\u2694',req:function(){return getPvPKills('warrior')>=100;},levelReq:0,killAch:true,killCls:'warrior'},
@@ -4036,7 +4047,7 @@ function buildAchCard(ach){
   var checkmark=earned?'<span style="color:#27ae60;font-size:14px;margin-left:6px">\u2713</span>':'<span style="color:rgba(255,255,255,0.15);font-size:11px;margin-left:6px">\u25CB</span>';
   var progressStr='';
   if(ach.weaponAch&&!earned){
-    var played=getGamesPlayed(ach.cls);
+    var played=getGamesWon(ach.cls);
     var need=ach.weaponTier===1?25:ach.weaponTier===2?75:150;
     progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+played+' / '+need+' games played</div>';
   }
