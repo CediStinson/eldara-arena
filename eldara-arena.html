@@ -1066,10 +1066,15 @@ function doAttack(gs,attacker,target) {
       range:C.atkRange,traveled:0,alive:true,anim:0
     });
     } else {
-    if(dist(attacker,target)<C.atkRange+10) {
-      if(target.rollInv)return;
-      if(target.blocking){dealDmg(gs,target,Math.max(1,Math.floor(C.atkDmg*0.15)),'block');}
-      else dealDmg(gs,target,C.atkDmg+Math.floor(Math.random()*4)-1,'slash');
+    // In PvP: always send action, receiver applies damage
+    // In training: check range locally
+    if(gameMode==='pvp'){
+      spawnEfx(gs,'slash',attacker.x,attacker.y);
+    } else {
+      if(dist(attacker,target)<C.atkRange+10) {
+        if(target.rollInv)return;
+        dealDmg(gs,target,C.atkDmg+Math.floor(Math.random()*4)-1,'slash');
+      }
     }
   }
 }
@@ -1663,7 +1668,7 @@ function dbg(msg) {}
 function processAction(msg,gs,me,en) {
   if(!msg||!gs||!me||!en)return;
   if(msg.type==='attack'){
-    var C5=CLS[en.cls],atkPos=msg.data||{};
+    var atkPos=msg.data||{};var C5=CLS[atkPos.cls||en.cls];
     en.attacking=14;
     var expos={x:atkPos.x!=null?atkPos.x:en.x,y:atkPos.y!=null?atkPos.y:en.y};
     dbg('ATK recv type='+(C5.atkType||'melee'));
@@ -1677,19 +1682,15 @@ function processAction(msg,gs,me,en) {
         dmg:C5.atkDmg,dot:0,dotDur:0,range:projRange,traveled:0,alive:true,anim:0,
         applyFrostOnHit:projType2==='ice'});
     } else {
-      // Melee (warrior/rogue) — apply damage to me
+      // Melee — attacker already confirmed range on their side, just apply
       spawnEfx(gs,'slash',expos.x,expos.y);
-      // Use generous range tolerance to account for network lag
-      var rdist=Math.hypot(expos.x-me.x,expos.y-me.y);
-      if(rdist<C5.atkRange+80){
-        if(!me.rollInv&&!me.stealthed){
-          var dmg=C5.atkDmg+Math.floor(Math.random()*4)-1;
-          me.hp=Math.max(0,me.hp-dmg);me.hitFlash=220;
-          spawnEfx(gs,'slash',me.x,me.y);
-          sidelog('\u2694',dmg+' dmg');
-          if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}
-          pushState(me);
-        }
+      if(!me.stealthed){
+        var dmg=C5.atkDmg+Math.floor(Math.random()*4)-1;
+        me.hp=Math.max(0,me.hp-dmg);me.hitFlash=220;
+        spawnEfx(gs,'slash',me.x,me.y);
+        sidelog('\u2694',dmg+' dmg');
+        if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}
+        pushState(me);
       }
     }
   } else if(msg.type==='skill1'){
@@ -1848,7 +1849,7 @@ document.addEventListener('keydown',function(e){
   if(e.code==='KeyG'){
     if(me.atkTimer<=0&&!me.disarmed){
       doAttack(gameState,me,en);
-      if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y)});
+      if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y),cls:me.cls});
     }
   }
 
