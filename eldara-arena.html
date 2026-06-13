@@ -1303,7 +1303,15 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
   ctx.restore();
 }
 
+var _redEyesOverride = null; // set to cls when drawing with red eyes
 var DRAW = {warrior:drawWarrior, mage:drawMage, ranger:drawRanger};
+function drawWithOpts(cls,ctx,x,y,dir,anim,flash,level){
+  var useRedEyes=(_redEyesOverride===cls)||(hasRedEyes(cls)&&_redEyesOverride===undefined);
+  _redEyesActive=useRedEyes;
+  DRAW[cls](ctx,x,y,dir,anim,flash,level);
+  _redEyesActive=false;
+}
+var _redEyesActive=false;
 
 // ═══════════════════════════════════════════
 // ARENAS
@@ -1317,13 +1325,19 @@ var ARENAS = {
     [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],[1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
     [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],[1,0,0,0,3,0,0,0,0,0,0,3,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  volcano:{name:'Volcanic Rift',sp1:{x:2,y:5},sp2:{x:13,y:5},tiles:[
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,2,2,0,0,2,2,0,0,0,0,1],
-    [1,0,0,3,0,2,2,0,0,2,2,0,3,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,5,0,0,1,1,0,0,5,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],[1,0,0,0,5,0,0,0,0,0,0,5,0,0,0,1],
-    [1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],[1,0,0,3,0,2,2,0,0,2,2,0,3,0,0,1],
-    [1,0,0,0,0,2,2,0,0,2,2,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
+  volcano:{name:'Volcanic Rift',sp1:{x:1,y:6},sp2:{x:13,y:3},tiles:[
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,2,0,0,0,0,1,1,0,0,0,0,0,1],
+    [1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
+    [1,0,2,2,2,1,1,0,0,0,0,0,1,1,0,1],
+    [1,0,2,2,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,0,0,0,1,2,0,0,1,0,0,0,1],
+    [1,0,1,0,0,1,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,1,0,0,0,2,0,0,0,0,0,0,1],
+    [1,0,0,1,0,0,0,0,2,2,2,0,0,0,0,1],
+    [1,0,0,1,0,0,0,1,2,2,2,2,0,0,0,1],
+    [1,0,0,0,0,0,1,1,2,2,2,2,2,2,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
   maze:{name:'Runic Maze',sp1:{x:1,y:5},sp2:{x:14,y:5},tiles:[
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
     [1,0,1,1,0,0,1,0,0,1,0,0,1,1,0,1],[1,0,1,0,0,3,0,0,0,0,3,0,0,1,0,1],
@@ -1367,6 +1381,7 @@ function drawArena(ctx, arena, tick) {
       var t=tiles[ty][tx], px2=tx*TILE, py2=ty*TILE;
       var isDesert=arena.name&&arena.name.indexOf('Desert')>=0;
       var isTemple=arena.name&&arena.name.indexOf('Shadow')>=0;
+      var isVolcano=arena.name&&arena.name.indexOf('Volcanic')>=0;
       if(t===1){
         if(isDesert){
           ctx.fillStyle='#3a2a10';ctx.fillRect(px2,py2,TILE,TILE);
@@ -1375,6 +1390,16 @@ function drawArena(ctx, arena, tick) {
           ctx.fillStyle='#2a1c04';ctx.fillRect(px2,py2+TILE-6,TILE,6);
           if((tx+ty)%2===0){ctx.fillStyle='#302010';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
           ctx.strokeStyle='#251808';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
+        } else if(isVolcano){
+          // Basalt rock — near-black with dark red-brown veins
+          ctx.fillStyle='#100806';ctx.fillRect(px2,py2,TILE,TILE);
+          ctx.fillStyle='#1c0e08';ctx.fillRect(px2,py2,TILE,6);
+          ctx.fillStyle='#160a04';ctx.fillRect(px2,py2+6,TILE,TILE-12);
+          ctx.fillStyle='#0e0602';ctx.fillRect(px2,py2+TILE-6,TILE,6);
+          if((tx+ty)%2===0){ctx.fillStyle='rgba(80,20,0,0.4)';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
+          // Lava crack glow seeping through
+          if((tx*5+ty*3)%4===0){ctx.fillStyle='rgba(120,30,0,0.25)';ctx.fillRect(px2+10,py2+10,TILE-20,TILE-20);}
+          ctx.strokeStyle='rgba(60,15,0,0.6)';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
         } else {
           ctx.fillStyle='#0a0a14';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.fillStyle='#22223a';ctx.fillRect(px2,py2,TILE,6);
@@ -1393,16 +1418,44 @@ function drawArena(ctx, arena, tick) {
         } else if(isTemple){
           ctx.fillStyle=(tx+ty)%2===0?'#14101a':'#100c16';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.strokeStyle='#1a1020';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
+        } else if(isVolcano){
+          // Dark volcanic ground — black stone with faint warm undertone
+          ctx.fillStyle=(tx+ty)%2===0?'#100c08':'#0c0a06';ctx.fillRect(px2,py2,TILE,TILE);
+          ctx.strokeStyle='rgba(70,20,0,0.25)';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
+          // Subtle heat shimmer crack in ground
+          if((tx*7+ty*5)%9===0){ctx.fillStyle='rgba(80,20,0,0.15)';ctx.fillRect(px2+12,py2+12,8,2);}
         } else {
           ctx.fillStyle=(tx+ty)%2===0?'#1a1a2e':'#161628';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.strokeStyle='#1c1c30';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
         }
       } else if(t===2){
-        var lf=Math.sin(tick*0.07+tx*0.8+ty*1.2)*0.35+0.65;
-        ctx.fillStyle='#1a0500';ctx.fillRect(px2,py2,TILE,TILE);
-        ctx.fillStyle='rgba(180,40,0,'+lf*0.85+')';ctx.fillRect(px2+3,py2+3,TILE-6,TILE-6);
-        ctx.fillStyle='rgba(240,110,0,'+lf*0.5+')';ctx.fillRect(px2+10,py2+10,TILE-20,TILE-20);
-        ctx.fillStyle='rgba(255,200,0,'+lf*0.3+')';ctx.fillRect(px2+17,py2+17,TILE-34,TILE-34);
+        // Dark volcanic lava — black stone with deep red/brown magma
+        var lf=Math.sin(tick*0.06+tx*0.9+ty*1.1)*0.3+0.7;
+        ctx.fillStyle='#0e0804';ctx.fillRect(px2,py2,TILE,TILE);
+        // Dark cracked stone border
+        ctx.fillStyle='#1a1008';ctx.fillRect(px2+1,py2+1,TILE-2,TILE-2);
+        // Deep magma glow
+        ctx.fillStyle='rgba(100,20,0,'+lf*0.9+')';ctx.fillRect(px2+4,py2+4,TILE-8,TILE-8);
+        ctx.fillStyle='rgba(160,40,0,'+lf*0.6+')';ctx.fillRect(px2+8,py2+8,TILE-16,TILE-16);
+        ctx.fillStyle='rgba(200,80,10,'+lf*0.4+')';ctx.fillRect(px2+13,py2+13,TILE-26,TILE-26);
+        // Occasional bright spot
+        if((tx*3+ty*7+Math.floor(tick/20))%5===0){ctx.fillStyle='rgba(255,140,20,'+lf*0.3+')';ctx.fillRect(px2+16,py2+16,TILE-32,TILE-32);}
+      } else if(t===6){
+        // Stone bridge over lava — dark rock slabs
+        var lf2=Math.sin(tick*0.06+tx*0.9+ty*1.1)*0.3+0.7;
+        // Lava glow underneath
+        ctx.fillStyle='rgba(80,15,0,'+lf2*0.8+')';ctx.fillRect(px2,py2,TILE,TILE);
+        // Stone slab
+        ctx.fillStyle='#2a1c10';ctx.fillRect(px2+3,py2+3,TILE-6,TILE-6);
+        ctx.fillStyle='#362416';ctx.fillRect(px2+4,py2+4,TILE-8,TILE-8);
+        // Stone texture lines
+        ctx.fillStyle='#1e1408';
+        ctx.fillRect(px2+3,py2+14,TILE-6,1);
+        ctx.fillRect(px2+14,py2+3,1,TILE-6);
+        // Edge highlight
+        ctx.fillStyle='rgba(160,80,20,0.3)';
+        ctx.fillRect(px2+3,py2+3,TILE-6,2);
+        ctx.fillRect(px2+3,py2+3,2,TILE-6);
       } else if(t===3){
         ctx.fillStyle=(tx+ty)%2===0?'#1a1a2e':'#161628';ctx.fillRect(px2,py2,TILE,TILE);
         var cx=px2+TILE/2,cy=py2+TILE/2;
@@ -1478,7 +1531,7 @@ function mkPlayer(id,cls,name,spawn,isMe) {
     dir:isMe?3:2,anim:0,moving:false,
     atkTimer:0,attacking:0,rollTimer:0,rolling:0,rollInv:false,rollDir:{x:1,y:0},
     blocking:false,s1cd:0,s2cd:0,stunned:0,poisoned:0,poisonDmg:0,poisonTimer:0,
-    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,frostSlow:0,
+    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,frostSlow:0,burning:false,burnTimer:0,burnTick:0,
     frost:0,frostTimer:0,frosted:false,frostedTimer:0,
     moveCd:0,warCharging:false,chargeTimer:0,chargeTarget:null,
     galing:false,galeTimer:0,
@@ -1630,7 +1683,7 @@ function doAttack(gs,attacker,target) {
       id:attacker.id+'_atk_'+(attacker.projId++),
       owner:attacker.id,
       type:projType,
-      x:attacker.x,y:attacker.y,
+      x:attacker.x,y:attacker.y+10,
       vx:Math.cos(angle)*(C.atkSpeed||320),
       vy:Math.sin(angle)*(C.atkSpeed||320),
       dmg:C.atkDmg,dot:0,dotDur:0,
@@ -1661,7 +1714,7 @@ function doSkill(gs,user,target,num) {
     var angle=Math.atan2(target.y-user.y,target.x-user.x);
     var ptype=user.cls==='mage'?'fireball':'arrow';
     gs.projs.push({id:user.id+'_'+(user.projId++),owner:user.id,type:ptype,
-      x:user.x,y:user.y,
+      x:user.x,y:user.y+10,
       vx:Math.cos(angle)*sk.speed,vy:Math.sin(angle)*sk.speed,
       dmg:sk.dmg,dot:0,dotDur:0,
       range:sk.range,traveled:0,alive:true,anim:0});
@@ -1720,7 +1773,7 @@ function startRoll(p) {
 
 function spawnEfx(gs,type,x,y){var life=type==='shadow_step'?650:400;gs.effects.push({type:type,x:x,y:y,life:life,max:life,anim:0});}
 function isWall(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return true;return a.tiles[ty][tx]===1;}
-function isPit(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return false;return a.tiles[ty][tx]===2;}
+function isPit(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return false;var t=a.tiles[ty][tx];return t===2;}
 function isTrap(a,wx,wy,tick){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return false;return a.tiles[ty][tx]===5&&Math.floor(tick/40)%3===0;}
 // Collision offset: how far above p.y (feet) the collision center sits
 var COLL_OFFSET_Y = -30; // center lower = more upper body overlaps walls
@@ -1858,7 +1911,24 @@ function update(gs,dt) {
     if(p.rollTimer>0)p.rollTimer-=dt;if(p.rolling>0){p.rolling-=dt;if(p.rolling<=0)p.rolling=0;}
     if(p.stunned>0)p.stunned-=dt;if(p.s1cd>0)p.s1cd-=dt;if(p.s2cd>0)p.s2cd-=dt;if(p.hitFlash>0)p.hitFlash-=dt;
 
-    if(isPit(gs.arena,p.x,p.y-COLL_OFFSET_Y)){dealDmg(gs,p,3,'lava');var sp=p.isMe?gs.arena.sp1:gs.arena.sp2;p.x=sp.x*TILE+TILE/2;p.y=sp.y*TILE+TILE/2;}
+    // Lava tile (t===2): burning DoT. Bridge (t===6): safe to walk on
+    var tileUnderX=Math.floor(p.x/TILE),tileUnderY=Math.floor((p.y-COLL_OFFSET_Y)/TILE);
+    var tileUnder=(tileUnderY>=0&&tileUnderX>=0&&tileUnderY<gs.arena.tiles.length&&tileUnderX<gs.arena.tiles[0].length)?gs.arena.tiles[tileUnderY][tileUnderX]:0;
+    if(tileUnder===2){
+      // On lava — start/refresh burn
+      p.burning=true;
+      p.burnTimer=Math.max(p.burnTimer,1500); // refresh to 2.5s whenever on lava
+    }
+    // Burn ticks regardless of whether still on lava
+    if(p.burning&&p.burnTimer>0){
+      p.burnTimer-=dt;
+      p.burnTick=(p.burnTick||0)-dt;
+      if(p.burnTick<=0){
+        dealDmg(gs,p,5,'lava');spawnEfx(gs,'lava',p.x,p.y);
+        p.burnTick=500;
+      }
+      if(p.burnTimer<=0){p.burning=false;p.burnTimer=0;p.burnTick=0;}
+    }
     if(isTrap(gs.arena,p.x,p.y-COLL_OFFSET_Y,gs.tick))dealDmg(gs,p,9,'spike');
     p.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,p.x));
     p.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,p.y));
@@ -1951,6 +2021,7 @@ function lerpRemote(en) {
   en.attacking=remoteState.attacking||0;
   if(remoteState.stealthed!=null) en.stealthed=!!remoteState.stealthed;
   if(remoteState.shieldHp!=null) en.shieldHp=remoteState.shieldHp;
+  if(remoteState.redEyes!=null) en.redEyes=remoteState.redEyes;
   if(remoteState.shieldTimer!=null) en.shieldTimer=remoteState.shieldTimer;
   if(remoteState.arcaneShield!=null) en.arcaneShield=remoteState.arcaneShield;
   if(remoteState.arcaneShieldHits!=null) en.arcaneShieldHits=remoteState.arcaneShieldHits;
@@ -2075,12 +2146,45 @@ function draw(gs) {
     if(p.stealthed&&p.isMe) gctx.globalAlpha=0.25;
     else if(p.stunned>0) gctx.globalAlpha=0.6;
     DRAW[p.cls](gctx,p.x,p.y,p.dir,p.anim,p.hitFlash>0,p.level||1);
+    // Red eyes cosmetic
+    if(p.isMe&&hasRedEyes(p.cls)||(!p.isMe&&p.redEyes)){
+      var re=getRedEyePos(p.cls,p.level||1);
+      var rePulse=0.7+Math.sin(Date.now()*0.008)*0.3;
+      gctx.save();
+      gctx.translate(p.x,p.y);
+      if(p.dir!==2)gctx.scale(-1,1);
+      re.forEach(function(e){
+        // Glow
+        gctx.fillStyle='rgba(255,0,0,'+(rePulse*0.4)+')';
+        gctx.beginPath();gctx.arc(e[0]*S,e[1]*S,5*S,0,Math.PI*2);gctx.fill();
+        // Core
+        gctx.fillStyle='rgba(255,40,0,'+(rePulse*0.95)+')';
+        gctx.fillRect(e[0]*S,e[1]*S,S,S);
+      });
+      gctx.restore();
+    }
     gctx.globalAlpha=1;
     // Frost slow: light blue tint overlay
     if(p.frostSlow>0&&!p.dead){
       var slowFade=Math.min(1,p.frostSlow/400);
       gctx.fillStyle='rgba(100,200,255,'+(slowFade*0.28)+')';
       gctx.fillRect(p.x-18,p.y-58,36,72);
+    }
+    // Burning: orange/red flickering overlay
+    if(p.burning&&p.burnTimer>0&&!p.dead){
+      var burnA=Math.min(1,p.burnTimer/500)*0.4;
+      var flicker=0.5+Math.sin(Date.now()*0.025)*0.25;
+      gctx.fillStyle='rgba(255,'+(80+Math.floor(flicker*60))+',0,'+(burnA*flicker)+')';
+      gctx.fillRect(p.x-18,p.y-58,36,72);
+      // Flame particles rising
+      for(var fi=0;fi<3;fi++){
+        var fx=p.x-8+fi*8+Math.sin(Date.now()*0.01+fi)*4;
+        var fy=p.y-50-Math.sin(Date.now()*0.008+fi*2)*10;
+        gctx.fillStyle='rgba(255,'+(100+fi*40)+',0,0.7)';
+        gctx.fillRect(fx,fy,3,6);
+        gctx.fillStyle='rgba(255,200,0,0.5)';
+        gctx.fillRect(fx+1,fy+2,1,3);
+      }
     }
     // Frost shield: ellipse around full body + 3 orbiting orbs
     if(p.arcaneShieldHits>0){
@@ -2228,7 +2332,14 @@ function endRound(gs) {
   else{showBanner('DRAW!');}
   // Award XP
   var meR=gs.players.find(function(p){return p.isMe;});
-  if(meR){awardMatchXP(meR.cls, wonRound, gameMode==='pvp');incrementGamesPlayed(meR.cls);}
+  if(meR){
+    awardMatchXP(meR.cls, wonRound, gameMode==='pvp');
+    incrementGamesPlayed(meR.cls);
+    if(gameMode==='pvp'&&wonRound&&dead&&!dead.isMe){
+      var kills=incrementPvPKills(meR.cls);
+      if(kills===100){showBanner('RED EYES UNLOCKED!');setRedEyes(meR.cls,true);}
+    }
+  }
   gs.phase='gameOver';
   if(gameMode==='training'){
     // Training: start next game after short delay, no rematch screen
@@ -2263,7 +2374,7 @@ function resetRound(gs) {
     p.stunned=0;p.poisoned=0;p.rolling=0;p.attacking=0;p.hitFlash=0;p.blocking=false;p.s1cd=0;p.s2cd=0;p.atkTimer=0;
     p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;
     if(p.isMe)p.level=getLevel(p.cls); // refresh level each round
-    p.moveCd=0;p.chargeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.disarmed=0;p.shieldHp=0;p.shieldTimer=0;p.arcaneShield=0;p.arcaneShieldHits=0;p.frostSlow=0;
+    p.moveCd=0;p.chargeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.disarmed=0;p.shieldHp=0;p.shieldTimer=0;p.arcaneShield=0;p.arcaneShieldHits=0;p.frostSlow=0;p.burning=false;p.burnTimer=0;p.burnTick=0;
   }
   gs.projs=[];gs.effects=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
@@ -2389,7 +2500,7 @@ function pushState(me) {
     moving:me.moving,hp:Math.round(me.hp),attacking:me.attacking>0?1:0,
     stunned:Math.round(Math.max(0,me.stunned)),
     hitFlash:me.hitFlash>0?1:0,dead:me.dead,wins:me.wins,
-    stealthed:me.stealthed||false,shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
+    stealthed:me.stealthed||false,redEyes:hasRedEyes(me.cls),shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
     moveCd:Math.round(me.moveCd||0),
     projs:myProjs.length>0?myProjs:null
   });
@@ -2959,7 +3070,8 @@ function drawArenaPreview(canvas, ak){
       var t=arena.tiles[r][c];
       if(t===1){ctx.fillStyle=wl;}
       else if(t===3||t===4){ctx.fillStyle=ac;} // rune/special
-      else if(t===2){ctx.fillStyle='#cc3300';} // lava
+      else if(t===2){ctx.fillStyle='rgba(140,30,0,0.9)';} // dark magma
+      else if(t===6){ctx.fillStyle='#4a3018';} // bridge
       else if(t===5){ctx.fillStyle='#8a0000';} // trap
       else{ctx.fillStyle=fl;}
       ctx.fillRect(c*ts,r*ts,ts,ts);
@@ -3288,9 +3400,43 @@ function incrementGamesPlayed(cls){
   saveClassData(cls,d);
   return d.games;
 }
+function getRedEyePos(cls,level){
+  // Returns array of [gridX,gridY] for eye pixels (relative to sprite center)
+  if(cls==='warrior'){
+    // Warrior eyes in visor: level<10 bare face, else helm
+    if(level>=10){return [[-2,-4],[0,-4]];} // visor eyes
+    return [[-1,-4],[1,-4]]; // bare face
+  } else if(cls==='mage'){
+    return [[-2,-4],[0,-4]]; // mage eye positions
+  } else {
+    return [[-2,-5],[0,-5]]; // rogue green eye positions
+  }
+}
 function getWeaponTier(cls){
   var g=getGamesPlayed(cls);
-  return g>=50?3:g>=25?2:g>=10?1:0;
+  return g>=150?3:g>=75?2:g>=25?1:0;
+}
+function getPvPKills(cls){
+  var d=getClassData(cls);return d.pvpKills||0;
+}
+function incrementPvPKills(cls){
+  var d=getClassData(cls);
+  d.pvpKills=(d.pvpKills||0)+1;
+  saveClassData(cls,d);
+  return d.pvpKills;
+}
+function hasRedEyes(cls){
+  var d=getClassData(cls);
+  return d.redEyes===true;
+}
+function toggleRedEyes(cls){setRedEyes(cls,!hasRedEyes(cls));renderAchievements(currentAchTab);}
+function setRedEyes(cls,val){
+  var d=getClassData(cls);
+  d.redEyes=val;
+  saveClassData(cls,d);
+}
+function isRedEyesUnlocked(cls){
+  return getPvPKills(cls)>=100;
 }
 function saveClassData(cls, data) {
   try { localStorage.setItem('eldara_cls_'+cls, JSON.stringify(data)); } catch(e){}
@@ -3617,7 +3763,7 @@ var ACHIEVEMENTS = [
   {id:'w_t3',cls:'warrior',tier:3,name:'Warlord',desc:'Warrior reaches Lv.30 — Gold warlord armor unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=30;},levelReq:30},
   // MAGE
   {id:'m_unlock',cls:'mage',tier:0,name:'Apprentice',desc:'Unlock the Mage',icon:'\u2728',req:function(){return getLevel('mage')>=1;},levelReq:1},
-  {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.15 — Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=15;},levelReq:15},
+  {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.10 — Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=15;},levelReq:15},
   {id:'m_t2',cls:'mage',tier:2,name:'Arcanist',desc:'Mage reaches Lv.20 — Arcane purple robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=20;},levelReq:20},
   {id:'m_t3',cls:'mage',tier:3,name:'Archmage',desc:'Mage reaches Lv.30 — Grand archmage look unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=30;},levelReq:30},
   // ROGUE
@@ -3628,19 +3774,24 @@ var ACHIEVEMENTS = [
   // GENERAL
   // WARRIOR WEAPON ACHIEVEMENTS
   {id:'ww0',cls:'warrior',tier:0,name:'Blade of Burden',desc:'Starting weapon — Rusty Shortsword',icon:'\u2694',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'ww1',cls:'warrior',tier:0,name:'First Steps',desc:'Play 10 games as Warrior — Iron Sword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=10;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'ww2',cls:'warrior',tier:0,name:'Veteran Blade',desc:'Play 25 games as Warrior — Steel Greatsword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=25;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'ww3',cls:'warrior',tier:0,name:'Warlord Edge',desc:'Play 50 games as Warrior — Legendary Blade unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=50;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'ww1',cls:'warrior',tier:0,name:'First Steps',desc:'Play 25 games as Warrior — Iron Sword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'ww2',cls:'warrior',tier:0,name:'Veteran Blade',desc:'Play 75 games as Warrior — Steel Greatsword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'ww3',cls:'warrior',tier:0,name:'Warlord Edge',desc:'Play 150 games as Warrior — Legendary Blade unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // MAGE WEAPON ACHIEVEMENTS
   {id:'mw0',cls:'mage',tier:0,name:'Apprentice Stick',desc:'Starting weapon — Gnarled Wooden Staff',icon:'\u2728',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'mw1',cls:'mage',tier:0,name:'Apprentice Staff',desc:'Play 10 games as Mage — Iron Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=10;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'mw2',cls:'mage',tier:0,name:'Crystal Focus',desc:'Play 25 games as Mage — Crystal Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=25;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'mw3',cls:'mage',tier:0,name:'Arcane Catalyst',desc:'Play 50 games as Mage — Legendary Arcane Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=50;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'mw1',cls:'mage',tier:0,name:'Apprentice Staff',desc:'Play 25 games as Mage — Iron Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'mw2',cls:'mage',tier:0,name:'Crystal Focus',desc:'Play 75 games as Mage — Crystal Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'mw3',cls:'mage',tier:0,name:'Arcane Catalyst',desc:'Play 150 games as Mage — Legendary Arcane Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // ROGUE WEAPON ACHIEVEMENTS
   {id:'rw0',cls:'ranger',tier:0,name:'Street Knife',desc:'Starting weapon — Plain Short Knife',icon:'\u2020',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'rw1',cls:'ranger',tier:0,name:'Street Fighter',desc:'Play 10 games as Rogue — Iron Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=10;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'rw2',cls:'ranger',tier:0,name:'Blade Dancer',desc:'Play 25 games as Rogue — Fine Steel Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=25;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'rw3',cls:'ranger',tier:0,name:'Phantom Blade',desc:'Play 50 games as Rogue — Legendary Rapier + Ornate Dagger unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=50;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'rw1',cls:'ranger',tier:0,name:'Street Fighter',desc:'Play 25 games as Rogue — Iron Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'rw2',cls:'ranger',tier:0,name:'Blade Dancer',desc:'Play 75 games as Rogue — Fine Steel Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'rw3',cls:'ranger',tier:0,name:'Phantom Blade',desc:'Play 150 games as Rogue — Legendary Rapier + Ornate Dagger unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
+  // GENERAL
+  // PVP KILL ACHIEVEMENTS
+  {id:'kw',cls:'warrior',tier:0,name:'Warlord Fury',desc:'Kill 100 players as Warrior — Red Eyes unlocked',icon:'\u2694',req:function(){return getPvPKills('warrior')>=100;},levelReq:0,killAch:true,killCls:'warrior'},
+  {id:'km',cls:'mage',tier:0,name:'Blood Mage',desc:'Kill 100 players as Mage — Red Eyes unlocked',icon:'\u2728',req:function(){return getPvPKills('mage')>=100;},levelReq:0,killAch:true,killCls:'mage'},
+  {id:'kr',cls:'ranger',tier:0,name:'Phantom Reaper',desc:'Kill 100 players as Rogue — Red Eyes unlocked',icon:'\u2020',req:function(){return getPvPKills('ranger')>=100;},levelReq:0,killAch:true,killCls:'ranger'},
   // GENERAL
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
   {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return s&&parseInt(s)>0;},levelReq:0},
@@ -3667,16 +3818,28 @@ function buildAchCard(ach){
   var checkmark=earned?'<span style="color:#27ae60;font-size:14px;margin-left:6px">\u2713</span>':'<span style="color:rgba(255,255,255,0.15);font-size:11px;margin-left:6px">\u25CB</span>';
   var progressStr='';
   if(ach.weaponAch&&!earned){
-    var clsKey=ach.cls;
-    var played=getGamesPlayed(clsKey);
-    var need=ach.weaponTier===1?10:ach.weaponTier===2?25:50;
+    var played=getGamesPlayed(ach.cls);
+    var need=ach.weaponTier===1?25:ach.weaponTier===2?75:150;
     progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+played+' / '+need+' games played</div>';
   }
-  card.innerHTML=leftHTML+'<div style="flex:1;min-width:0"><div style="font-size:12px;letter-spacing:1px;color:'+nameColor+'">'+ach.name+checkmark+'</div><div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.4">'+ach.desc+'</div>'+(ach.levelReq>1?'<div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:4px">Requires Lv.'+ach.levelReq+'</div>':'')+progressStr+'</div>';
+  if(ach.killAch){
+    var kills=getPvPKills(ach.killCls);
+    if(!earned){
+      progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+kills+' / 100 PvP kills</div>';
+    }
+  }
+  var wearBtn='';
+  if(ach.killAch&&earned){
+    var wearing=hasRedEyes(ach.killCls);
+    wearBtn='<button onclick="toggleRedEyes(\''+ach.killCls+'\')" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearing?'#e74c3c':'var(--gold)')+';color:'+(wearing?'#e74c3c':'var(--gold)')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearing?'TAKE OFF':'WEAR')+'</button>';
+  }
+  card.innerHTML=leftHTML+'<div style="flex:1;min-width:0"><div style="font-size:12px;letter-spacing:1px;color:'+nameColor+'">'+ach.name+checkmark+'</div><div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.4">'+ach.desc+'</div>'+(ach.levelReq>1?'<div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:4px">Requires Lv.'+ach.levelReq+'</div>':'')+progressStr+wearBtn+'</div>';
   return {card:card,earned:earned};
 }
 
+var currentAchTab='all';
 function renderAchievements(tab){
+  currentAchTab=tab||'all';
   var list=document.getElementById('ach-list');if(!list)return;
   list.innerHTML='';
   var filtered=ACHIEVEMENTS.filter(function(a){
