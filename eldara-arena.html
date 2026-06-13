@@ -3415,7 +3415,8 @@ function hasRedEyes(cls){
   var d=getClassData(cls);
   return d.redEyes===true;
 }
-function toggleRedEyes(cls){setRedEyes(cls,!hasRedEyes(cls));renderAchievements(currentAchTab);}
+var currentAchTab='all';
+function toggleRedEyes(cls){setRedEyes(cls,!hasRedEyes(cls));renderAchievements(currentAchTab||'all');}
 function setRedEyes(cls,val){
   var d=getClassData(cls);
   d.redEyes=val;
@@ -3817,13 +3818,12 @@ function buildAchCard(ach){
   var wearBtn='';
   if(ach.killAch&&earned){
     var wearing=hasRedEyes(ach.killCls);
-    wearBtn='<button onclick="toggleRedEyes(\''+ach.killCls+'\')" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearing?'#e74c3c':'var(--gold)')+';color:'+(wearing?'#e74c3c':'var(--gold)')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearing?'TAKE OFF':'WEAR')+'</button>';
+    wearBtn='<button class="wear-eyes-btn" data-cls="'+ach.killCls+'" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearing?'#e74c3c':'var(--gold)')+';color:'+(wearing?'#e74c3c':'var(--gold)')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearing?'TAKE OFF':'WEAR')+'</button>';
   }
   card.innerHTML=leftHTML+'<div style="flex:1;min-width:0"><div style="font-size:12px;letter-spacing:1px;color:'+nameColor+'">'+ach.name+checkmark+'</div><div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.4">'+ach.desc+'</div>'+(ach.levelReq>1?'<div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:4px">Requires Lv.'+ach.levelReq+'</div>':'')+progressStr+wearBtn+'</div>';
   return {card:card,earned:earned};
 }
 
-var currentAchTab='all';
 function renderAchievements(tab){
   currentAchTab=tab||'all';
   var list=document.getElementById('ach-list');if(!list)return;
@@ -3845,6 +3845,12 @@ function renderAchievements(tab){
   sorted.forEach(function(ach){
     var result=buildAchCard(ach);
     list.appendChild(result.card);
+  });
+  // Wire wear buttons
+  list.querySelectorAll('.wear-eyes-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      toggleRedEyes(btn.dataset.cls);
+    });
   });
   
   // Animate sprites
