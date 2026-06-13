@@ -328,13 +328,6 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div class="lobby-right">
     <div style="font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:16px">LOBBY CHAT</div>
     <div class="chat-wrap">
-      <!-- Class selector in lobby -->
-      <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:6px">
-        <div style="font-size:10px;color:var(--dim);letter-spacing:1px;align-self:center">PLAY AS:</div>
-        <button class="lob-cls-btn" data-cls="warrior" style="flex:1;padding:6px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">WARRIOR</button>
-        <button class="lob-cls-btn" data-cls="mage" style="flex:1;padding:6px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">MAGE</button>
-        <button class="lob-cls-btn" data-cls="ranger" style="flex:1;padding:6px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">ROGUE</button>
-      </div>
       <div class="chat-log" id="lob-chat"></div>
       <div class="chat-row">
         <input class="chat-inp" id="lob-chat-inp" placeholder="say something..." maxlength="100">
@@ -1499,17 +1492,17 @@ function drawArena(ctx, arena, tick) {
 var CLS = {
   warrior:{name:'Warrior',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Slash',color:'#6a7a8a',
     hp:105,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
-    s1:{name:'Shield Bash',icon:'\uD83D\uDEE1',cd:5000,range:58,dmg:14,stun:600,shieldHp:10,shieldDur:3000},
+    s1:{name:'Shield Bash',icon:'\uD83D\uDEE1',cd:5000,range:58,dmg:16,stun:600,shieldHp:10,shieldDur:3000},
     s2:{name:'War Cry',icon:'\u26A1',cd:10000,warcry:true},
     move:{name:'War Charge',icon:'\uD83D\uDCA5',cd:6000,charge:true,chargeDur:800,dmgReduce:0.4}},
   mage:{name:'Mage',icon:'\uD83D\uDD2E',atkIcon:'\uD83E\uDDCA',atkLabel:'Ice Shard',color:'#3a30a0',
     hp:80,spd:2.2,atkDmg:10,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
-    s1:{name:'Fireball',icon:'\uD83D\uDD25',cd:2800,dmg:35,proj:true,speed:340,range:230},
-    s2:{name:'Frost Shield',icon:'\u2744',cd:14000,arcaneShield:true,arcaneShieldDur:8000,arcaneShieldHits:3},
+    s1:{name:'Fireball',icon:'\uD83D\uDD25',cd:2800,dmg:25,proj:true,speed:340,range:230,charged:true,chargeMax:1500,chargeDmgMax:55},
+    s2:{name:'Frost Shield',icon:'\u2744',cd:12000,arcaneShield:true,arcaneShieldDur:8000,arcaneShieldHits:3},
     move:{name:'Blink',icon:'\uD83D\uDCA8',cd:4000,blink:140}},
   ranger:{name:'Rogue',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Rapier',color:'#8a6a20',
-    hp:105,spd:3.0,atkDmg:10,atkRange:58,atkMs:220,atkType:'melee',
-    s1:{name:'Headbutt',icon:'\u26A1',cd:5500,dmg:12,range:56,stun:1100},
+    hp:105,spd:3.0,atkDmg:10,atkRange:58,atkMs:240,atkType:'melee',
+    s1:{name:'Headbutt',icon:'\u26A1',cd:5500,dmg:12,range:56,stun:500},
     s2:{name:'Stealth',icon:'\u25CF',cd:11000,stealth:true,stealthDur:7000,spdMult:0.65},
     move:{name:'Shadow Step',icon:'\u27A1',cd:5000,shadowStep:true,stepRange:280,stepDmg:12}}
 };
@@ -1538,8 +1531,8 @@ function mkPlayer(id,cls,name,spawn,isMe) {
     dir:isMe?3:2,anim:0,moving:false,
     atkTimer:0,attacking:0,rollTimer:0,rolling:0,rollInv:false,rollDir:{x:1,y:0},
     blocking:false,s1cd:0,s2cd:0,stunned:0,poisoned:0,poisonDmg:0,poisonTimer:0,
-    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,frostSlow:0,burning:false,burnTimer:0,burnTick:0,redEyes:false,
-    frost:0,frostTimer:0,frosted:false,frostedTimer:0,
+    stealthed:false,stealthTimer:0,stealthFirstHit:false,disarmed:0,shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,frostSlow:0,burning:false,burnTimer:0,burnTick:0,redEyes:false,warCryBuff:0,warCryShake:0,
+    frost:0,frostTimer:0,frosted:false,frostedTimer:0,fireballCharge:0,fireballCharging:false,
     moveCd:0,warCharging:false,chargeTimer:0,chargeTarget:null,
     galing:false,galeTimer:0,
     blinking:false,
@@ -1548,7 +1541,7 @@ function mkPlayer(id,cls,name,spawn,isMe) {
 
 function mkGS(arenaKey,me,en) {
   return {arena:ARENAS[arenaKey],arenaKey:arenaKey,players:[me,en],projs:[],effects:[],traps:[],
-    tick:0,phase:'pregame',countdown:5000,roundTimer:99,roundMs:0,round:1};
+    tick:0,phase:'pregame',countdown:5000,roundTimer:99,roundMs:0,round:1,dopps:[]};
 }
 
 // ═══════════════════════════════════════════
@@ -1647,6 +1640,20 @@ function doMoveAbility(gs,user,target) {
     user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,user.y+bdy*mv.blink));
     user.rollInv=true;setTimeout(function(){user.rollInv=false;},200);
     spawnEfx(gs,'blink',user.x,user.y);
+    // Spawn doppelganger at blink destination
+    if(gs.dopps){
+      var dAngle=Math.random()*Math.PI*2;
+      gs.dopps.push({
+        x:user.x,y:user.y,
+        cls:user.cls,level:user.level||1,
+        name:user.name,
+        vx:Math.cos(dAngle)*1.2,vy:Math.sin(dAngle)*1.2,
+        dir:user.dir,anim:0,
+        life:3000,maxLife:3000,
+        isMe:user.isMe
+      });
+      if(user.isMe&&gameMode==='pvp')pushAction('dopp',{x:Math.round(user.x),y:Math.round(user.y),dir:user.dir,level:user.level||1});
+    }
     // Mage arcane shield on blink
 
   } else if(mv.shadowStep) {
@@ -1658,7 +1665,7 @@ function doMoveAbility(gs,user,target) {
       user.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,stepTarget.x+Math.cos(ang)*45));
       user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,stepTarget.y+Math.sin(ang)*45));
       spawnEfx(gs,'shadow_step',user.x,user.y);
-      if(user.stealthed){user.stealthed=false;user.stealthTimer=0;user.rollInv=false;}
+      if(user.stealthed){user.stealthed=false;user.stealthTimer=0;user.rollInv=false;user.stealthFirstHit=false;}
       if(wasStealthed&&!stepTarget.rollInv){
         stepTarget.stunned=1400;
         dealDmg(gs,stepTarget,CLS[user.cls].s1.dmg,'bash');
@@ -1680,11 +1687,17 @@ function doMoveAbility(gs,user,target) {
 function doAttack(gs,attacker,target) {
   var C=CLS[attacker.cls];
   // Break stealth when attacking
-  if(attacker.stealthed){attacker.stealthed=false;attacker.stealthTimer=0;attacker.rollInv=false;}
+  var hadStealthFirstHit=attacker.stealthed&&attacker.stealthFirstHit;
+  if(attacker.stealthed){attacker.stealthed=false;attacker.stealthTimer=0;attacker.rollInv=false;attacker.stealthFirstHit=false;}
   attacker.attacking=14;attacker.atkTimer=C.atkMs;
   if(C.atkType==='proj') {
-    // Mage: ice shard / Ranger: arrow — spawn a projectile
-    var angle=Math.atan2(target.y-attacker.y,target.x-attacker.x);
+    // Don't reveal stealthed target position — aim in attacker's facing direction instead
+    var angle;
+    if(target.stealthed){
+      angle=attacker.dir===2?Math.PI:attacker.dir===3?0:attacker.dir===1?-Math.PI/2:Math.PI/2;
+    } else {
+      angle=Math.atan2(target.y-attacker.y,target.x-attacker.x);
+    }
     var projType=attacker.cls==='mage'?'ice':'arrow';
     gs.projs.push({
       id:attacker.id+'_atk_'+(attacker.projId++),
@@ -1704,7 +1717,9 @@ function doAttack(gs,attacker,target) {
     } else {
       if(dist(attacker,target)<C.atkRange+10) {
         if(target.rollInv)return;
-        dealDmg(gs,target,C.atkDmg+Math.floor(Math.random()*4)-1,'slash');
+        var wBonus=attacker.warCryBuff>0?1.2:1;
+        var sneak=hadStealthFirstHit?1.5:1;
+        dealDmg(gs,target,Math.round((C.atkDmg+Math.floor(Math.random()*4)-1)*wBonus*sneak),'slash');
       }
     }
   }
@@ -1718,7 +1733,12 @@ function doSkill(gs,user,target,num) {
   // Break stealth on offensive skills
   if(user.stealthed&&!sk.stealth){user.stealthed=false;user.stealthTimer=0;user.rollInv=false;}
   if(sk.proj) {
-    var angle=Math.atan2(target.y-user.y,target.x-user.x);
+    var angle;
+    if(target.stealthed){
+      angle=user.dir===2?Math.PI:user.dir===3?0:user.dir===1?-Math.PI/2:Math.PI/2;
+    } else {
+      angle=Math.atan2(target.y-user.y,target.x-user.x);
+    }
     var ptype=user.cls==='mage'?'fireball':'arrow';
     gs.projs.push({id:user.id+'_'+(user.projId++),owner:user.id,type:ptype,
       x:user.x,y:user.y+10,
@@ -1758,11 +1778,13 @@ function doSkill(gs,user,target,num) {
       if(user.isMe&&gameMode==='pvp')pushState(user);
     }
   } else if(sk.warcry) {
-    // War Cry: cleanse debuffs + reduce cooldowns
+    // War Cry: cleanse debuffs + reduce CDs + damage buff + shake
     user.stunned=0;user.frosted=false;user.frostedTimer=0;user.disarmed=0;
     user.s1cd=Math.max(0,(user.s1cd||0)-2000);
     user.s2cd=Math.max(0,(user.s2cd||0)-2000);
     user.moveCd=Math.max(0,(user.moveCd||0)-2000);
+    user.warCryBuff=3000; // 3s damage buff
+    user.warCryShake=600; // 0.6s shake
     spawnEfx(gs,'warcry',user.x,user.y);
     sidelog('!!',user.name+' WAR CRY!');
     if(user.isMe&&gameMode==='pvp')pushState(user);
@@ -1863,6 +1885,18 @@ function updateAI(gs,ai,target,dt) {
 function update(gs,dt) {
   if(!gs||gs.phase==='gameOver')return;
   gs.tick++;
+  // Tick doppelgangers
+  if(gs.dopps){
+    gs.dopps=gs.dopps.filter(function(d){return d.life>0;});
+    gs.dopps.forEach(function(d){
+      d.life-=dt;d.anim+=dt*0.01;
+      d.x+=d.vx;d.y+=d.vy;
+      // Bounce off walls
+      if(d.x<TILE*2||d.x>(AW-2)*TILE){d.vx*=-1;}
+      if(d.y<TILE*2||d.y>(AH-2)*TILE){d.vy*=-1;}
+      if(d.life<d.maxLife)d.dir=d.vx<0?2:3;
+    });
+  }
   if(gs.phase==='pregame'){
     gs.countdown-=dt;
     var sec=Math.ceil(gs.countdown/1000);
@@ -1904,6 +1938,10 @@ function update(gs,dt) {
     if(p.shieldTimer>0){p.shieldTimer-=dt;if(p.shieldTimer<=0){p.shieldHp=0;p.shieldTimer=0;}}
     if(p.arcaneShield>0){p.arcaneShield-=dt;if(p.arcaneShield<=0){p.arcaneShield=0;p.arcaneShieldHits=0;}}
     if(p.frostSlow>0)p.frostSlow-=dt;
+    if(p.warCryBuff>0)p.warCryBuff-=dt;
+    if(p.warCryShake>0)p.warCryShake-=dt;
+    // Fireball charge ticking + speed slow while charging
+    if(p.fireballCharging&&p.cls==='mage'){p.fireballCharge=Math.min((p.fireballCharge||0)+dt,1500);}
     if(p.disarmed>0)p.disarmed-=dt;
     if(p.frosted>0){p.frostedTimer-=dt;if(p.frostedTimer<=0){p.frosted=false;p.frostedTimer=0;p.stunned=0;}}
     if(p.moveCd>0)p.moveCd-=dt;
@@ -1999,8 +2037,12 @@ function update(gs,dt) {
 }
 
 function updateLocal(gs,p,dt) {
+  if(!p)return;
+  // Ensure optional fields exist
+  if(p.fireballCharging===undefined)p.fireballCharging=false;
+  if(p.fireballCharge===undefined)p.fireballCharge=0;
   if(p.stunned>0||p.dead)return;
-  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+C.move.galeSpd):1)*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1)*(p.frostSlow>0?0.25:1);
+  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+C.move.galeSpd):1)*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1)*(p.frostSlow>0?0.25:1)*(p.fireballCharging&&p.cls==='mage'?0.25:1);
   p.vx=0;p.vy=0;var moved=false;
   if(keys['KeyW']||keys['ArrowUp']){p.vy=-spd;p.dir=1;moved=true;}
   if(keys['KeyS']||keys['ArrowDown']){p.vy=spd;p.dir=0;moved=true;}
@@ -2035,7 +2077,6 @@ function lerpRemote(en) {
   if(remoteState.frostSlow!=null) en.frostSlow=remoteState.frostSlow;
   if(remoteState.level!=null) en.level=remoteState.level;
   if(remoteState.cls) en.cls=remoteState.cls;
-  if(remoteState.lobbyClass) en.cls=remoteState.lobbyClass; // lobby class override
   if(remoteState.moveCd!=null) en.moveCd=remoteState.moveCd;
   if(remoteState.hp!=null) en.hp=remoteState.hp;
   if(remoteState.dead!=null) en.dead=!!remoteState.dead;
@@ -2081,6 +2122,35 @@ function draw(gs) {
   gctx.save();gctx.translate(ox,oy);
   drawArena(gctx,gs.arena,gs.tick);
 
+  // ── DOPPELGANGERS ──
+  if(gs.dopps){
+    gs.dopps.forEach(function(d){
+      var fade=d.life/d.maxLife;
+      gctx.save();
+      if(d.isMe){
+        // Owner sees: semi-transparent blue tint — clearly a decoy
+        gctx.globalAlpha=fade*0.35;
+        DRAW[d.cls](gctx,d.x,d.y,d.dir,d.anim*10,false,d.level||1);
+        gctx.fillStyle='rgba(80,60,255,0.4)';
+        gctx.fillRect(d.x-18,d.y-58,36,72);
+      } else {
+        // Opponent sees: full opacity, looks exactly like the real mage
+        gctx.globalAlpha=fade;
+        DRAW[d.cls](gctx,d.x,d.y,d.dir,d.anim*10,false,d.level||1);
+        // Full name tag (enemy color = red)
+        gctx.globalAlpha=fade;
+        gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(d.x-30,d.y-56,60,14);
+        gctx.fillStyle='#cc5555';
+        gctx.font='bold 9px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
+        gctx.fillText(d.name||'???',d.x,d.y-49);
+        // Full HP bar (fake — always shows full)
+        gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(d.x-24,d.y-62,48,5);
+        gctx.fillStyle='#27ae60';gctx.fillRect(d.x-24,d.y-62,48,5);
+      }
+      gctx.globalAlpha=1;
+      gctx.restore();
+    });
+  }
   for(var ei=0;ei<gs.effects.length;ei++) {
     var ef=gs.effects[ei],a=ef.life/ef.max;
     gctx.globalAlpha=Math.max(0,a);
@@ -2155,7 +2225,9 @@ function draw(gs) {
     if(p.poisoned>0){gctx.fillStyle='rgba(40,180,40,0.12)';gctx.beginPath();gctx.arc(p.x,p.y,24+Math.sin(gs.tick*0.14)*3,0,Math.PI*2);gctx.fill();}
     if(p.stealthed&&p.isMe) gctx.globalAlpha=0.25;
     else if(p.stunned>0) gctx.globalAlpha=0.6;
-    DRAW[p.cls](gctx,p.x,p.y,p.dir,p.anim,p.hitFlash>0,p.level||1);
+    var shakeX=0,shakeY=0;
+    if(p.warCryShake>0){var sf=p.warCryShake/600;shakeX=(Math.random()-0.5)*6*sf;shakeY=(Math.random()-0.5)*4*sf;}
+    DRAW[p.cls](gctx,p.x+shakeX,p.y+shakeY,p.dir,p.anim,p.hitFlash>0,p.level||1);
     // Red eyes cosmetic — pulsing pixels only, no circles
     if(p.isMe&&hasRedEyes(p.cls)||(!p.isMe&&p.redEyes)){
       var re=getRedEyePos(p.cls,p.level||1);
@@ -2170,6 +2242,28 @@ function draw(gs) {
       gctx.restore();
     }
     gctx.globalAlpha=1;
+    // Fireball charge bar (mage only, while charging)
+    if(p.isMe&&p.cls==='mage'&&p.fireballCharging&&p.fireballCharge>0){
+      gctx.globalAlpha=1;
+      var chargeRatio=p.fireballCharge/1500;
+      var barW=48,barX=p.x-24,barY=p.y-72;
+      gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(barX,barY,barW,5);
+      var segW=14,segGap=3;
+      for(var ci=0;ci<3;ci++){
+        var segStart=ci/3,segEnd=(ci+1)/3;
+        var segFill=Math.max(0,Math.min(1,(chargeRatio-segStart)/(segEnd-segStart)));
+        var sx=barX+ci*(segW+segGap);
+        gctx.fillStyle='rgba(255,80,0,0.2)';gctx.fillRect(sx,barY,segW,5);
+        if(segFill>0){
+          var cheat=ci===2?'rgba(255,220,0,0.9)':'rgba(255,'+(100+ci*60)+',0,0.9)';
+          gctx.fillStyle=cheat;gctx.fillRect(sx,barY,segW*segFill,5);
+        }
+      }
+      if(chargeRatio>=1){
+        gctx.strokeStyle='rgba(255,200,0,'+(0.5+Math.sin(Date.now()*0.015)*0.5)+')';
+        gctx.lineWidth=1;gctx.strokeRect(barX,barY,barW,5);
+      }
+    }
     // Frost slow: light blue tint overlay
     if(p.frostSlow>0&&!p.dead){
       var slowFade=Math.min(1,p.frostSlow/400);
@@ -2256,9 +2350,39 @@ function draw(gs) {
         gctx.strokeStyle='rgba(160,220,255,0.8)';gctx.lineWidth=0.5;gctx.stroke();
       }
       if(p.frosted){
-        var frostAlpha=0.25+Math.sin(gs.tick*0.2)*0.1;
-        gctx.fillStyle='rgba(80,160,255,'+frostAlpha+')';
-        gctx.fillRect(p.x-22,p.y-60,44,80);
+        // Icicle freeze — solid ice block with spikes
+        var frostPulse=0.7+Math.sin(gs.tick*0.15)*0.3;
+        // Ice block body
+        gctx.fillStyle='rgba(140,210,255,0.55)';gctx.fillRect(p.x-22,p.y-60,44,78);
+        gctx.fillStyle='rgba(180,235,255,0.35)';gctx.fillRect(p.x-18,p.y-56,36,68);
+        // Ice shine streak
+        gctx.fillStyle='rgba(255,255,255,0.5)';gctx.fillRect(p.x-14,p.y-54,6,60);
+        gctx.fillStyle='rgba(255,255,255,0.25)';gctx.fillRect(p.x-6,p.y-50,3,50);
+        // Icicle spikes on top
+        gctx.fillStyle='rgba(160,220,255,0.9)';
+        var spikes=[{x:-16,h:14},{x:-8,h:20},{x:0,h:16},{x:8,h:22},{x:16,h:12}];
+        spikes.forEach(function(sp){
+          gctx.beginPath();
+          gctx.moveTo(p.x+sp.x-4,p.y-60);
+          gctx.lineTo(p.x+sp.x+4,p.y-60);
+          gctx.lineTo(p.x+sp.x,p.y-60-sp.h);
+          gctx.closePath();gctx.fill();
+          // Shine on spike
+          gctx.fillStyle='rgba(220,245,255,0.7)';
+          gctx.beginPath();
+          gctx.moveTo(p.x+sp.x-1,p.y-60);
+          gctx.lineTo(p.x+sp.x+1,p.y-60);
+          gctx.lineTo(p.x+sp.x,p.y-60-sp.h*0.6);
+          gctx.closePath();gctx.fill();
+          gctx.fillStyle='rgba(160,220,255,0.9)';
+        });
+        // Crack lines in ice
+        gctx.strokeStyle='rgba(180,230,255,0.4)';gctx.lineWidth=1;
+        gctx.beginPath();gctx.moveTo(p.x-10,p.y-55);gctx.lineTo(p.x+5,p.y-30);gctx.stroke();
+        gctx.beginPath();gctx.moveTo(p.x+8,p.y-40);gctx.lineTo(p.x-4,p.y-15);gctx.stroke();
+        // Pulsing outer glow
+        gctx.strokeStyle='rgba(100,200,255,'+(frostPulse*0.5)+')';gctx.lineWidth=2;
+        gctx.strokeRect(p.x-23,p.y-61,46,80);
       }
     }
     // Warrior charge — red flash overlay
@@ -2373,18 +2497,15 @@ function resetRound(gs) {
     // In PvP: host always uses sp1, guest always uses sp2 (same as initial launch)
     var sp;
     if(gameMode==='pvp'){
-      // Alternate sides each round for fairness
-      var hostGetsP1Round=(gs.round%2===0)!==iAmHost;
-      if(p.isMe){sp=iAmHost?(hostGetsP1Round?gs.arena.sp1:gs.arena.sp2):(hostGetsP1Round?gs.arena.sp2:gs.arena.sp1);}
-      else{sp=iAmHost?(hostGetsP1Round?gs.arena.sp2:gs.arena.sp1):(hostGetsP1Round?gs.arena.sp1:gs.arena.sp2);}
+      sp=iAmHost===p.isMe?gs.arena.sp1:gs.arena.sp2;
     } else {sp=p.isMe?gs.arena.sp1:gs.arena.sp2;}
     var C=C2;
     p.x=sp.x*TILE+TILE/2;p.y=sp.y*TILE+TILE/2;
     p.hp=C.hp;p.dead=false;
     p.stunned=0;p.poisoned=0;p.rolling=0;p.attacking=0;p.hitFlash=0;p.blocking=false;p.s1cd=0;p.s2cd=0;p.atkTimer=0;
-    p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;
+    p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;p.fireballCharge=0;p.fireballCharging=false;
     if(p.isMe)p.level=getLevel(p.cls); // refresh level each round
-    p.moveCd=0;p.chargeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.disarmed=0;p.shieldHp=0;p.shieldTimer=0;p.arcaneShield=0;p.arcaneShieldHits=0;p.frostSlow=0;p.burning=false;p.burnTimer=0;p.burnTick=0;
+    p.moveCd=0;p.chargeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.stealthFirstHit=false;p.disarmed=0;p.shieldHp=0;p.shieldTimer=0;p.arcaneShield=0;p.arcaneShieldHits=0;p.frostSlow=0;p.burning=false;p.burnTimer=0;p.burnTick=0;
   }
   gs.projs=[];gs.effects=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
@@ -2635,6 +2756,20 @@ function processAction(msg,gs,me,en) {
     resetRound(gs);
   } else if(msg.type==='frost_slow'){
     me.frostSlow=(me.frostSlow||0)+(msg.data&&msg.data.dur||1500);
+  } else if(msg.type==='dopp'){
+    // Opponent spawned a doppelganger — add to our gameState
+    if(gs.dopps&&msg.data){
+      var dAngle2=Math.random()*Math.PI*2;
+      gs.dopps.push({
+        x:msg.data.x||en.x,y:msg.data.y||en.y,
+        cls:en.cls,level:msg.data.level||en.level||1,
+        name:en.name,
+        vx:Math.cos(dAngle2)*1.2,vy:Math.sin(dAngle2)*1.2,
+        dir:msg.data.dir||en.dir,anim:0,
+        life:3000,maxLife:3000,
+        isMe:false
+      });
+    }
   } else if(msg.type==='chat'&&msg.data){
     sidelog(msg.data.who||'?',msg.data.text||'');
   } else if(msg.type==='rematch_ready'){
@@ -2656,7 +2791,7 @@ function processAction(msg,gs,me,en) {
       if(st2){st2.style.display='block';st2.textContent='Opponent is ready!';}
     }
   } else if(msg.type==='rematch_start'){
-    // Guest receives start from host
+    if(msg.data&&msg.data.spawnFlip!==undefined)pvpSpawnFlip=msg.data.spawnFlip;
     if(msg.data&&msg.data.arenaKey&&ARENAS[msg.data.arenaKey]){
       gs.arena=ARENAS[msg.data.arenaKey];gs.arenaKey=msg.data.arenaKey;
     }
@@ -2700,6 +2835,8 @@ var actionPollInterval=null;
 var seenActionKeys={};
 
 // startListeningRematchStart removed — using inbox
+
+// startListeningLobbyClass removed
 
 function startListeningActions() {
   var myInbox='/rooms/'+roomCode+'/inbox/'+myId;
@@ -2786,24 +2923,60 @@ document.addEventListener('keydown',function(e){
   if(!me||!en)return;
   if(!me||me.dead)return;
   if(e.code==='KeyG'){
-    if(me.atkTimer<=0&&!me.disarmed){
+    if(me.atkTimer<=0&&!me.disarmed&&!me.stunned){
       doAttack(gameState,me,en);
       if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y),cls:me.cls});
     }
   }
 
   if(e.code==='KeyH'){
-    doSkill(gameState,me,en,1);
-    if(gameMode==='pvp')pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y)});
+    if(me.fireballCharging===undefined)me.fireballCharging=false;
+    if(me.fireballCharge===undefined)me.fireballCharge=0;
+    var sk1=CLS[me.cls]&&CLS[me.cls].s1;
+    if(me.stunned&&!(sk1&&(sk1.arcaneShield||sk1.warcry)))return;
+    if(sk1&&sk1.charged&&me.s1cd<=0){
+      me.fireballCharging=true;me.fireballCharge=0;
+    } else if(!sk1||!sk1.charged){
+      doSkill(gameState,me,en,1);if(gameMode==='pvp')pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y)});
+    }
   }
   if(e.code==='KeyJ'){
-    doSkill(gameState,me,en,2);
-    if(gameMode==='pvp')pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});
+    // While stunned: allow warcry, frost shield, stealth
+    var sk2=CLS[me.cls]&&CLS[me.cls].s2;
+    if(!me.stunned||(sk2&&(sk2.warcry||sk2.arcaneShield||sk2.stealth))){
+      doSkill(gameState,me,en,2);if(gameMode==='pvp')pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});
+    }
   }
-
   if(e.code==='Space'){
-    doMoveAbility(gameState,me,en);
-    if(gameMode==='pvp')pushAction('move',{x:Math.round(me.x),y:Math.round(me.y)});
+    // While stunned: only allow blink (mage escape)
+    var mv=CLS[me.cls]&&CLS[me.cls].move;
+    if(!me.stunned||(mv&&mv.blink)){
+      doMoveAbility(gameState,me,en);if(gameMode==='pvp')pushAction('move',{x:Math.round(me.x),y:Math.round(me.y)});
+    }
+  }
+});
+document.addEventListener('keyup',function(e){
+  if(!gameState)return;
+  var gs=gameState;
+  var me=gs.players.find(function(p){return p.isMe;});
+  var en=gs.players.find(function(p){return !p.isMe;});
+  if(!me||!en)return;
+  if(e.code==='KeyH'&&me.fireballCharging){
+    me.fireballCharging=false;
+    var sk1=CLS[me.cls]&&CLS[me.cls].s1;
+    if(sk1&&sk1.charged&&me.s1cd<=0&&me.fireballCharge>100){
+      // Fire with scaled damage
+      var chargeRatio=me.fireballCharge/sk1.chargeMax;
+      var scaledDmg=Math.round(sk1.dmg+(sk1.chargeDmgMax-sk1.dmg)*chargeRatio);
+      me.s1cd=sk1.cd;
+      var angle=Math.atan2(en.y-me.y,en.x-me.x);
+      gs.projs.push({id:me.id+'_'+(me.projId++),owner:me.id,type:'fireball',
+        x:me.x,y:me.y+10,vx:Math.cos(angle)*sk1.speed,vy:Math.sin(angle)*sk1.speed,
+        dmg:scaledDmg,dot:0,dotDur:0,range:sk1.range,traveled:0,alive:true,anim:0});
+      spawnEfx(gs,'cast',me.x,me.y);
+      if(gameMode==='pvp')pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y),chargedDmg:scaledDmg});
+    }
+    me.fireballCharge=0;
   }
 });
 document.addEventListener('keyup',function(e){
@@ -3240,13 +3413,9 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   var hostGetsP1=Math.random()<0.5;
   var mySpawn=iAmHost?(hostGetsP1?arena.sp1:arena.sp2):(hostGetsP1?arena.sp2:arena.sp1);
   var enSpawn=iAmHost?(hostGetsP1?arena.sp2:arena.sp1):(hostGetsP1?arena.sp1:arena.sp2);
-  // Sync spawn choice so guest uses same sides — encode in matchStart
-  // For now: host decides, guest mirrors via iAmHost logic
-  // Actually: use a shared random based on roomCode+round so both sides agree
-  var spawnSeed=0;for(var si=0;si<roomCode.length;si++)spawnSeed+=roomCode.charCodeAt(si);
-  var hostGetsP1Shared=(spawnSeed%2===0);
-  mySpawn=iAmHost?(hostGetsP1Shared?arena.sp1:arena.sp2):(hostGetsP1Shared?arena.sp2:arena.sp1);
-  enSpawn=iAmHost?(hostGetsP1Shared?arena.sp2:arena.sp1):(hostGetsP1Shared?arena.sp1:arena.sp2);
+  // Spawn side: use timestamp-based seed that host sends to guest via matchStart
+  // For initial game: use random, store in Firebase matchStart
+  var hostGetsP1Shared=pvpSpawnFlip;
   var me=mkPlayer(myId,meClass,myName||'Player',mySpawn,true);
   me.redEyes=hasRedEyes(meClass);
   var enId=iAmHost?enemyIdPvp:hostId;
@@ -3256,10 +3425,12 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   var en=mkPlayer(enId,enCls,enName,enSpawn,false);
   gameMode='pvp';
   gameState=mkGS(arenaKey,me,en);
-  document.getElementById('sp-myname').textContent=myName;
-  document.getElementById('sp-enname').textContent=enName;
+  document.getElementById('sp-myname').textContent=myName||'Player';
+  document.getElementById('sp-enname').textContent=enName||'Opponent';
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
-  showScreen('game-screen');hideOverlay();resizeCanvas();
+  showScreen('game-screen');hideOverlay();
+  resizeCanvas();
+  if(!canvas||!gctx){resizeCanvas();} // ensure canvas always initialized
   startListeningEnemy(enId);startListeningActions();
 
   updateProfileBadge();
@@ -3319,6 +3490,7 @@ function checkBothRematchReady(){
 }
 function doStartRematch(guestCls){
   if(!gameState)return;
+  pvpSpawnFlip=Math.random()<0.5; // new random sides each rematch
   var ak3=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
   var meR3=gameState.players.find(function(p){return p.isMe;});
   var enR3=gameState.players.find(function(p){return !p.isMe;});
@@ -3329,8 +3501,8 @@ function doStartRematch(guestCls){
   pvpRematchReady=false;
   opponentRematchReady=false;
   // Send start to guest via inbox — retry a few times to ensure delivery
-  pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass});
-  setTimeout(function(){if(gameState&&gameState.phase==='fighting')return;pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass});},300);
+  pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,spawnFlip:pvpSpawnFlip});
+  setTimeout(function(){if(gameState&&gameState.phase==='fighting')return;pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,spawnFlip:pvpSpawnFlip});},300);
   hideOverlay();resetRound(gameState);
 }
 // Class picker in overlay
@@ -3338,6 +3510,7 @@ var pvpRematchReady=false;
 var opponentRematchReady=false;
 var opponentRematchCls='';
 var iAmHost=false;
+var pvpSpawnFlip=true; // host on sp1 by default
 var lockedArena=null;
 document.querySelectorAll('.ov-cls-btn').forEach(function(b){
   b.addEventListener('click',function(){
@@ -3363,32 +3536,7 @@ document.getElementById('ov-menu').addEventListener('click',function(){
 });
 
 // Chat
-// Lobby class selector
-document.querySelectorAll('.lob-cls-btn').forEach(function(btn){
-  btn.addEventListener('click',function(){
-    myClass=btn.dataset.cls;
-    document.querySelectorAll('.lob-cls-btn').forEach(function(b){
-      b.style.borderColor=b.dataset.cls===myClass?'var(--gold)':'var(--border)';
-      b.style.color=b.dataset.cls===myClass?'var(--gold)':'var(--dim)';
-    });
-    // Also update gameState if in game
-    if(gameState){
-      var meP=gameState.players.find(function(p){return p.isMe;});
-      if(meP)meP.cls=myClass;
-    }
-    // Notify opponent of class change via room data
-    if(roomCode&&myId){
-      fbSet('/rooms/'+roomCode+'/players/'+myId+'/lobbyClass',myClass);
-    }
-  });
-});
-// Highlight current class on lobby open
-function updateLobbyClassBtns(){
-  document.querySelectorAll('.lob-cls-btn').forEach(function(b){
-    b.style.borderColor=b.dataset.cls===myClass?'var(--gold)':'var(--border)';
-    b.style.color=b.dataset.cls===myClass?'var(--gold)':'var(--dim)';
-  });
-}
+function updateLobbyClassBtns(){} // removed
 document.getElementById('lob-chat-send').addEventListener('click',sendLobbyChat);
 document.getElementById('lob-chat-inp').addEventListener('keydown',function(e){if(e.key==='Enter')sendLobbyChat();});
 function sendLobbyChat(){var inp=document.getElementById('lob-chat-inp'),txt=inp.value.trim();inp.value='';if(!txt)return;if(roomCode)fbPush('/rooms/'+roomCode+'/chat',{name:myName,text:txt,from:myId,ts:Date.now()});}
