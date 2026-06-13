@@ -1861,9 +1861,7 @@ function updateAI(gs,ai,target,dt) {
 // UPDATE
 // ═══════════════════════════════════════════
 function update(gs,dt) {
-  // Allow rematch/lobby messages even during gameOver
-  var isRematchMsg=msg&&(msg.type==='rematch_ready'||msg.type==='rematch_start'||msg.type==='opponent_left'||msg.type==='opponent_left_lobby');
-  if(!gs||(gs.phase==='gameOver'&&!isRematchMsg))return;
+  if(!gs||gs.phase==='gameOver')return;
   gs.tick++;
   if(gs.phase==='pregame'){
     gs.countdown-=dt;
@@ -2650,6 +2648,17 @@ function processAction(msg,gs,me,en) {
     } else {
       if(st2){st2.style.display='block';st2.textContent='Opponent is ready!';}
     }
+  } else if(msg.type==='rematch_start'){
+    // Guest receives start from host
+    if(msg.data&&msg.data.arenaKey&&ARENAS[msg.data.arenaKey]){
+      gs.arena=ARENAS[msg.data.arenaKey];gs.arenaKey=msg.data.arenaKey;
+    }
+    if(en&&msg.data&&msg.data.hostCls){en.cls=msg.data.hostCls;}
+    var meR4=gs.players.find(function(p){return p.isMe;});
+    if(meR4)meR4.cls=myClass;
+    gs.players.forEach(function(p){p.wins=0;});
+    pvpRematchReady=false;opponentRematchReady=false;
+    hideOverlay();resetRound(gs);
   } else if(msg.type==='opponent_left_lobby'){
     // Opponent went back to menu — take us to lobby
     gs.phase='gameOver';
