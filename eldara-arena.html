@@ -203,6 +203,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     </div>
   </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);letter-spacing:2px;white-space:nowrap">by Benjamin Siedler 2026</div>
+  <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
 </div>
 
 <!-- TRAINING OVERLAY (appears over title) -->
@@ -312,6 +313,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <div id="conn-bar">OFFLINE</div>
   <div id="profile-badge"></div>
+  <button id="btn-leave-game" style="position:absolute;top:8px;right:12px;background:rgba(10,8,20,0.85);border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:5px 10px;cursor:pointer;text-transform:uppercase;z-index:60">LEAVE</button>
 
 
 <div id="debug-panel" style="display:none">DEBUG</div>
@@ -1003,8 +1005,16 @@ function doMoveAbility(gs,user,target) {
     var dx=target.x-user.x,dy=target.y-user.y,d=Math.hypot(dx,dy)||1;
     user.chargeVx=(dx/d)*C.spd*3.5;user.chargeVy=(dy/d)*C.spd*3.5;
   } else if(mv.blink) {
-    var mag=Math.hypot(user.vx,user.vy)||1;
-    var bdx=user.vx?user.vx/mag:1,bdy=user.vy?user.vy/mag:0;
+    // Use current velocity if moving, otherwise last known facing direction
+    var mag=Math.hypot(user.vx,user.vy);
+    var bdx,bdy;
+    if(mag>0.1){bdx=user.vx/mag;bdy=user.vy/mag;}
+    else{
+      // Fall back to dir: 0=down,1=up,2=left,3=right
+      var dirMap=[[0,1],[0,-1],[-1,0],[1,0]];
+      var dm=dirMap[user.dir]||[1,0];
+      bdx=dm[0];bdy=dm[1];
+    }
     user.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,user.x+bdx*mv.blink));
     user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,user.y+bdy*mv.blink));
     user.rollInv=true;setTimeout(function(){user.rollInv=false;},200);
@@ -1516,8 +1526,11 @@ function endRound(gs) {
 }
 
 function resetRound(gs) {
-  var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
-  gs.arena=ARENAS[ak];gs.arenaKey=ak;
+  // Only randomize arena in training — in PvP the arena is controlled by host via rematch action
+  if(gameMode==='training'){
+    var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+    gs.arena=ARENAS[ak];gs.arenaKey=ak;
+  }
   for(var i=0;i<gs.players.length;i++){
     var p=gs.players[i],C2=CLS[p.cls],sp=p.isMe?gs.arena.sp1:gs.arena.sp2;
     var C=C2;
@@ -2512,6 +2525,27 @@ function updateSetupNameField() {
     inp.value = '';
   }
 }
+
+// Logout
+document.getElementById('btn-logout').addEventListener('click',function(){
+  authToken=null;authUid=null;authEmail=null;displayName='';isGuest=false;
+  try{sessionStorage.removeItem('eldara_token');sessionStorage.removeItem('eldara_uid');sessionStorage.removeItem('eldara_name');}catch(e){}
+  showScreen('auth-screen');
+  document.getElementById('auth-err').textContent='';
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-pass').value='';
+});
+
+// Leave game button
+document.getElementById('btn-leave-game').addEventListener('click',function(){
+  if(!gameState)return;
+  if(!confirm('Leave this game?'))return;
+  saveUserProfile();
+  gameState=null;cleanupFB();
+  var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
+  hideOverlay();
+  showScreen('title-screen');
+});
 
 function refreshCharCards(){
   // Re-draw card canvases with current levels (called after XP gain)
