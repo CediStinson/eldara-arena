@@ -2033,6 +2033,9 @@ function lerpRemote(en) {
   if(remoteState.arcaneShield!=null) en.arcaneShield=remoteState.arcaneShield;
   if(remoteState.arcaneShieldHits!=null) en.arcaneShieldHits=remoteState.arcaneShieldHits;
   if(remoteState.frostSlow!=null) en.frostSlow=remoteState.frostSlow;
+  if(remoteState.level!=null) en.level=remoteState.level;
+  if(remoteState.cls) en.cls=remoteState.cls;
+  if(remoteState.lobbyClass) en.cls=remoteState.lobbyClass; // lobby class override
   if(remoteState.moveCd!=null) en.moveCd=remoteState.moveCd;
   if(remoteState.hp!=null) en.hp=remoteState.hp;
   if(remoteState.dead!=null) en.dead=!!remoteState.dead;
@@ -2369,8 +2372,12 @@ function resetRound(gs) {
     var p=gs.players[i],C2=CLS[p.cls];
     // In PvP: host always uses sp1, guest always uses sp2 (same as initial launch)
     var sp;
-    if(gameMode==='pvp'){sp=iAmHost===p.isMe?gs.arena.sp1:gs.arena.sp2;}
-    else{sp=p.isMe?gs.arena.sp1:gs.arena.sp2;}
+    if(gameMode==='pvp'){
+      // Alternate sides each round for fairness
+      var hostGetsP1Round=(gs.round%2===0)!==iAmHost;
+      if(p.isMe){sp=iAmHost?(hostGetsP1Round?gs.arena.sp1:gs.arena.sp2):(hostGetsP1Round?gs.arena.sp2:gs.arena.sp1);}
+      else{sp=iAmHost?(hostGetsP1Round?gs.arena.sp2:gs.arena.sp1):(hostGetsP1Round?gs.arena.sp1:gs.arena.sp2);}
+    } else {sp=p.isMe?gs.arena.sp1:gs.arena.sp2;}
     var C=C2;
     p.x=sp.x*TILE+TILE/2;p.y=sp.y*TILE+TILE/2;
     p.hp=C.hp;p.dead=false;
@@ -2504,7 +2511,7 @@ function pushState(me) {
     stunned:Math.round(Math.max(0,me.stunned)),
     hitFlash:me.hitFlash>0?1:0,dead:me.dead,wins:me.wins,
     stealthed:me.stealthed||false,redEyes:hasRedEyes(me.cls),shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
-    moveCd:Math.round(me.moveCd||0),
+    moveCd:Math.round(me.moveCd||0),level:me.level||1,cls:me.cls,
     projs:myProjs.length>0?myProjs:null
   });
 }
@@ -3229,13 +3236,24 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   iAmHost=(myId===hostId);
   if(!iAmHost&&hostId){enemyIdPvp=hostId;}
   var meClass=myClass||'warrior';
-  var me=mkPlayer(myId,meClass,myName||'Player',iAmHost?arena.sp1:arena.sp2,true);
+  // Randomize spawn sides — host picks randomly, guest gets the other
+  var hostGetsP1=Math.random()<0.5;
+  var mySpawn=iAmHost?(hostGetsP1?arena.sp1:arena.sp2):(hostGetsP1?arena.sp2:arena.sp1);
+  var enSpawn=iAmHost?(hostGetsP1?arena.sp2:arena.sp1):(hostGetsP1?arena.sp1:arena.sp2);
+  // Sync spawn choice so guest uses same sides — encode in matchStart
+  // For now: host decides, guest mirrors via iAmHost logic
+  // Actually: use a shared random based on roomCode+round so both sides agree
+  var spawnSeed=0;for(var si=0;si<roomCode.length;si++)spawnSeed+=roomCode.charCodeAt(si);
+  var hostGetsP1Shared=(spawnSeed%2===0);
+  mySpawn=iAmHost?(hostGetsP1Shared?arena.sp1:arena.sp2):(hostGetsP1Shared?arena.sp2:arena.sp1);
+  enSpawn=iAmHost?(hostGetsP1Shared?arena.sp2:arena.sp1):(hostGetsP1Shared?arena.sp1:arena.sp2);
+  var me=mkPlayer(myId,meClass,myName||'Player',mySpawn,true);
   me.redEyes=hasRedEyes(meClass);
   var enId=iAmHost?enemyIdPvp:hostId;
   var enName=(iAmHost?enemyNamePvp:hostName)||'Opponent';
   var enCls=(iAmHost?enemyClsPvp:hostCls)||'warrior';
   if(!enId){addLobbyMsg('System','Error: opponent ID missing',true);return;}
-  var en=mkPlayer(enId,enCls,enName,iAmHost?arena.sp2:arena.sp1,false);
+  var en=mkPlayer(enId,enCls,enName,enSpawn,false);
   gameMode='pvp';
   gameState=mkGS(arenaKey,me,en);
   document.getElementById('sp-myname').textContent=myName;
@@ -3246,12 +3264,15 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
 
   updateProfileBadge();
   updateHUD(gameState);showBanner('Get Ready!');
+  // Track PvP games played
+  try{var pvpN=parseInt(localStorage.getItem('eldara_pvp_played')||'0')+1;localStorage.setItem('eldara_pvp_played',pvpN);}catch(e){}
 }
 
 function launchTraining(continuing) {
   var ak=(lockedArena&&ARENAS[lockedArena])?lockedArena:ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
   var arena=ARENAS[ak];
-  var me=mkPlayer(myId,myClass,myName,arena.sp1,true);
+  var trainSwap=Math.random()<0.5;
+  var me=mkPlayer(myId,myClass,myName,trainSwap?arena.sp2:arena.sp1,true);
   me.redEyes=hasRedEyes(myClass);
   var aiCls=['warrior','mage','ranger'];
   var aiClass=aiCls[Math.floor(Math.random()*aiCls.length)];
@@ -3259,7 +3280,7 @@ function launchTraining(continuing) {
   var aiLevel=Math.floor(Math.random()*100)+1;
   var aiNames=['Shadow','Specter','Shade','Ghost','Phantom','Wraith'];
   var aiName=aiNames[Math.floor(Math.random()*aiNames.length)];
-  var en=mkPlayer('ai',aiClass,aiName,arena.sp2,false);
+  var en=mkPlayer('ai',aiClass,aiName,trainSwap?arena.sp1:arena.sp2,false);
   en.level=aiLevel; // random tier appearance
   gameState=mkGS(ak,me,en);gameMode='training';
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
@@ -3354,6 +3375,10 @@ document.querySelectorAll('.lob-cls-btn').forEach(function(btn){
     if(gameState){
       var meP=gameState.players.find(function(p){return p.isMe;});
       if(meP)meP.cls=myClass;
+    }
+    // Notify opponent of class change via room data
+    if(roomCode&&myId){
+      fbSet('/rooms/'+roomCode+'/players/'+myId+'/lobbyClass',myClass);
     }
   });
 });
@@ -3840,8 +3865,8 @@ var ACHIEVEMENTS = [
   // GENERAL
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
   {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return s&&parseInt(s)>0;},levelReq:0},
-  {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.25 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=25||getLevel('mage')>=25||getLevel('ranger')>=25;},levelReq:0},
-  {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.50 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=50&&getLevel('mage')>=50&&getLevel('ranger')>=50;},levelReq:0},
+  {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.30 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=30||getLevel('mage')>=30||getLevel('ranger')>=30;},levelReq:0},
+  {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.30 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=30&&getLevel('mage')>=30&&getLevel('ranger')>=30;},levelReq:0},
   {id:'g_legend',cls:'general',tier:0,name:'Legend',desc:'Reach Lv.100 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=100||getLevel('mage')>=100||getLevel('ranger')>=100;},levelReq:0},
 ];
 
