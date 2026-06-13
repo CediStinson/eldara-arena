@@ -2628,10 +2628,29 @@ function processAction(msg,gs,me,en) {
   } else if(msg.type==='chat'&&msg.data){
     sidelog(msg.data.who||'?',msg.data.text||'');
   } else if(msg.type==='rematch_ready'){
-    // Legacy inbox handler — show notification, host will detect via Firebase poll
     var st2=document.getElementById('ov-rematch-status');
-    if(st2&&!pvpRematchReady){st2.style.display='block';st2.textContent='Opponent is ready!';}
-    if(pvpRematchReady&&isHost){checkBothRematchReady();} // we're already ready, kick off check
+    if(msg.data&&msg.data.cls&&en){en.cls=msg.data.cls;}
+    if(pvpRematchReady){
+      // We're already ready — start the rematch
+      var st3=document.getElementById('ov-rematch-status');
+      if(st3){st3.style.display='block';st3.textContent='Starting...';}
+      if(isHost){
+        doStartRematch(msg.data&&msg.data.cls);
+      }
+      // Guest waits for rematch_start from host
+    } else {
+      if(st2){st2.style.display='block';st2.textContent='Opponent is ready!';}
+    }
+  } else if(msg.type==='opponent_left_lobby'){
+    // Opponent went back to menu — take us to lobby
+    gs.phase='gameOver';
+    showBanner('Opponent returned to lobby');
+    setTimeout(function(){
+      hideOverlay();
+      cleanupFB();
+      gameState=null;
+      showScreen('title-screen');
+    },1200);
   } else if(msg.type==='opponent_left'){
     // Opponent left — you win
     var meW=gs.players.find(function(p){return p.isMe;});
@@ -2655,30 +2674,7 @@ function processAction(msg,gs,me,en) {
 var actionPollInterval=null;
 var seenActionKeys={};
 
-function startListeningRematchStart(){
-  // Guest polls for rematch start signal from host
-  if(isHost)return;
-  var rematchPoll=setInterval(function(){
-    if(!gameState||!roomCode){clearInterval(rematchPoll);return;}
-    fbGet('/rooms/'+roomCode+'/rematch/start').then(function(data){
-      if(!data||!data.arenaKey)return;
-      clearInterval(rematchPoll);
-      if(gameState&&gameState.phase==='gameOver'){
-        var enR5=gameState.players.find(function(p){return !p.isMe;});
-        var meR5=gameState.players.find(function(p){return p.isMe;});
-        if(enR5&&data.hostCls)enR5.cls=data.hostCls;
-        if(meR5)meR5.cls=myClass;
-        gameState.arena=ARENAS[data.arenaKey]||gameState.arena;
-        gameState.arenaKey=data.arenaKey;
-        gameState.players.forEach(function(p){p.wins=0;});
-        pvpRematchReady=false;
-        hideOverlay();resetRound(gameState);
-        // Write our ready state too so host knows
-        fbSet('/rooms/'+roomCode+'/rematch/'+myId,{cls:myClass,ts:Date.now()});
-      }
-    });
-  },600);
-}
+// startListeningRematchStart removed — using inbox
 
 function startListeningActions() {
   var myInbox='/rooms/'+roomCode+'/inbox/'+myId;
@@ -3222,7 +3218,7 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
   showScreen('game-screen');hideOverlay();resizeCanvas();
   startListeningEnemy(enId);startListeningActions();
-  if(!iAmHost)startListeningRematchStart();
+
   updateProfileBadge();
   updateHUD(gameState);showBanner('Get Ready!');
 }
@@ -3262,40 +3258,26 @@ document.getElementById('ov-rematch').addEventListener('click',function(){
   var st=document.getElementById('ov-rematch-status');
   if(st){st.style.display='block';st.textContent='Waiting for opponent...';}
   pvpRematchReady=true;
-  // Write ready state to Firebase so both sides can see it
-  fbSet('/rooms/'+roomCode+'/rematch/'+myId,{cls:myClass,ts:Date.now()});
-  // If host: start polling for guest ready
-  // If guest: host will detect and start
-  if(isHost){checkBothRematchReady();}
+  // Signal via inbox
+  pushAction('rematch_ready',{cls:myClass});
 });
 
 function checkBothRematchReady(){
-  fbGet('/rooms/'+roomCode+'/rematch').then(function(data){
-    if(!data||!gameState)return;
-    var keys=Object.keys(data).filter(function(k){return k!=='start';});
-    if(keys.length>=2){
-      // Both ready — start!
-      var ak3=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
-      var guestKey=keys.find(function(k){return k!==myId;})||keys[0];
-      var guestCls=data[guestKey]&&data[guestKey].cls||'warrior';
-      // Update classes
-      var meR3=gameState.players.find(function(p){return p.isMe;});
-      var enR3=gameState.players.find(function(p){return !p.isMe;});
-      if(meR3)meR3.cls=myClass;
-      if(enR3)enR3.cls=guestCls;
-      gameState.arena=ARENAS[ak3];gameState.arenaKey=ak3;
-      gameState.players.forEach(function(p){p.wins=0;});
-      // Write start signal for guest
-      fbSet('/rooms/'+roomCode+'/rematch/start',{arenaKey:ak3,hostCls:myClass,ts:Date.now()});
-      // Clear rematch entries
-      fbDelete('/rooms/'+roomCode+'/rematch');
-      pvpRematchReady=false;
-      hideOverlay();resetRound(gameState);
-    } else {
-      // Guest not ready yet — poll again
-      setTimeout(checkBothRematchReady,500);
-    }
-  });
+  // Not needed anymore - using inbox
+}
+function doStartRematch(guestCls){
+  if(!gameState)return;
+  var ak3=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+  var meR3=gameState.players.find(function(p){return p.isMe;});
+  var enR3=gameState.players.find(function(p){return !p.isMe;});
+  if(meR3)meR3.cls=myClass;
+  if(enR3&&guestCls)enR3.cls=guestCls;
+  gameState.arena=ARENAS[ak3];gameState.arenaKey=ak3;
+  gameState.players.forEach(function(p){p.wins=0;});
+  pvpRematchReady=false;
+  // Send start to guest via inbox
+  pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass});
+  hideOverlay();resetRound(gameState);
 }
 // Class picker in overlay
 var pvpRematchReady=false;
@@ -3313,10 +3295,14 @@ document.querySelectorAll('.ov-cls-btn').forEach(function(b){
 document.getElementById('ov-menu').addEventListener('click',function(){
   saveUserProfile();
   var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
-  hideOverlay();
-  gameState=null;
-  cleanupFB(); // just close our own connections
-  showScreen('title-screen');
+  if(gameMode==='pvp'&&enemyIdPvp){
+    // Tell opponent we left so they go back to lobby
+    pushAction('opponent_left_lobby',{roomCode:roomCode});
+    setTimeout(function(){cleanupFB();showScreen('title-screen');},400);
+  } else {
+    cleanupFB();showScreen('title-screen');
+  }
+  gameState=null;hideOverlay();
 });
 
 // Chat
