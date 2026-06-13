@@ -199,16 +199,32 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div id="title-spell-panel"></div>
     <div class="menu-list">
       <button class="menu-btn primary" id="btn-pvp">&#9876; Online PvP</button>
-      <button class="menu-btn" id="btn-train">&#128481; Training vs AI</button>
+      <button class="menu-btn" id="btn-train">&#128481; Training</button>
     </div>
   </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);letter-spacing:2px;white-space:nowrap">by Benjamin Siedler 2026</div>
   <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
+  <button id="btn-settings" style="position:absolute;top:46px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Settings">SETTINGS</button>
+  <!-- Settings overlay -->
+  <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:90;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Courier New,monospace">
+    <div style="background:rgba(10,8,20,0.97);border:1px solid var(--border);padding:32px 40px;display:flex;flex-direction:column;gap:14px;width:360px">
+      <div style="font-size:15px;letter-spacing:3px;color:var(--gold);margin-bottom:4px">SETTINGS</div>
+      <div style="font-size:11px;color:var(--dim);letter-spacing:1px">DISPLAY NAME</div>
+      <div style="font-size:13px;color:var(--text)" id="settings-curname">-</div>
+      <input id="settings-name-inp" placeholder="New display name" maxlength="14" style="background:#0a0a0f;border:1px solid var(--border);color:var(--text);font-family:Courier New,monospace;font-size:14px;padding:10px 12px;outline:none;text-transform:uppercase;width:100%">
+      <div style="font-size:10px;color:var(--dim)" id="settings-changes-left">Loading...</div>
+      <div style="font-size:10px;color:#e74c3c;min-height:12px" id="settings-err"></div>
+      <div style="display:flex;gap:10px">
+        <button id="settings-save" style="flex:1;padding:11px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">SAVE NAME</button>
+        <button id="settings-close" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">CANCEL</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- TRAINING OVERLAY (appears over title) -->
 <div id="train-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:16px">
-  <div style="font-size:11px;letter-spacing:4px;color:var(--dim);margin-bottom:4px">TRAINING VS AI</div>
+  <div style="font-size:11px;letter-spacing:4px;color:var(--dim);margin-bottom:4px">TRAINING</div>
   <div style="font-size:22px;letter-spacing:4px;color:var(--gold)" id="train-cls-label">WARRIOR</div>
   <div style="font-size:11px;color:var(--dim)" id="train-lvl-label">Lv.1 Conscript</div>
   <button class="menu-btn primary" id="btn-start-train" style="width:260px;margin-top:8px;font-size:15px">START TRAINING</button>
@@ -345,6 +361,20 @@ function fbAuthPost(endpoint, body) {
   }).then(function(r){return r.json();});
 }
 
+function refreshAuthToken() {
+  if(!authToken||isGuest)return;
+  // Refresh every 50 minutes (token expires after 60)
+  fbAuthPost('/accounts:lookup',{idToken:authToken}).then(function(r){
+    if(r.error&&r.error.message==='INVALID_ID_TOKEN'){
+      // Token expired — try re-auth via stored refresh token
+      // For now just clear session so user logs in again
+      console.warn('Auth token expired');
+    }
+  }).catch(function(){});
+}
+// Refresh token every 50 minutes
+setInterval(refreshAuthToken, 50*60*1000);
+
 function fbSetAuth(path, data) {
   var url = FB_BASE + path + '.json' + (authToken ? '?auth=' + authToken : '');
   return fetch(url, {
@@ -376,13 +406,13 @@ function onAuthSuccess(result, uname) {
   authUid = result.localId;
   authEmail = result.email;
   isGuest = false;
-  displayName = uname || result.displayName || result.email.split('@')[0].toUpperCase().substring(0,12);
-  myName = displayName;
-  // Save token to sessionStorage for refresh
+  // uname is only set on registration — for login, load from Firebase profile
+  if(uname) { displayName = uname; myName = uname; }
+  else { displayName = ''; myName = ''; } // will be set by loadUserProfile
   try {
     sessionStorage.setItem('eldara_token', authToken);
     sessionStorage.setItem('eldara_uid', authUid);
-    sessionStorage.setItem('eldara_name', displayName);
+    if(uname) sessionStorage.setItem('eldara_name', uname);
   } catch(e) {}
   loadUserProfile();
 }
@@ -392,18 +422,27 @@ function loadUserProfile() {
     if (data && data.displayName) {
       displayName = data.displayName;
       myName = displayName;
+      // Update session storage with correct name
+      try { sessionStorage.setItem('eldara_name', displayName); } catch(e) {}
+    } else if(!displayName) {
+      // Fallback if no profile yet (shouldn't happen after register)
+      displayName = authEmail.split('@')[0].substring(0,12).toUpperCase();
+      myName = displayName;
     }
-    // Load class XP data
     return fbGetAuth('/users/' + authUid + '/classes');
   }).then(function(data) {
-    if (data) {
-      // Merge Firebase data into local cache
-      ['warrior','mage','ranger'].forEach(function(cls) {
-        if (data[cls]) {
-          try { localStorage.setItem('eldara_cls_' + cls, JSON.stringify(data[cls])); } catch(e) {}
-        }
-      });
-    }
+    ['warrior','mage','ranger'].forEach(function(cls) {
+      var fbData = data && data[cls];
+      var localRaw = localStorage.getItem('eldara_cls_' + cls);
+      var localData = localRaw ? JSON.parse(localRaw) : null;
+      if (fbData && (!localData || (fbData.level||0) >= (localData.level||0))) {
+        // Firebase has same or better data — use it
+        try { localStorage.setItem('eldara_cls_' + cls, JSON.stringify(fbData)); } catch(e) {}
+      } else if (localData && localData.level > 1) {
+        // Local has progress Firebase doesn't — push it up
+        fbSetAuth('/users/' + authUid + '/classes/' + cls, localData).catch(function(){});
+      }
+    });
     showScreen('title-screen');
     updateProfileBadge();
   }).catch(function() {
@@ -419,9 +458,15 @@ function saveUserProfile() {
   });
   fbSetAuth('/users/' + authUid + '/profile', {
     displayName: displayName,
+    email: authEmail||'',
     lastSeen: Date.now()
   }).catch(function(){});
-  fbSetAuth('/users/' + authUid + '/classes', classes).catch(function(){});
+  // Save each class individually so partial failures don't lose all data
+  ['warrior','mage','ranger'].forEach(function(cls) {
+    if(classes[cls]&&classes[cls].level>0){
+      fbSetAuth('/users/'+authUid+'/classes/'+cls, classes[cls]).catch(function(){});
+    }
+  });
 }
 
 function updateProfileBadge() {
@@ -887,15 +932,15 @@ function drawArena(ctx, arena, tick) {
 // ═══════════════════════════════════════════
 var CLS = {
   warrior:{name:'Warrior',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Slash',color:'#6a7a8a',
-    hp:120,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
-    s1:{name:'Shield Bash',icon:'\uD83D\uDEE1',cd:4200,range:58,dmg:18,stun:1100},
-    s2:{name:'Shield Wall',icon:'\uD83D\uDEE1',cd:12000,shield:true,shieldHp:30},
+    hp:105,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
+    s1:{name:'Shield Bash',icon:'\uD83D\uDEE1',cd:5000,range:58,dmg:14,stun:600,shieldHp:10,shieldDur:3000},
+    s2:{name:'War Cry',icon:'\u26A1',cd:10000,warcry:true},
     move:{name:'War Charge',icon:'\uD83D\uDCA5',cd:6000,charge:true,chargeDur:800,dmgReduce:0.4}},
   mage:{name:'Mage',icon:'\uD83D\uDD2E',atkIcon:'\uD83E\uDDCA',atkLabel:'Ice Shard',color:'#3a30a0',
     hp:80,spd:2.2,atkDmg:10,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
     s1:{name:'Fireball',icon:'\uD83D\uDD25',cd:2800,dmg:35,proj:true,speed:340,range:230},
-    s2:{name:'Frost Nova',icon:'\u2744',cd:8000,nova:true,dmg:20,range:80},
-    move:{name:'Blink',icon:'\uD83D\uDCA8',cd:4000,blink:90}},
+    s2:{name:'Frost Shield',icon:'\u2744',cd:14000,arcaneShield:true,arcaneShieldDur:8000,arcaneShieldHits:3},
+    move:{name:'Blink',icon:'\uD83D\uDCA8',cd:4000,blink:140}},
   ranger:{name:'Rogue',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Rapier',color:'#8a6a20',
     hp:105,spd:3.0,atkDmg:10,atkRange:58,atkMs:220,atkType:'melee',
     s1:{name:'Headbutt',icon:'\u26A1',cd:5500,dmg:12,range:56,stun:1100},
@@ -927,7 +972,7 @@ function mkPlayer(id,cls,name,spawn,isMe) {
     dir:isMe?3:2,anim:0,moving:false,
     atkTimer:0,attacking:0,rollTimer:0,rolling:0,rollInv:false,rollDir:{x:1,y:0},
     blocking:false,s1cd:0,s2cd:0,stunned:0,poisoned:0,poisonDmg:0,poisonTimer:0,
-    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,
+    stealthed:false,stealthTimer:0,disarmed:0,shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,frostSlow:0,
     frost:0,frostTimer:0,frosted:false,frostedTimer:0,
     moveCd:0,warCharging:false,chargeTimer:0,chargeTarget:null,
     galing:false,galeTimer:0,
@@ -948,6 +993,23 @@ function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 function dealDmg(gs,target,dmg,type) {
   if(target.dead)return;
   if(target.stealthed)return;
+  if(target.arcaneShield>0&&target.arcaneShieldHits>0){
+    // Frost shield: absorb hit, slow attacker, reduce damage
+    target.arcaneShieldHits--;
+    if(target.arcaneShieldHits<=0){target.arcaneShield=0;target.arcaneShieldHits=0;}
+    spawnEfx(gs,'arcane_block',target.x,target.y);
+    var isMeleeHit=(type==='slash'||type==='bash');
+    if(isMeleeHit){
+      // Melee hits get reflected slow
+      if(gs&&gs.players){
+        var atk=gs.players.find(function(p){return p!==target;});
+        if(atk){atk.frostSlow=(atk.frostSlow||0)+1500;}
+      }
+    }
+    // Reduce damage: melee 25%, ranged 50%
+    dmg=Math.max(1,Math.floor(dmg*(isMeleeHit?0.25:0.5)));
+    // Don't return — apply reduced damage through
+  }
   if(gameMode==='pvp'&&!target.isMe) {
     // Visual only — real damage handled on their side via inbox
     target.hitFlash=80;
@@ -1019,6 +1081,8 @@ function doMoveAbility(gs,user,target) {
     user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,user.y+bdy*mv.blink));
     user.rollInv=true;setTimeout(function(){user.rollInv=false;},200);
     spawnEfx(gs,'blink',user.x,user.y);
+    // Mage arcane shield on blink
+
   } else if(mv.shadowStep) {
     var stepTarget=target;
     var stepDist=Math.hypot(stepTarget.x-user.x,stepTarget.y-user.y);
@@ -1027,12 +1091,13 @@ function doMoveAbility(gs,user,target) {
       var ang=Math.atan2(user.y-stepTarget.y,user.x-stepTarget.x);
       user.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,stepTarget.x+Math.cos(ang)*45));
       user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,stepTarget.y+Math.sin(ang)*45));
-      spawnEfx(gs,'blink',user.x,user.y);
+      spawnEfx(gs,'shadow_step',user.x,user.y);
       if(user.stealthed){user.stealthed=false;user.stealthTimer=0;user.rollInv=false;}
       if(wasStealthed&&!stepTarget.rollInv){
         stepTarget.stunned=1400;
         dealDmg(gs,stepTarget,CLS[user.cls].s1.dmg,'bash');
         spawnEfx(gs,'stun',stepTarget.x,stepTarget.y);
+        spawnEfx(gs,'shadow_step',user.x,user.y); // extra burst on ambush
         sidelog('!!','Ambush! +stun');
       }
       sidelog('>>',user.name+' shadow steps!');
@@ -1098,14 +1163,27 @@ function doSkill(gs,user,target,num) {
   } else if(sk.stun||sk.disarm) {
     if(dist(user,target)<(sk.range||55)+10&&!target.rollInv){
       if(sk.dmg)dealDmg(gs,target,sk.dmg,'bash');
-      target.stunned=sk.stun||900;
+      target.stunned=sk.stun||600;
       spawnEfx(gs,'stun',target.x,target.y);
       sidelog('!!',target.name+' stunned!');
+      // Shield Bash: also grants mini shield to attacker
+      if(sk.shieldHp&&user.shieldHp<=0){
+        user.shieldHp=sk.shieldHp;
+        user.shieldTimer=sk.shieldDur||3000;
+        spawnEfx(gs,'shield_up',user.x,user.y);
+      }
     }
   } else if(sk.stealth) {
     user.stealthed=true;user.stealthTimer=sk.stealthDur;user.rollInv=true;
     spawnEfx(gs,'blink',user.x,user.y);
     sidelog('**',user.name+' enters stealth!');
+  } else if(sk.arcaneShield) {
+    // Frost Shield — same as blink shield but via J key
+    user.arcaneShield=sk.arcaneShieldDur;
+    user.arcaneShieldHits=sk.arcaneShieldHits||3;
+    spawnEfx(gs,'arcane_block',user.x,user.y);
+    sidelog('\u2744',user.name+' Frost Shield!');
+    if(user.isMe&&gameMode==='pvp')pushState(user);
   } else if(sk.shield) {
     if(user.shieldHp<=0){
       user.shieldHp=sk.shieldHp;
@@ -1113,6 +1191,15 @@ function doSkill(gs,user,target,num) {
       sidelog('[]',user.name+' shield up!(+'+sk.shieldHp+')');
       if(user.isMe&&gameMode==='pvp')pushState(user);
     }
+  } else if(sk.warcry) {
+    // War Cry: cleanse debuffs + reduce cooldowns
+    user.stunned=0;user.frosted=false;user.frostedTimer=0;user.disarmed=0;
+    user.s1cd=Math.max(0,(user.s1cd||0)-2000);
+    user.s2cd=Math.max(0,(user.s2cd||0)-2000);
+    user.moveCd=Math.max(0,(user.moveCd||0)-2000);
+    spawnEfx(gs,'warcry',user.x,user.y);
+    sidelog('!!',user.name+' WAR CRY!');
+    if(user.isMe&&gameMode==='pvp')pushState(user);
   }
 }
 
@@ -1125,7 +1212,7 @@ function startRoll(p) {
   setTimeout(function(){p.rollInv=false;},240);
 }
 
-function spawnEfx(gs,type,x,y){gs.effects.push({type:type,x:x,y:y,life:400,max:400,anim:0});}
+function spawnEfx(gs,type,x,y){var life=type==='shadow_step'?650:400;gs.effects.push({type:type,x:x,y:y,life:life,max:life,anim:0});}
 function isWall(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return true;return a.tiles[ty][tx]===1;}
 function isPit(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return false;return a.tiles[ty][tx]===2;}
 function isTrap(a,wx,wy,tick){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return false;return a.tiles[ty][tx]===5&&Math.floor(tick/40)%3===0;}
@@ -1184,7 +1271,7 @@ function updateAI(gs,ai,target,dt) {
     aiTick=280+Math.random()*480;
     if(aiPhase==='retreat')aiRetDir={x:-dx/d,y:-dy/d};
   }
-  var spd=C.spd;ai.vx=0;ai.vy=0;
+  var spd=C.spd*(ai.frostSlow>0?0.25:1);ai.vx=0;ai.vy=0;
   if(aiPhase==='approach'){ai.vx=dx/d*spd;ai.vy=dy/d*spd;}
   else if(aiPhase==='retreat'){ai.vx=aiRetDir.x*spd;ai.vy=aiRetDir.y*spd;}
   else if(aiPhase==='circle'){ai.vx=-dy/d*spd;ai.vy=dx/d*spd;}
@@ -1248,6 +1335,9 @@ function update(gs,dt) {
     // Frostbite stack decay
     if(p.frost>0){p.frostTimer-=dt;if(p.frostTimer<=0){p.frost=0;p.frostTimer=0;}}
     if(p.stealthTimer>0){p.stealthTimer-=dt;if(p.stealthTimer<=0){p.stealthed=false;p.stealthTimer=0;p.rollInv=false;}}
+    if(p.shieldTimer>0){p.shieldTimer-=dt;if(p.shieldTimer<=0){p.shieldHp=0;p.shieldTimer=0;}}
+    if(p.arcaneShield>0){p.arcaneShield-=dt;if(p.arcaneShield<=0){p.arcaneShield=0;p.arcaneShieldHits=0;}}
+    if(p.frostSlow>0)p.frostSlow-=dt;
     if(p.disarmed>0)p.disarmed-=dt;
     if(p.frosted>0){p.frostedTimer-=dt;if(p.frostedTimer<=0){p.frosted=false;p.frostedTimer=0;p.stunned=0;}}
     if(p.moveCd>0)p.moveCd-=dt;
@@ -1275,7 +1365,16 @@ function update(gs,dt) {
     if(pr.alive&&Math.hypot(pr.x-tgt.x,pr.y-tgt.y)<26) {
       if(pr.visualOnly){pr.alive=false;spawnEfx(gs,'impact',pr.x,pr.y);}
       else if(!tgt.rollInv){
-        dealDmg(gs,tgt,pr.dmg,'proj');
+        // Check frost shield for ranged — reduce dmg, no slow
+        var projDmg=pr.dmg;
+        if(tgt.arcaneShield>0&&tgt.arcaneShieldHits>0&&!pr.visualOnly){
+          tgt.arcaneShieldHits--;
+          if(tgt.arcaneShieldHits<=0){tgt.arcaneShield=0;tgt.arcaneShieldHits=0;}
+          spawnEfx(gs,'arcane_block',tgt.x,tgt.y);
+          projDmg=Math.max(1,Math.floor(projDmg*0.5));
+          pr.dmg=projDmg;
+        }
+        dealDmg(gs,tgt,projDmg,'proj');
         if(pr.type==='ice') applyFrost(gs,tgt);
         
         pr.alive=false;spawnEfx(gs,'impact',pr.x,pr.y);
@@ -1318,7 +1417,7 @@ function update(gs,dt) {
 
 function updateLocal(gs,p,dt) {
   if(p.stunned>0||p.dead)return;
-  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+C.move.galeSpd):1)*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1);
+  var C=CLS[p.cls],spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+C.move.galeSpd):1)*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1)*(p.frostSlow>0?0.25:1);
   p.vx=0;p.vy=0;var moved=false;
   if(keys['KeyW']||keys['ArrowUp']){p.vy=-spd;p.dir=1;moved=true;}
   if(keys['KeyS']||keys['ArrowDown']){p.vy=spd;p.dir=0;moved=true;}
@@ -1346,6 +1445,10 @@ function lerpRemote(en) {
   en.attacking=remoteState.attacking||0;
   if(remoteState.stealthed!=null) en.stealthed=!!remoteState.stealthed;
   if(remoteState.shieldHp!=null) en.shieldHp=remoteState.shieldHp;
+  if(remoteState.shieldTimer!=null) en.shieldTimer=remoteState.shieldTimer;
+  if(remoteState.arcaneShield!=null) en.arcaneShield=remoteState.arcaneShield;
+  if(remoteState.arcaneShieldHits!=null) en.arcaneShieldHits=remoteState.arcaneShieldHits;
+  if(remoteState.frostSlow!=null) en.frostSlow=remoteState.frostSlow;
   if(remoteState.moveCd!=null) en.moveCd=remoteState.moveCd;
   if(remoteState.hp!=null) en.hp=remoteState.hp;
   if(remoteState.dead!=null) en.dead=!!remoteState.dead;
@@ -1400,8 +1503,54 @@ function draw(gs) {
     else if(ef.type==='stun'){gctx.fillStyle='#f39c12';gctx.font='13px serif';gctx.textAlign='center';gctx.fillText('\u2605',ef.x+Math.cos(ef.anim*0.28)*18,ef.y-36+Math.sin(ef.anim*0.28)*6);}
     else if(ef.type==='impact'||ef.type==='splat'||ef.type==='proj'){gctx.fillStyle='rgba(220,80,20,0.6)';for(var pi=0;pi<5;pi++){var ang=pi/5*Math.PI*2+ef.anim*0.12,rr=(1-a)*26;gctx.beginPath();gctx.arc(ef.x+Math.cos(ang)*rr,ef.y+Math.sin(ang)*rr,4,0,Math.PI*2);gctx.fill();}}
     else if(ef.type==='blink'){gctx.fillStyle='rgba(122,74,240,0.55)';gctx.beginPath();gctx.arc(ef.x,ef.y,30*(1-a+0.05),0,Math.PI*2);gctx.fill();}
+    else if(ef.type==='shadow_step'){
+      gctx.save();
+      // Dark smoky burst — expanding shadow ring
+      gctx.strokeStyle='rgba(20,0,40,'+(a*0.9)+')';
+      gctx.lineWidth=6;
+      gctx.beginPath();gctx.arc(ef.x,ef.y-16,(1-a)*44+6,0,Math.PI*2);gctx.stroke();
+      // Purple-black inner fill
+      var sg=gctx.createRadialGradient(ef.x,ef.y-16,0,ef.x,ef.y-16,(1-a)*30+4);
+      sg.addColorStop(0,'rgba(40,0,80,'+(a*0.7)+')');
+      sg.addColorStop(0.5,'rgba(10,0,20,'+(a*0.5)+')');
+      sg.addColorStop(1,'rgba(0,0,0,0)');
+      gctx.fillStyle=sg;
+      gctx.beginPath();gctx.arc(ef.x,ef.y-16,(1-a)*30+4,0,Math.PI*2);gctx.fill();
+      // Wispy shadow tendrils
+      for(var wi=0;wi<5;wi++){
+        var wa=wi/5*Math.PI*2+ef.anim*0.08;
+        var wr=(1-a)*28+4;
+        gctx.strokeStyle='rgba(60,0,100,'+(a*0.6)+')';
+        gctx.lineWidth=2;
+        gctx.beginPath();
+        gctx.moveTo(ef.x,ef.y-16);
+        gctx.lineTo(ef.x+Math.cos(wa)*wr,ef.y-16+Math.sin(wa)*(wr*0.6));
+        gctx.stroke();
+      }
+      gctx.restore();
+    }
     else if(ef.type==='shield_up'){gctx.strokeStyle='rgba(100,140,255,'+a+')';gctx.lineWidth=3;for(var si2=0;si2<3;si2++){gctx.beginPath();gctx.arc(ef.x,ef.y,20+si2*12+(1-a)*8,0,Math.PI*2);gctx.stroke();}}
+    else if(ef.type==='warcry'){
+      // Red expanding ring burst
+      gctx.strokeStyle='rgba(220,60,20,'+a*0.9+')';gctx.lineWidth=4;
+      gctx.beginPath();gctx.arc(ef.x,ef.y,(1-a)*70+10,0,Math.PI*2);gctx.stroke();
+      gctx.strokeStyle='rgba(255,160,40,'+a*0.6+')';gctx.lineWidth=2;
+      gctx.beginPath();gctx.arc(ef.x,ef.y,(1-a)*50+5,0,Math.PI*2);gctx.stroke();
+    }
     else if(ef.type==='charge_start'){gctx.fillStyle='rgba(220,30,0,'+a*0.7+')';gctx.beginPath();gctx.arc(ef.x,ef.y,40*(1-a+0.05),0,Math.PI*2);gctx.fill();}
+    else if(ef.type==='arcane_block'){
+      // Ice shatter effect — crystal shards burst outward
+      gctx.strokeStyle='rgba(180,240,255,'+a+')';gctx.lineWidth=3;
+      gctx.beginPath();gctx.arc(ef.x,ef.y-18,(1-a)*30+8,0,Math.PI*2);gctx.stroke();
+      for(var is=0;is<6;is++){
+        var sa=is/6*Math.PI*2,sr=(1-a)*28;
+        gctx.fillStyle='rgba(200,245,255,'+(a*0.9)+')';
+        gctx.fillRect(ef.x+Math.cos(sa)*sr-2,ef.y-18+Math.sin(sa)*sr-2,4,4);
+      }
+      gctx.fillStyle='rgba(220,245,255,'+(a*0.7)+')';
+      gctx.font='bold 13px Courier New';gctx.textAlign='center';
+      gctx.fillText('BLOCKED',ef.x,ef.y-44);
+    }
     else if(ef.type==='frost_burst'){
       gctx.fillStyle='rgba(80,180,255,0.6)';gctx.beginPath();gctx.arc(ef.x,ef.y,36*(1-a+0.05),0,Math.PI*2);gctx.fill();
       for(var fi=0;fi<8;fi++){var fang=fi/8*Math.PI*2+ef.anim*0.05;var fr=(1-a)*30;gctx.fillStyle='rgba(180,230,255,0.85)';gctx.beginPath();gctx.moveTo(ef.x+Math.cos(fang)*4,ef.y+Math.sin(fang)*4);gctx.lineTo(ef.x+Math.cos(fang+0.2)*fr*0.4,ef.y+Math.sin(fang+0.2)*fr*0.4);gctx.lineTo(ef.x+Math.cos(fang)*fr,ef.y+Math.sin(fang)*fr);gctx.lineTo(ef.x+Math.cos(fang-0.2)*fr*0.4,ef.y+Math.sin(fang-0.2)*fr*0.4);gctx.closePath();gctx.fill();}
@@ -1421,6 +1570,56 @@ function draw(gs) {
     else if(p.stunned>0) gctx.globalAlpha=0.6;
     DRAW[p.cls](gctx,p.x,p.y,p.dir,p.anim,p.hitFlash>0,p.level||1);
     gctx.globalAlpha=1;
+    // Frost slow: light blue tint overlay
+    if(p.frostSlow>0&&!p.dead){
+      var slowFade=Math.min(1,p.frostSlow/400);
+      gctx.fillStyle='rgba(100,200,255,'+(slowFade*0.28)+')';
+      gctx.fillRect(p.x-18,p.y-58,36,72);
+    }
+    // Frost shield: ellipse around full body + 3 orbiting orbs
+    if(p.arcaneShieldHits>0){
+      var fade=Math.min(1,p.arcaneShield/600);
+      var pulse=0.7+Math.sin(Date.now()*0.005)*0.2;
+      var t=Date.now()*0.0015;
+      // Center ellipse on body center (not head)
+      var cx=p.x, cy=p.y+6, rw=26, rh=42;
+      gctx.save();
+      // Outer soft glow
+      gctx.strokeStyle='rgba(100,200,255,'+(fade*0.22)+')';
+      gctx.lineWidth=10;
+      gctx.beginPath();gctx.ellipse(cx,cy,rw,rh,0,0,Math.PI*2);gctx.stroke();
+      // Main shell
+      gctx.strokeStyle='rgba(160,230,255,'+(fade*0.82)+')';
+      gctx.lineWidth=2;
+      gctx.beginPath();gctx.ellipse(cx,cy,rw,rh,0,0,Math.PI*2);gctx.stroke();
+      // Fill tint
+      gctx.fillStyle='rgba(120,210,255,'+(fade*pulse*0.10)+')';
+      gctx.beginPath();gctx.ellipse(cx,cy,rw,rh,0,0,Math.PI*2);gctx.fill();
+      // 3 orbiting orbs — one per remaining charge, spaced evenly, spinning
+      for(var oi=0;oi<3;oi++){
+        var active=oi<p.arcaneShieldHits;
+        // Each orb offset by 120deg, spin around the ellipse perimeter
+        var oa=t+oi*(Math.PI*2/3);
+        var ox2=cx+Math.cos(oa)*rw;
+        var oy2=cy+Math.sin(oa)*rh;
+        if(active){
+          var og=gctx.createRadialGradient(ox2,oy2,0,ox2,oy2,7);
+          og.addColorStop(0,'rgba(220,248,255,'+(fade*0.95)+')');
+          og.addColorStop(0.5,'rgba(100,200,255,'+(fade*0.85)+')');
+          og.addColorStop(1,'rgba(60,160,255,0)');
+          gctx.fillStyle=og;
+          gctx.beginPath();gctx.arc(ox2,oy2,7,0,Math.PI*2);gctx.fill();
+          // Inner gleam
+          gctx.fillStyle='rgba(240,252,255,'+(fade*0.9)+')';
+          gctx.beginPath();gctx.arc(ox2-1.5,oy2-1.5,2.5,0,Math.PI*2);gctx.fill();
+        } else {
+          // Spent charge — small dim dot
+          gctx.fillStyle='rgba(60,120,180,'+(fade*0.35)+')';
+          gctx.beginPath();gctx.arc(ox2,oy2,4,0,Math.PI*2);gctx.fill();
+        }
+      }
+      gctx.restore();
+    }
     if(p.stealthed&&p.isMe){gctx.globalAlpha=0.25;}
     if(!p.stealthed||p.isMe){
     gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-30,p.y-56,60,14);
@@ -1431,6 +1630,7 @@ function draw(gs) {
     if(!p.stealthed||p.isMe){
     gctx.fillStyle=p.hp/p.maxHp>0.5?'#27ae60':p.hp/p.maxHp>0.25?'#f39c12':'#c0392b';
     gctx.fillRect(p.x-24,p.y-62,48*(p.hp/p.maxHp),5);}
+
     gctx.globalAlpha=1;
     // Frost dot stacks to the right of HP bar
     if((p.frost>0||p.frosted)&&!p.dead){
@@ -1517,17 +1717,26 @@ function endRound(gs) {
   if(gs.phase==='gameOver')return;
   var dead=gs.players.find(function(p){return p.dead;});
   var alive=gs.players.find(function(p){return !p.dead;});
-  if(alive){alive.wins++;showBanner(alive.name+' WINS ROUND!');}
-  // Award XP at end of each round
+  var wonRound=alive&&alive.isMe;
+  if(alive){showBanner(alive.isMe?'YOU WIN!':alive.name+' WINS!');}
+  else{showBanner('DRAW!');}
+  // Award XP
   var meR=gs.players.find(function(p){return p.isMe;});
-  if(meR){
-    var wonRound=alive&&alive.isMe;
-    awardMatchXP(meR.cls, wonRound, gameMode==='pvp');
-  }else showBanner('DRAW!');
-  var winner=gs.players.find(function(p){return p.wins>=2;});
-  if(winner){gs.phase='gameOver';setTimeout(function(){showOverlay(winner.isMe?'VICTORY':'DEFEAT',winner.name+' wins the match!');},900);return;}
-  gs.phase='countdown';gs.countdown=3200;
-  setTimeout(function(){showBanner('ROUND '+(gs.round+1)+'...');},1000);
+  if(meR) awardMatchXP(meR.cls, wonRound, gameMode==='pvp');
+  gs.phase='gameOver';
+  if(gameMode==='training'){
+    // Training: start next game after short delay, no rematch screen
+    setTimeout(function(){
+      showBanner('Next fight...');
+      setTimeout(function(){launchTraining(true);},1200);
+    },1400);
+  } else {
+    // PvP: show victory/defeat overlay with rematch
+    setTimeout(function(){
+      var rb=document.getElementById('ov-rematch');if(rb)rb.style.display='';
+      showOverlay(wonRound?'VICTORY':'DEFEAT', alive?alive.name+' wins!':'Draw!');
+    },900);
+  }
 }
 
 function resetRound(gs) {
@@ -1537,14 +1746,18 @@ function resetRound(gs) {
     gs.arena=ARENAS[ak];gs.arenaKey=ak;
   }
   for(var i=0;i<gs.players.length;i++){
-    var p=gs.players[i],C2=CLS[p.cls],sp=p.isMe?gs.arena.sp1:gs.arena.sp2;
+    var p=gs.players[i],C2=CLS[p.cls];
+    // In PvP: host always uses sp1, guest always uses sp2 (same as initial launch)
+    var sp;
+    if(gameMode==='pvp'){sp=iAmHost===p.isMe?gs.arena.sp1:gs.arena.sp2;}
+    else{sp=p.isMe?gs.arena.sp1:gs.arena.sp2;}
     var C=C2;
     p.x=sp.x*TILE+TILE/2;p.y=sp.y*TILE+TILE/2;
     p.hp=C.hp;p.dead=false;
     p.stunned=0;p.poisoned=0;p.rolling=0;p.attacking=0;p.hitFlash=0;p.blocking=false;p.s1cd=0;p.s2cd=0;p.atkTimer=0;
     p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;
     if(p.isMe)p.level=getLevel(p.cls); // refresh level each round
-    p.moveCd=0;p.chargeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.disarmed=0;p.shieldHp=0;
+    p.moveCd=0;p.chargeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.disarmed=0;p.shieldHp=0;p.shieldTimer=0;p.arcaneShield=0;p.arcaneShieldHits=0;p.frostSlow=0;
   }
   gs.projs=[];gs.effects=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
@@ -1552,7 +1765,25 @@ function resetRound(gs) {
 }
 
 function showBanner(t){var el=document.getElementById('round-banner');el.textContent=t;el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},1900);}
-function showOverlay(t,s){document.getElementById('ov-title').textContent=t;document.getElementById('ov-sub').textContent=s;document.getElementById('game-overlay').classList.add('show');}
+function showOverlay(t,s,hideRematch){
+  document.getElementById('ov-title').textContent=t;
+  document.getElementById('ov-sub').textContent=s;
+  document.getElementById('game-overlay').classList.add('show');
+  var rb=document.getElementById('ov-rematch');
+  if(rb){rb.style.display=hideRematch?'none':'';rb.textContent='REMATCH';rb.disabled=false;}
+  var cp=document.getElementById('ov-class-pick');
+  var st=document.getElementById('ov-rematch-status');
+  if(cp){cp.style.display=gameMode==='pvp'?'flex':'none';}
+  if(st){st.style.display='none';}
+  // Highlight current class in picker
+  if(gameMode==='pvp'){
+    document.querySelectorAll('.ov-cls-btn').forEach(function(b){
+      b.style.borderColor=b.dataset.cls===myClass?'var(--gold)':'var(--border)';
+      b.style.color=b.dataset.cls===myClass?'var(--gold)':'var(--dim)';
+    });
+  }
+  pvpRematchReady=false;
+}
 function hideOverlay(){document.getElementById('game-overlay').classList.remove('show');var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';}
 
 // ═══════════════════════════════════════════
@@ -1644,7 +1875,7 @@ function pushState(me) {
     moving:me.moving,hp:Math.round(me.hp),attacking:me.attacking>0?1:0,
     stunned:Math.round(Math.max(0,me.stunned)),
     hitFlash:me.hitFlash>0?1:0,dead:me.dead,wins:me.wins,
-    stealthed:me.stealthed||false,shieldHp:Math.round(me.shieldHp||0),
+    stealthed:me.stealthed||false,shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
     moveCd:Math.round(me.moveCd||0),
     projs:myProjs.length>0?myProjs:null
   });
@@ -1682,10 +1913,20 @@ function processAction(msg,gs,me,en) {
         dmg:C5.atkDmg,dot:0,dotDur:0,range:projRange,traveled:0,alive:true,anim:0,
         applyFrostOnHit:projType2==='ice'});
     } else {
-      // Melee — attacker already confirmed range on their side, just apply
+      // Melee — check frost shield, then apply damage
       spawnEfx(gs,'slash',expos.x,expos.y);
       if(!me.stealthed){
         var dmg=C5.atkDmg+Math.floor(Math.random()*4)-1;
+        if(me.arcaneShield>0&&me.arcaneShieldHits>0){
+          me.arcaneShieldHits--;
+          if(me.arcaneShieldHits<=0){me.arcaneShield=0;me.arcaneShieldHits=0;}
+          spawnEfx(gs,'arcane_block',me.x,me.y);
+          // Melee: slow enemy on their screen via inbox + visual slow locally
+          if(en){en.frostSlow=(en.frostSlow||0)+1500;}
+          pushAction('frost_slow',{dur:1500}); // tell attacker they're slowed
+          dmg=Math.max(1,Math.floor(dmg*0.25));
+          pushState(me); // sync shield charges
+        }
         me.hp=Math.max(0,me.hp-dmg);me.hitFlash=220;
         spawnEfx(gs,'slash',me.x,me.y);
         sidelog('\u2694',dmg+' dmg');
@@ -1757,8 +1998,56 @@ function processAction(msg,gs,me,en) {
       gs.arena=ARENAS[msg.data.arenaKey];gs.arenaKey=msg.data.arenaKey;
     }
     resetRound(gs);
+  } else if(msg.type==='frost_slow'){
+    me.frostSlow=(me.frostSlow||0)+(msg.data&&msg.data.dur||1500);
   } else if(msg.type==='chat'&&msg.data){
     sidelog(msg.data.who||'?',msg.data.text||'');
+  } else if(msg.type==='rematch_ready'){
+    // Opponent is ready for rematch — update their class, start if we're also ready
+    if(en&&msg.data&&msg.data.cls){en.cls=msg.data.cls;}
+    var st=document.getElementById('ov-rematch-status');
+    if(pvpRematchReady){
+      // Both ready — host starts the match
+      if(st){st.style.display='block';st.textContent='Starting...';}
+      if(isHost){
+        var ak3=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+        // Update our own class in gameState
+        var meR3=gs.players.find(function(p){return p.isMe;});
+        if(meR3)meR3.cls=myClass;
+        pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass});
+        gs.arena=ARENAS[ak3];gs.arenaKey=ak3;
+        gs.players.forEach(function(p){p.wins=0;});
+        hideOverlay();resetRound(gs);
+      }
+      // Guest resets on rematch_start
+    } else {
+      // We haven't pressed rematch yet — show notification
+      if(st){st.style.display='block';st.textContent='Opponent is ready!';}
+    }
+  } else if(msg.type==='rematch_start'){
+    // Guest receives start signal from host
+    if(msg.data&&msg.data.arenaKey&&ARENAS[msg.data.arenaKey]){
+      gs.arena=ARENAS[msg.data.arenaKey];gs.arenaKey=msg.data.arenaKey;
+    }
+    // Update enemy class
+    if(en&&msg.data&&msg.data.hostCls){en.cls=msg.data.hostCls;}
+    // Update our own class
+    var meR4=gs.players.find(function(p){return p.isMe;});
+    if(meR4)meR4.cls=myClass;
+    gs.players.forEach(function(p){p.wins=0;});
+    hideOverlay();resetRound(gs);
+  } else if(msg.type==='opponent_left'){
+    // Opponent left — you win, no rematch button
+    if(gs.phase!=='gameOver'){
+      gs.phase='gameOver';
+      var meW=gs.players.find(function(p){return p.isMe;});
+      if(meW) awardMatchXP(meW.cls,true,true);
+      showBanner('Opponent left!');
+      setTimeout(function(){
+        document.getElementById('ov-rematch').style.display='none';
+        showOverlay('VICTORY','Opponent disconnected.');
+      },800);
+    }
   }
 }
 
@@ -1970,7 +2259,7 @@ function buildSpellDesc(cls){
   var h='<div class="tsp-name">'+C.name.toUpperCase()+' &nbsp; <span style="color:var(--dim);font-size:11px">Lv.'+xpD.level+'</span></div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.atkLabel+'</span> [G] &nbsp; '+C.atkDmg+' dmg &middot; '+C.atkRange+'px range'+(cls==='ranger'?' &middot; hold to charge':'')+'</div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.s1.name+'</span> [H] &nbsp; '+(C.s1.dmg||'—')+' dmg &middot; '+(C.s1.cd/1000).toFixed(1)+'s cd'+(C.s1.stun?' &middot; stuns '+(C.s1.stun/1000).toFixed(1)+'s':'')+(C.s1.trap?' &middot; snare trap &middot; 3 max &middot; invisible to enemy':'')+'</div>';
-  h+='<div class="tsp-skill"><span class="tsn">'+C.s2.name+'</span> [J] &nbsp; '+(C.s2.dmg||'—')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd'+(C.s2.aoe?' &middot; AOE spin':'')+(C.s2.nova?' &middot; frost burst':'')+(C.s2.smoke?' &middot; smoke cover':'')+'</div>';
+  h+='<div class="tsp-skill"><span class="tsn">'+C.s2.name+'</span> [J] &nbsp; '+(C.s2.dmg||'—')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd'+(C.s2.aoe?' &middot; AOE spin':'')+(C.s2.smoke?' &middot; smoke cover':'')+'</div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.move.name+'</span> [SPC] &nbsp; '+C.move.name+(C.move.charge?' &middot; rush toward enemy &middot; dmg reduction':C.move.blink?' &middot; teleport 90px forward':' &middot; wind speed boost 1.2s')+'</div>';
   // Tier progression preview
   var xpD2=getXP(cls); var curLvl=xpD2.level;
@@ -2223,36 +2512,61 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   updateHUD(gameState);showBanner('Get Ready!');
 }
 
-function launchTraining() {
+function launchTraining(continuing) {
   var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)],arena=ARENAS[ak];
   var me=mkPlayer(myId,myClass,myName,arena.sp1,true);
-  var aiCls=['warrior','mage','ranger'].filter(function(c){return c!==myClass;});
-  var en=mkPlayer('ai',aiCls[Math.floor(Math.random()*aiCls.length)],'Shade',arena.sp2,false);
+  var aiCls=['warrior','mage','ranger'];
+  var aiClass=aiCls[Math.floor(Math.random()*aiCls.length)];
+  // Random armor level for AI (0-99 so we see different tiers)
+  var aiLevel=Math.floor(Math.random()*100)+1;
+  var aiNames=['Shadow','Specter','Shade','Ghost','Phantom','Wraith'];
+  var aiName=aiNames[Math.floor(Math.random()*aiNames.length)];
+  var en=mkPlayer('ai',aiClass,aiName,arena.sp2,false);
+  en.level=aiLevel; // random tier appearance
   gameState=mkGS(ak,me,en);gameMode='training';
-  document.getElementById('sp-myname').textContent=myName;document.getElementById('sp-enname').textContent='Shade (AI)';
   document.getElementById('conn-bar').textContent='TRAINING';
-  showScreen('game-screen');hideOverlay();resizeCanvas();updateHUD(gameState);showBanner('Get Ready!');
+  showScreen('game-screen');hideOverlay();resizeCanvas();updateHUD(gameState);
+  // First game gets pregame timer; subsequent games start immediately
+  if(continuing){
+    gameState.phase='fighting';
+    var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
+    showBanner('FIGHT!');
+  } else {
+    showBanner('Get Ready!');
+  }
 }
 
 document.getElementById('ov-rematch').addEventListener('click',function(){
   if(!gameState)return;
-  hideOverlay();
-  gameState.players.forEach(function(p){p.wins=0;});
-  if(gameMode==='pvp'){
-    if(isHost){
-      var ak2=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
-      gameState.arena=ARENAS[ak2];gameState.arenaKey=ak2;
-      pushAction('rematch',{arenaKey:ak2});
-      resetRound(gameState); // host also resets immediately
-    }
-    // guest resets when rematch action arrives in inbox
-  } else {
-    resetRound(gameState);
-  }
+  if(gameMode!=='pvp'){hideOverlay();resetRound(gameState);return;}
+  // PvP: signal ready for rematch with chosen class
+  var btn=document.getElementById('ov-rematch');
+  btn.disabled=true;btn.textContent='WAITING...';
+  var st=document.getElementById('ov-rematch-status');
+  if(st){st.style.display='block';st.textContent='Waiting for opponent...';}
+  pvpRematchReady=true;
+  pushAction('rematch_ready',{cls:myClass});
 });
+// Class picker in overlay
+var pvpRematchReady=false;
+document.querySelectorAll('.ov-cls-btn').forEach(function(b){
+  b.addEventListener('click',function(){
+    myClass=b.dataset.cls;
+    document.querySelectorAll('.ov-cls-btn').forEach(function(x){
+      x.style.borderColor=x.dataset.cls===myClass?'var(--gold)':'var(--border)';
+      x.style.color=x.dataset.cls===myClass?'var(--gold)':'var(--dim)';
+    });
+  });
+});
+
 document.getElementById('ov-menu').addEventListener('click',function(){
   saveUserProfile();
-  var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';hideOverlay();gameState=null;cleanupFB();showScreen('title-screen');});
+  var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
+  hideOverlay();
+  gameState=null;
+  cleanupFB(); // just close our own connections
+  showScreen('title-screen');
+});
 
 // Chat
 document.getElementById('lob-chat-send').addEventListener('click',sendLobbyChat);
@@ -2528,6 +2842,57 @@ function updateSetupNameField() {
 }
 
 // Logout
+// Settings
+document.getElementById('btn-settings').addEventListener('click',function(){
+  if(isGuest){alert('Create an account to use settings.');return;}
+  var ov=document.getElementById('settings-overlay');
+  ov.style.display='flex';
+  document.getElementById('settings-curname').textContent=displayName||'-';
+  document.getElementById('settings-name-inp').value='';
+  document.getElementById('settings-err').textContent='';
+  // Load name changes count from Firebase
+  fbGetAuth('/users/'+authUid+'/profile').then(function(d){
+    var used=d&&d.nameChanges||0;
+    var left=Math.max(0,2-used);
+    document.getElementById('settings-changes-left').textContent=left+' free name change'+(left!==1?'s':'')+' remaining';
+    document.getElementById('settings-save').disabled=left<=0;
+    document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
+  });
+});
+document.getElementById('settings-close').addEventListener('click',function(){
+  document.getElementById('settings-overlay').style.display='none';
+});
+document.getElementById('settings-save').addEventListener('click',function(){
+  var newName=document.getElementById('settings-name-inp').value.trim().toUpperCase().substring(0,14);
+  var err=document.getElementById('settings-err');
+  if(!newName){err.textContent='Enter a name.';return;}
+  if(newName===displayName){err.textContent='Same as current name.';return;}
+  fbGetAuth('/users/'+authUid+'/profile').then(function(d){
+    var used=d&&d.nameChanges||0;
+    if(used>=2){err.textContent='No name changes left.';return;}
+    var confirmed=confirm('Rename to "'+newName+'"? This is permanent. You have '+(2-used-1)+' name change'+(2-used-1!==1?'s':'')+' remaining after this.');
+    if(!confirmed)return;
+    // Save to Firebase
+    fbSetAuth('/users/'+authUid+'/profile',{
+      displayName:newName,
+      email:authEmail,
+      nameChanges:used+1,
+      lastSeen:Date.now()
+    }).then(function(){
+      displayName=newName;myName=newName;
+      try{sessionStorage.setItem('eldara_name',newName);}catch(e){}
+      document.getElementById('settings-curname').textContent=newName;
+      var left=Math.max(0,2-(used+1));
+      document.getElementById('settings-changes-left').textContent=left+' free name change'+(left!==1?'s':'')+' remaining';
+      document.getElementById('settings-save').disabled=left<=0;
+      document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
+      document.getElementById('settings-name-inp').value='';
+      updateProfileBadge();
+      err.textContent='';
+    });
+  });
+});
+
 document.getElementById('btn-logout').addEventListener('click',function(){
   authToken=null;authUid=null;authEmail=null;displayName='';isGuest=false;
   try{sessionStorage.removeItem('eldara_token');sessionStorage.removeItem('eldara_uid');sessionStorage.removeItem('eldara_name');}catch(e){}
@@ -2540,13 +2905,44 @@ document.getElementById('btn-logout').addEventListener('click',function(){
 // Leave game button
 document.getElementById('btn-leave-game').addEventListener('click',function(){
   if(!gameState)return;
-  if(!confirm('Leave this game?'))return;
-  saveUserProfile();
-  gameState=null;cleanupFB();
-  var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
-  hideOverlay();
-  showScreen('title-screen');
+  // Show inline confirm instead of browser confirm()
+  var confirmDiv=document.getElementById('leave-confirm');
+  if(confirmDiv){confirmDiv.style.display='flex';return;}
 });
+
+// Create leave confirmation overlay
+(function(){
+  var div=document.createElement('div');
+  div.id='leave-confirm';
+  div.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:80;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Courier New,monospace';
+  div.innerHTML='<div style="font-size:16px;letter-spacing:3px;color:var(--gold)">LEAVE GAME?</div>'
+    +'<div style="font-size:11px;color:var(--dim)">Your progress will be saved.</div>'
+    +'<div style="display:flex;gap:12px">'
+    +'<button id="leave-yes" style="padding:12px 28px;background:transparent;border:1px solid #e74c3c;color:#e74c3c;font-family:Courier New,monospace;font-size:12px;letter-spacing:2px;cursor:pointer">LEAVE</button>'
+    +'<button id="leave-no" style="padding:12px 28px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:12px;letter-spacing:2px;cursor:pointer">CANCEL</button>'
+    +'</div>';
+  document.getElementById('game-screen').appendChild(div);
+
+  document.getElementById('leave-no').addEventListener('click',function(){
+    div.style.display='none';
+  });
+  document.getElementById('leave-yes').addEventListener('click',function(){
+    div.style.display='none';
+    if(!gameState)return; // already left
+    saveUserProfile();
+    // Only notify opponent if we're in an active PvP game
+    if(gameMode==='pvp'&&enemyIdPvp&&gameState.phase!=='gameOver'){
+      pushAction('opponent_left',{});
+    }
+    // Award XP for leaving (loss)
+    var meL=gameState.players.find(function(p){return p.isMe;});
+    if(meL) awardMatchXP(meL.cls,false,gameMode==='pvp');
+    gameState=null;cleanupFB();
+    var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
+    hideOverlay();
+    showScreen('title-screen');
+  });
+})();
 
 function refreshCharCards(){
   // Re-draw card canvases with current levels (called after XP gain)
