@@ -742,12 +742,19 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
 
   // ── HELM ──
   if(wT===0){
-    // No helmet — bare head with short hair
+    // No helmet — bare head with short hair + red headband
     // Hair
     px(ctx,-2,-9+bob,'#3a2810',5,3);  // hair top
     px(ctx,-3,-8+bob,'#3a2810',1,3);  // hair left
     px(ctx,2,-8+bob,'#2a1808',1,2);   // hair right shadow
     px(ctx,-2,-7+bob,'#4a3820',4,1);  // hairline
+    // Red headband
+    px(ctx,-3,-7+bob,'#8b1010',6,1);  // band main
+    px(ctx,-3,-7+bob,'#aa1818',3,1);  // left highlight
+    px(ctx,2,-7+bob,'#6a0808',1,1);   // right shadow
+    // Knot/tail on the right side
+    px(ctx,2,-7+bob,'#8b1010',1,2);   // knot
+    px(ctx,3,-6+bob,'#8b1010',1,3);   // tail hanging
     // Face
     px(ctx,-2,-6+bob,'#d4a76a',4,4);  // face
     px(ctx,-2,-6+bob,'#c09050',1,3);  // face left shadow
@@ -928,126 +935,183 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   var oy=Math.sin(anim*0.08)*2;
   var rv=Math.sin(anim*0.06)*1;
 
-  // ── ROBE BODY ──
-  // Colors per tier
-  var robeBase=mT===0?'#2a2618':mT===1?'#12182a':mT===2?'#0e1428':'#080b18';
-  var robeMid =mT===0?'#3a3628':mT===1?'#1a2440':mT===2?'#141e50':'#0e1440';
-  var robeHi  =mT===0?'#4a4438':mT===1?'#243060':mT===2?'#1c2870':'#141a5a';
-  var trimCol =mT===0?'#804010':mT===1?'#2a3480':mT===2?'#4a18a0':'#7a30d0';
-  var shCol   =mT===0?'#1e1a10':mT===1?'#0a0e1a':mT===2?'#090e1e':'#060810';
+  // ── ROBE COLORS per tier ──
+  // T0: dark grey-purple (apprentice, simple)
+  // T1: deep midnight blue-purple (scholar)
+  // T2: rich dark purple (arcanist)
+  // T3: darkest imperial purple, arcane glow (archmage)
+  var robeBase=mT===0?'#1e1a2a':mT===1?'#1a1432':mT===2?'#1e0e40':'#140830';
+  var robeMid =mT===0?'#2a2440':mT===1?'#241c4a':mT===2?'#2e1460':'#1e0c48';
+  var robeHi  =mT===0?'#362e52':mT===1?'#2e2258':mT===2?'#3a1878':'#280e60';
+  var trimCol =mT===0?'#483060':mT===1?'#5a2890':mT===2?'#7a20c0':'#9a30e0';
+  var shCol   =mT===0?'#100e18':mT===1?'#0e0a20':mT===2?'#0a0618':'#080412';
 
-  // Main robe
-  px(ctx,-3,0+bob,robeBase,6,13);
-  px(ctx,-2,0+bob,robeMid,4,12);
-  px(ctx,-1,1+bob,robeHi,2,6);
-  px(ctx,-3,0+bob,shCol,1,12);px(ctx,2,0+bob,shCol,1,12); // side shadow
-  // Trim stripes on sides (tier 2+)
-  if(mT>=2){px(ctx,-3,0+bob,trimCol,1,12);px(ctx,2,0+bob,trimCol,1,12);}
-  // Center robe opening line
-  px(ctx,-1,0+bob,robeMid,1,6);
-  // Robe hem — flared
-  px(ctx,-4,11+bob+rv,robeBase,8,4);
-  px(ctx,-5,13+bob+rv,robeBase,3,2);px(ctx,3,13+bob+rv,robeBase,3,2);
-  // Gold rune hem (tier 3)
-  if(mT>=3){
-    px(ctx,-4,13+bob+rv,'#2a1060',8,1);
-    px(ctx,-3,13+bob+rv,'#c8a030',1,1);px(ctx,-1,13+bob+rv,'#c8a030',1,1);
-    px(ctx,1,13+bob+rv,'#c8a030',1,1);px(ctx,3,13+bob+rv,'#c8a030',1,1);
-  }
-  // Sash/belt (tier 1+)
-  if(mT>=1){
-    px(ctx,-3,9+bob,trimCol,6,1);
-    px(ctx,-1,9+bob,'#c8a030',2,1);
-  } else {
-    px(ctx,-2,9+bob,'#5a4020',4,1);
-  }
-  // Wide sleeves
-  px(ctx,-5,0+bob,robeBase,2,10);px(ctx,3,0+bob,robeBase,2,10);
-  px(ctx,-5,0+bob,shCol,1,9);px(ctx,4,0+bob,shCol,1,9);
-  if(mT>=2){px(ctx,-5,0+bob,trimCol,1,8);}
-  // Sleeve cuffs
-  if(mT>=1){px(ctx,-5,8+bob,trimCol,2,1);px(ctx,3,8+bob,trimCol,2,1);}
-  // Hands
-  px(ctx,-5,9+bob,'#c8a060',2,2);px(ctx,3,9+bob,'#c8a060',2,2);
-  // Fingers hint
-  px(ctx,-5,10+bob,'#b89050',2,1);px(ctx,3,10+bob,'#b89050',2,1);
-  // Dark slippers
-  px(ctx,-2,14+bob,'#14101a',2,3);px(ctx,0,14+bob,'#14101a',2,3);
-  px(ctx,-2,15+bob,'#0e0c14',2,2);px(ctx,0,15+bob,'#0e0c14',2,2);
-  if(mT>=2){px(ctx,-2,14+bob,trimCol,1,1);px(ctx,1,14+bob,trimCol,1,1);}
-
-  // ── FACE ──
-  var eyeCol=mT>=2?'rgba(210,150,20,0.95)':'rgba(80,160,220,0.8)';
-  var skinCol=mT>=3?'#c09050':'#c8a060'; // older/more weathered at high tier
-  px(ctx,-2,-6+bob,skinCol,4,5);
-  // Eye shadow
-  px(ctx,-2,-4+bob,'#0a0808',1,1);px(ctx,0,-4+bob,'#0a0808',1,1);
-  px(ctx,-2,-4+bob,eyeCol,1,1);px(ctx,0,-4+bob,eyeCol,1,1);
-  // Eyebrows
+  // ── FLOWING ROBE BODY ──
+  // Back layer (slightly wider, darker — gives depth)
+  px(ctx,-4,-1+bob,shCol,8,15);
+  // Main robe body — slim torso, flares at hem
+  px(ctx,-3,0+bob,robeBase,6,12);
+  px(ctx,-2,0+bob,robeMid,4,11);
+  px(ctx,-1,1+bob,robeHi,2,7);
+  px(ctx,-3,0+bob,shCol,1,11); // left shadow
+  px(ctx,2,0+bob,shCol,1,11);  // right shadow
+  // Vertical center opening (robe front split)
+  px(ctx,-1,2+bob,robeBase,1,7);
+  px(ctx,0,4+bob,shCol,1,5);
+  // Purple trim stripes (T2+)
   if(mT>=2){
-    px(ctx,-2,-5+bob,'#d0d0d0',2,1);px(ctx,0,-5+bob,'#d0d0d0',2,1);
+    px(ctx,-3,0+bob,trimCol,1,11);
+    px(ctx,2,0+bob,trimCol,1,11);
+  }
+  // Rune/embroidery detail on chest (T3)
+  if(mT>=3){
+    px(ctx,-1,2+bob,trimCol,2,1);
+    px(ctx,-1,4+bob,trimCol,2,1);
+    px(ctx,-1,6+bob,trimCol,2,1);
+    px(ctx,0,3+bob,trimCol,1,1);
+    px(ctx,-2,3+bob,trimCol,1,1);
+  }
+  // Sash belt
+  if(mT===0){
+    px(ctx,-3,9+bob,'#2a2030',6,1); // plain dark cord
+  } else if(mT===1){
+    px(ctx,-3,9+bob,trimCol,6,1);
   } else {
-    px(ctx,-2,-5+bob,'#5a4020',2,1);px(ctx,0,-5+bob,'#5a4020',2,1);
+    px(ctx,-3,9+bob,trimCol,6,2);   // wider arcane sash
+    px(ctx,-1,9+bob,'rgba(160,60,220,0.4)',2,1); // glow
   }
-  px(ctx,-1,-3+bob,'#b08050',1,1); // nose
-  px(ctx,-1,-2+bob,'#904030',2,1); // lips
-  // Wrinkles/age lines (tier 3)
-  if(mT>=3){
-    px(ctx,-2,-3+bob,'rgba(0,0,0,0.2)',1,1);
-    px(ctx,1,-3+bob,'rgba(0,0,0,0.2)',1,1);
+  // Robe hem — elegantly flared, longer in back
+  px(ctx,-4,11+bob+rv,robeBase,8,5);
+  px(ctx,-5,13+bob+rv,robeBase,2,3);px(ctx,3,13+bob+rv,robeBase,2,3);
+  px(ctx,-5,14+bob+rv,shCol,2,2);px(ctx,3,14+bob+rv,shCol,2,2);
+  // Hem trim
+  if(mT>=2){
+    px(ctx,-4,15+bob+rv,trimCol,8,1);
   }
-  // Long beard (tier 3)
   if(mT>=3){
-    px(ctx,-2,-1+bob,'#d8d8d8',4,3);
-    px(ctx,-2,2+bob,'#c8c8c8',4,5);
-    px(ctx,-1,6+bob,'#b8b8b8',2,4);
-    px(ctx,-2,3+bob,'#e0e0e0',1,3);// beard highlight
+    // Glowing arcane hem runes
+    px(ctx,-3,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
+    px(ctx,-1,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
+    px(ctx,1,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
+    px(ctx,3,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
   }
 
-  // ── HAT ──
+  // ── SLEEVES — wide and flowing ──
+  px(ctx,-5,0+bob,robeBase,2,11);px(ctx,3,0+bob,robeBase,2,11);
+  px(ctx,-6,2+bob,shCol,1,9);px(ctx,4,2+bob,shCol,1,9); // outer sleeve shadow
+  px(ctx,-5,0+bob,shCol,1,10);
+  if(mT>=1){px(ctx,-5,0+bob,trimCol,1,8);} // trim stripe on sleeve
+  // Sleeve cuffs
+  if(mT>=1){
+    px(ctx,-6,9+bob,trimCol,2,2);px(ctx,4,9+bob,trimCol,2,2);
+    px(ctx,-6,9+bob,robeHi,1,1);
+  }
+  // Hands — pale elven skin
+  px(ctx,-6,10+bob,'#d0c8b8',2,2);px(ctx,4,10+bob,'#d0c8b8',2,2);
+  px(ctx,-6,11+bob,'#b8b0a0',2,1);px(ctx,4,11+bob,'#b8b0a0',2,1);
+
+  // ── SHOES — dark elegant pointed ──
+  px(ctx,-3,15+bob,'#18141e',3,3);px(ctx,0,15+bob,'#18141e',3,3);
+  px(ctx,-2,17+bob,'#0e0c14',2,1);px(ctx,1,17+bob,'#0e0c14',2,1);
+  // Pointed toe
+  px(ctx,-4,16+bob,'#18141e',1,2);px(ctx,3,16+bob,'#18141e',1,2);
+  if(mT>=2){
+    px(ctx,-4,15+bob,trimCol,1,1);px(ctx,3,15+bob,trimCol,1,1);
+  }
+
+  // ── FACE — pale elven ──
+  var skinCol='#d8cfc0'; // pale elven skin all tiers
+  var eyeCol=mT===0?'rgba(100,160,220,0.9)':mT===1?'rgba(120,80,220,0.9)':mT===2?'rgba(160,60,240,0.95)':'rgba(200,80,255,1.0)';
+  // Grey hair behind face
+  px(ctx,2,-5+bob,'#a8a8a0',1,10); // hair flow right
+  px(ctx,3,-4+bob,'#989890',1,9);
+  px(ctx,-4,-4+bob,'#b0b0a8',1,8); // hair flow left
+  // Face — slightly narrow and angular (elven)
+  px(ctx,-2,-7+bob,skinCol,4,6);
+  px(ctx,-2,-7+bob,'#c0b8a8',1,5); // left face shadow
+  px(ctx,1,-7+bob,'#c8c0b0',1,5);  // right face shadow
+  // Pointed elven ear
+  px(ctx,2,-6+bob,skinCol,1,2);    // right ear
+  px(ctx,3,-5+bob,skinCol,1,1);    // ear tip
+  px(ctx,-3,-6+bob,skinCol,1,2);   // left ear
+  px(ctx,-4,-5+bob,skinCol,1,1);   // left ear tip
+  // Eyes — colour shifts per tier
+  px(ctx,-2,-5+bob,'#080408',1,1);px(ctx,0,-5+bob,'#080408',1,1); // eye shadow
+  px(ctx,-2,-5+bob,eyeCol,1,1);px(ctx,0,-5+bob,eyeCol,1,1);
+  // Glowing eye effect (T3)
+  if(mT>=3){
+    ctx.fillStyle='rgba(200,60,255,0.25)';
+    ctx.fillRect(-3*S,-6*S,5*S,2*S);
+  }
+  // Grey eyebrows — sharp elven
+  px(ctx,-3,-6+bob,'#909088',3,1);px(ctx,0,-6+bob,'#909088',2,1);
+  px(ctx,-1,-3+bob,'#c0b8a8',1,1); // nose
+  // No visible lips — thin-lipped elf
+  // Grey hair on head
+  px(ctx,-2,-9+bob,'#a8a8a0',4,3);  // hair top
+  px(ctx,-3,-8+bob,'#b0b0a8',1,3);  // left flow
+  px(ctx,2,-8+bob,'#989890',1,2);   // right flow
+  px(ctx,-1,-10+bob,'#c0c0b8',2,1); // crown highlight
+
+  // ── HEADBAND ──
   if(mT===0){
-    // Small old pointy hat — faded purple/brown
-    px(ctx,-3,-9+bob,'#3a2840',6,3); // hat base
-    px(ctx,-2,-12+bob,'#2e2038',4,4); // mid cone
-    px(ctx,-1,-15+bob,'#281830',2,3); // upper cone
-    px(ctx,0,-17+bob,'#221428',1,2);  // tip
-    px(ctx,-3,-9+bob,'#4a3858',6,1);  // brim
-    px(ctx,-2,-10+bob,'#382848',1,2); // left shadow
-    px(ctx,1,-12+bob,'#3a2a4a',1,2);  // right shadow
+    // Simple thin dark cord headband
+    px(ctx,-2,-8+bob,'#2a1840',5,1); // dark cord
+    px(ctx,-2,-8+bob,'#3a2850',1,1); // slight highlight
   } else if(mT===1){
-    // Dark blue pointed hat
-    px(ctx,-3,-9+bob,'#12182a',6,4);
-    px(ctx,-2,-13+bob,'#0e1224',4,5);
-    px(ctx,-1,-17+bob,'#0a0e1e',2,4);
-    px(ctx,-3,-9+bob,'#1e2840',6,1); // brim
-    px(ctx,-2,-10+bob,'#1a2236',1,2); // shadow
-    px(ctx,1,-12+bob,'#1e2a44',1,2);  // highlight
+    // Slim leather headband with small purple gem
+    px(ctx,-2,-8+bob,'#1e1428',5,1);  // dark band
+    px(ctx,-2,-8+bob,'#2e2040',1,1);  // highlight
+    px(ctx,0,-8+bob,'#5a1890',2,1);   // purple gem center
+    px(ctx,0,-8+bob,'#7a30b0',1,1);   // gem highlight
   } else if(mT===2){
-    // Arcane hat — deep with purple glow trim
-    px(ctx,-3,-10+bob,'#0e0c28',6,5);
-    px(ctx,-2,-14+bob,'#140e3a',4,5);
-    px(ctx,-1,-18+bob,'#0e0a28',2,5);
-    px(ctx,-3,-10+bob,'#4a18a0',6,1); // purple brim glow
-    px(ctx,-2,-11+bob,'#16103a',1,3); // shadow
-    px(ctx,1,-13+bob,'#1e1448',1,3);  // highlight
-    px(ctx,-1,-13+bob,'#e8b84b',1,1); // star
-    px(ctx,1,-16+bob,'#e8b84b',1,1);  // star
+    // Silver headband with purple gems
+    px(ctx,-3,-8+bob,'#707880',6,1);  // silver band
+    px(ctx,-3,-8+bob,'#909898',1,1);  // left highlight
+    px(ctx,2,-8+bob,'#505860',1,1);   // right shadow
+    px(ctx,-1,-8+bob,'#6a20b0',2,2);  // large center gem
+    px(ctx,-1,-9+bob,'#8a30d0',2,1);  // gem top facet
+    px(ctx,0,-8+bob,'#c090f0',1,1);   // gem shine
+    // Small side gems
+    px(ctx,-3,-8+bob,'#4a1880',1,1);px(ctx,2,-8+bob,'#4a1880',1,1);
   } else {
-    // Grand archmage hat — darkest, stars, purple aura
-    px(ctx,-3,-10+bob,'#06040e',6,5);
-    px(ctx,-2,-14+bob,'#0a0820',4,5);
-    px(ctx,-1,-18+bob,'#06040e',2,5);
-    px(ctx,-3,-10+bob,'#7a30d0',6,1); // bright purple brim
-    px(ctx,-3,-10+bob,'#9a40f0',3,1); // extra bright left
-    px(ctx,-2,-11+bob,'#0e0a20',1,4); // deep shadow
-    px(ctx,1,-14+bob,'#120e28',1,4);  // highlight
-    // Stars
-    px(ctx,-1,-13+bob,'#f0c840',1,1);
-    px(ctx,1,-16+bob,'#f0c840',1,1);
-    px(ctx,-2,-16+bob,'rgba(200,160,255,0.9)',1,1);
-    px(ctx,0,-12+bob,'rgba(180,120,255,0.7)',1,1);
-    // Floating sparkle
-    px(ctx,2,-15+bob+oy,'rgba(220,180,255,0.8)',1,1);
+    // Gold headband with multiple arcane gems — grand archmage
+    px(ctx,-3,-8+bob,'#c8a030',6,1);  // gold band
+    px(ctx,-3,-8+bob,'#e0b840',1,1);  // left gleam
+    px(ctx,2,-8+bob,'#a88020',1,1);   // right shadow
+    // Center large gem
+    px(ctx,-1,-9+bob,'#8020c0',2,3);  // gem body
+    px(ctx,-1,-10+bob,'#a030e0',2,2); // gem upper facet
+    px(ctx,0,-10+bob,'#d080ff',1,1);  // gem shine
+    // Gem glow
+    ctx.fillStyle='rgba(160,40,255,0.3)';
+    ctx.fillRect(-2*S,-11*S,4*S,4*S);
+    // Side gems
+    px(ctx,-3,-8+bob,'#6020a0',1,2);px(ctx,2,-8+bob,'#6020a0',1,2);
+    px(ctx,-3,-9+bob,'#8030c0',1,1);px(ctx,2,-9+bob,'#8030c0',1,1);
+  }
+
+  // ── BEARD — silver-grey, all tiers but grows ──
+  if(mT===0){
+    // Short stubble / young elf
+    px(ctx,-1,-2+bob,'#888080',2,1);
+  } else if(mT===1){
+    // Chin beard — neat
+    px(ctx,-1,-1+bob,'#a0a098',2,2);
+    px(ctx,0,1+bob,'#909088',1,1);
+  } else if(mT===2){
+    // Longer flowing beard
+    px(ctx,-2,-1+bob,'#b0b0a8',4,3);
+    px(ctx,-1,2+bob,'#a0a098',2,3);
+    px(ctx,-2,2+bob,'#c0c0b8',1,2); // highlight
+    px(ctx,1,4+bob,'#909088',1,2);
+  } else {
+    // Grand long silver beard
+    px(ctx,-2,-1+bob,'#c8c8c0',4,3);
+    px(ctx,-2,2+bob,'#b8b8b0',4,6);
+    px(ctx,-1,7+bob,'#a8a8a0',2,3);
+    px(ctx,-2,3+bob,'#e0e0d8',1,4); // bright highlight streak
+    px(ctx,0,5+bob,'#c0c0b8',1,3);
   }
 
   // ── STAFF (thin long shaft, orb scales with weapon tier) ──
