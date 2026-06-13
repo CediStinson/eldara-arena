@@ -328,6 +328,13 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div class="lobby-right">
     <div style="font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:16px">LOBBY CHAT</div>
     <div class="chat-wrap">
+      <!-- Class selector in lobby -->
+      <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:6px">
+        <div style="font-size:10px;color:var(--dim);letter-spacing:1px;align-self:center">PLAY AS:</div>
+        <button class="lob-cls-btn" data-cls="warrior" style="flex:1;padding:6px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">WARRIOR</button>
+        <button class="lob-cls-btn" data-cls="mage" style="flex:1;padding:6px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">MAGE</button>
+        <button class="lob-cls-btn" data-cls="ranger" style="flex:1;padding:6px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">ROGUE</button>
+      </div>
       <div class="chat-log" id="lob-chat"></div>
       <div class="chat-row">
         <input class="chat-inp" id="lob-chat-inp" placeholder="say something..." maxlength="100">
@@ -2146,19 +2153,15 @@ function draw(gs) {
     if(p.stealthed&&p.isMe) gctx.globalAlpha=0.25;
     else if(p.stunned>0) gctx.globalAlpha=0.6;
     DRAW[p.cls](gctx,p.x,p.y,p.dir,p.anim,p.hitFlash>0,p.level||1);
-    // Red eyes cosmetic
+    // Red eyes cosmetic — pulsing pixels only, no circles
     if(p.isMe&&hasRedEyes(p.cls)||(!p.isMe&&p.redEyes)){
       var re=getRedEyePos(p.cls,p.level||1);
-      var rePulse=0.7+Math.sin(Date.now()*0.008)*0.3;
+      var rePulse=0.6+Math.sin(Date.now()*0.008)*0.4;
       gctx.save();
       gctx.translate(p.x,p.y);
       if(p.dir!==2)gctx.scale(-1,1);
       re.forEach(function(e){
-        // Glow
-        gctx.fillStyle='rgba(255,0,0,'+(rePulse*0.4)+')';
-        gctx.beginPath();gctx.arc(e[0]*S,e[1]*S,5*S,0,Math.PI*2);gctx.fill();
-        // Core
-        gctx.fillStyle='rgba(255,40,0,'+(rePulse*0.95)+')';
+        gctx.fillStyle='rgba(255,20,0,'+(rePulse)+')';
         gctx.fillRect(e[0]*S,e[1]*S,S,S);
       });
       gctx.restore();
@@ -2384,7 +2387,7 @@ function resetRound(gs) {
 }
 
 function showBanner(t){var el=document.getElementById('round-banner');el.textContent=t;el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},1900);}
-function showOverlay(t,s,hideRematch){
+function showOverlay(t,s,hideRematch){opponentRematchReady=false;opponentRematchCls='';
   document.getElementById('ov-title').textContent=t;
   document.getElementById('ov-sub').textContent=s;
   document.getElementById('game-overlay').classList.add('show');
@@ -2629,15 +2632,19 @@ function processAction(msg,gs,me,en) {
     sidelog(msg.data.who||'?',msg.data.text||'');
   } else if(msg.type==='rematch_ready'){
     var st2=document.getElementById('ov-rematch-status');
-    if(msg.data&&msg.data.cls&&en){en.cls=msg.data.cls;}
+    var opCls=msg.data&&msg.data.cls||'warrior';
+    if(en)en.cls=opCls;
+    opponentRematchReady=true;
+    opponentRematchCls=opCls;
     if(pvpRematchReady){
-      // We're already ready — start the rematch
+      // Both ready — host starts
       var st3=document.getElementById('ov-rematch-status');
       if(st3){st3.style.display='block';st3.textContent='Starting...';}
       if(isHost){
-        doStartRematch(msg.data&&msg.data.cls);
+        opponentRematchReady=false;
+        doStartRematch(opCls);
       }
-      // Guest waits for rematch_start from host
+      // Guest just waits for rematch_start from host
     } else {
       if(st2){st2.style.display='block';st2.textContent='Opponent is ready!';}
     }
@@ -2706,14 +2713,18 @@ function startListeningActions() {
 
 function startListeningLobbyChat() {
   var seen={};
-  esChat=fbListen('/rooms/'+roomCode+'/chat',function(data){
-    if(!data)return;
-    Object.keys(data).forEach(function(k){
-      if(seen[k])return;seen[k]=true;
-      var m=data[k];if(!m)return;
-      addLobbyMsg(m.name||'?',m.text||'',m.sys||false);
+  var chatInterval=setInterval(function(){
+    if(!roomCode){clearInterval(chatInterval);return;}
+    fbGet('/rooms/'+roomCode+'/chat').then(function(data){
+      if(!data)return;
+      Object.keys(data).forEach(function(k){
+        if(seen[k])return;seen[k]=true;
+        var m=data[k];if(!m||typeof m!=='object')return;
+        addLobbyMsg(m.name||'?',m.text||'',m.sys||false);
+      });
     });
-  });
+  },800);
+  esChat={close:function(){clearInterval(chatInterval);}};
 }
 
 function cleanupFB() {
@@ -3260,6 +3271,11 @@ document.getElementById('ov-rematch').addEventListener('click',function(){
   pvpRematchReady=true;
   // Signal via inbox
   pushAction('rematch_ready',{cls:myClass});
+  // If opponent already signaled (we received their ready before pressing), start now
+  if(opponentRematchReady&&isHost){
+    opponentRematchReady=false;
+    setTimeout(function(){doStartRematch(opponentRematchCls);},100);
+  }
 });
 
 function checkBothRematchReady(){
@@ -3281,6 +3297,8 @@ function doStartRematch(guestCls){
 }
 // Class picker in overlay
 var pvpRematchReady=false;
+var opponentRematchReady=false;
+var opponentRematchCls='';
 var lockedArena=null;
 document.querySelectorAll('.ov-cls-btn').forEach(function(b){
   b.addEventListener('click',function(){
@@ -3306,6 +3324,28 @@ document.getElementById('ov-menu').addEventListener('click',function(){
 });
 
 // Chat
+// Lobby class selector
+document.querySelectorAll('.lob-cls-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    myClass=btn.dataset.cls;
+    document.querySelectorAll('.lob-cls-btn').forEach(function(b){
+      b.style.borderColor=b.dataset.cls===myClass?'var(--gold)':'var(--border)';
+      b.style.color=b.dataset.cls===myClass?'var(--gold)':'var(--dim)';
+    });
+    // Notify opponent of class change via chat system message
+    if(roomCode&&enemyIdPvp){
+      var clsDisplay=myClass==='ranger'?'Rogue':myClass.charAt(0).toUpperCase()+myClass.slice(1);
+      addLobbyMsg('System',myName+' switched to '+clsDisplay,true);
+    }
+  });
+});
+// Highlight current class on lobby open
+function updateLobbyClassBtns(){
+  document.querySelectorAll('.lob-cls-btn').forEach(function(b){
+    b.style.borderColor=b.dataset.cls===myClass?'var(--gold)':'var(--border)';
+    b.style.color=b.dataset.cls===myClass?'var(--gold)':'var(--dim)';
+  });
+}
 document.getElementById('lob-chat-send').addEventListener('click',sendLobbyChat);
 document.getElementById('lob-chat-inp').addEventListener('keydown',function(e){if(e.key==='Enter')sendLobbyChat();});
 function sendLobbyChat(){var inp=document.getElementById('lob-chat-inp'),txt=inp.value.trim();inp.value='';if(!txt)return;addLobbyMsg(myName,txt,false);if(roomCode)fbPush('/rooms/'+roomCode+'/chat',{name:myName,text:txt,from:myId,ts:Date.now()});}
