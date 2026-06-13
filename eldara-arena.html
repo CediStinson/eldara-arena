@@ -775,25 +775,73 @@ var ARENAS = {
     [1,0,1,0,1,1,0,0,0,0,1,1,0,1,0,1],[1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],[1,0,1,0,1,1,0,0,0,0,1,1,0,1,0,1],
     [1,0,1,0,0,3,0,0,0,0,3,0,0,1,0,1],[1,0,1,1,0,0,1,0,0,1,0,0,1,1,0,1],
-    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]}
+    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
+  desert:{name:'Desert Colosseum',sp1:{x:2,y:5},sp2:{x:13,y:5},tiles:[
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
+    [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],
+    [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],
+    [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
+  temple:{name:'Shadow Temple',sp1:{x:1,y:1},sp2:{x:14,y:10},tiles:[
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],
+    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
+    [1,0,1,1,1,1,0,0,0,0,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,0,0,0,0,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
+    [1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]}
 };
-var ARENA_KEYS = ['crypt','volcano','maze'];
+var ARENA_KEYS = ['crypt','volcano','maze','desert','temple'];
 
 function drawArena(ctx, arena, tick) {
   var tiles=arena.tiles;
   for(var ty=0;ty<AH;ty++) {
     for(var tx=0;tx<AW;tx++) {
       var t=tiles[ty][tx], px2=tx*TILE, py2=ty*TILE;
+      var isDesert=arena.name&&arena.name.indexOf('Desert')>=0;
+      var isTemple=arena.name&&arena.name.indexOf('Shadow')>=0;
       if(t===1){
-        ctx.fillStyle='#0a0a14';ctx.fillRect(px2,py2,TILE,TILE);
-        ctx.fillStyle='#22223a';ctx.fillRect(px2,py2,TILE,6);
-        ctx.fillStyle='#1a1a2e';ctx.fillRect(px2,py2+6,TILE,TILE-12);
-        ctx.fillStyle='#0e0e1a';ctx.fillRect(px2,py2+TILE-6,TILE,6);
-        if((tx+ty)%2===0){ctx.fillStyle='#14142a';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
-        ctx.strokeStyle='#0c0c18';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
+        if(isDesert){
+          ctx.fillStyle='#3a2a10';ctx.fillRect(px2,py2,TILE,TILE);
+          ctx.fillStyle='#4a3820';ctx.fillRect(px2,py2,TILE,6);
+          ctx.fillStyle='#382808';ctx.fillRect(px2,py2+6,TILE,TILE-12);
+          ctx.fillStyle='#2a1c04';ctx.fillRect(px2,py2+TILE-6,TILE,6);
+          if((tx+ty)%2===0){ctx.fillStyle='#302010';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
+          ctx.strokeStyle='#251808';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
+        } else {
+          ctx.fillStyle='#0a0a14';ctx.fillRect(px2,py2,TILE,TILE);
+          ctx.fillStyle='#22223a';ctx.fillRect(px2,py2,TILE,6);
+          ctx.fillStyle='#1a1a2e';ctx.fillRect(px2,py2+6,TILE,TILE-12);
+          ctx.fillStyle='#0e0e1a';ctx.fillRect(px2,py2+TILE-6,TILE,6);
+          if((tx+ty)%2===0){ctx.fillStyle='#14142a';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
+          ctx.strokeStyle='#0c0c18';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
+        }
       } else if(t===0){
-        ctx.fillStyle=(tx+ty)%2===0?'#1a1a2e':'#161628';ctx.fillRect(px2,py2,TILE,TILE);
-        ctx.strokeStyle='#1c1c30';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
+        if(isDesert){
+          ctx.fillStyle=(tx+ty)%2===0?'#c8a04a':'#b89040';ctx.fillRect(px2,py2,TILE,TILE);
+          ctx.strokeStyle='#a87830';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
+          // Sand grain dots
+          if((tx*3+ty*7)%5===0){ctx.fillStyle='rgba(200,170,80,0.3)';ctx.fillRect(px2+8,py2+8,3,2);}
+          if((tx*5+ty*3)%7===0){ctx.fillStyle='rgba(180,140,60,0.2)';ctx.fillRect(px2+20,py2+18,2,2);}
+        } else if(isTemple){
+          ctx.fillStyle=(tx+ty)%2===0?'#14101a':'#100c16';ctx.fillRect(px2,py2,TILE,TILE);
+          ctx.strokeStyle='#1a1020';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
+        } else {
+          ctx.fillStyle=(tx+ty)%2===0?'#1a1a2e':'#161628';ctx.fillRect(px2,py2,TILE,TILE);
+          ctx.strokeStyle='#1c1c30';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
+        }
       } else if(t===2){
         var lf=Math.sin(tick*0.07+tx*0.8+ty*1.2)*0.35+0.65;
         ctx.fillStyle='#1a0500';ctx.fillRect(px2,py2,TILE,TILE);
@@ -845,7 +893,7 @@ var CLS = {
     s2:{name:'Frost Nova',icon:'\u2744',cd:8000,nova:true,dmg:20,range:80},
     move:{name:'Blink',icon:'\uD83D\uDCA8',cd:4000,blink:90}},
   ranger:{name:'Rogue',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Rapier',color:'#8a6a20',
-    hp:105,spd:3.0,atkDmg:12,atkRange:58,atkMs:240,atkType:'melee',
+    hp:105,spd:3.0,atkDmg:10,atkRange:58,atkMs:220,atkType:'melee',
     s1:{name:'Headbutt',icon:'\u26A1',cd:5500,dmg:12,range:56,stun:1100},
     s2:{name:'Stealth',icon:'\u25CF',cd:11000,stealth:true,stealthDur:7000,spdMult:0.65},
     move:{name:'Shadow Step',icon:'\u27A1',cd:5000,shadowStep:true,stepRange:280,stepDmg:12}}
@@ -989,6 +1037,8 @@ function doMoveAbility(gs,user,target) {
 
 function doAttack(gs,attacker,target) {
   var C=CLS[attacker.cls];
+  // Break stealth when attacking
+  if(attacker.stealthed){attacker.stealthed=false;attacker.stealthTimer=0;attacker.rollInv=false;}
   attacker.attacking=14;attacker.atkTimer=C.atkMs;
   if(C.atkType==='proj') {
     // Mage: ice shard / Ranger: arrow — spawn a projectile
@@ -1428,19 +1478,26 @@ function draw(gs) {
   for(var pl=0;pl<gs.players.length;pl++) {
     var p=gs.players[pl];
     if(p.dead){gctx.globalAlpha=0.3;DRAW[p.cls](gctx,p.x,p.y,p.dir,0,false,p.level||1);gctx.globalAlpha=1;continue;}
+    // Stealth: enemy = skip entirely, self = very faded
+    if(p.stealthed&&!p.isMe) continue;
     if(p.rolling>0){gctx.globalAlpha=0.2;DRAW[p.cls](gctx,p.x-p.rollDir.x*26,p.y-p.rollDir.y*26,p.dir,p.anim,false,p.level||1);gctx.globalAlpha=1;}
     if(p.blocking){gctx.fillStyle='rgba(40,120,220,0.2)';gctx.beginPath();gctx.arc(p.x,p.y,28,0,Math.PI*2);gctx.fill();gctx.strokeStyle='rgba(60,140,240,0.5)';gctx.lineWidth=2;gctx.stroke();}
     if(p.poisoned>0){gctx.fillStyle='rgba(40,180,40,0.12)';gctx.beginPath();gctx.arc(p.x,p.y,24+Math.sin(gs.tick*0.14)*3,0,Math.PI*2);gctx.fill();}
-    if(p.stunned>0)gctx.globalAlpha=0.6;
+    if(p.stealthed&&p.isMe) gctx.globalAlpha=0.25;
+    else if(p.stunned>0) gctx.globalAlpha=0.6;
     DRAW[p.cls](gctx,p.x,p.y,p.dir,p.anim,p.hitFlash>0,p.level||1);
     gctx.globalAlpha=1;
+    if(p.stealthed&&p.isMe){gctx.globalAlpha=0.25;}
+    if(!p.stealthed||p.isMe){
     gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-30,p.y-56,60,14);
     gctx.fillStyle=p.isMe?'#e8b84b':'#cc5555';
     gctx.font='bold 9px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
     gctx.fillText(p.name+(p.wins>0?' ('+p.wins+')':''),p.x,p.y-49);
-    gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-24,p.y-62,48,5);
+    gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-24,p.y-62,48,5);}
+    if(!p.stealthed||p.isMe){
     gctx.fillStyle=p.hp/p.maxHp>0.5?'#27ae60':p.hp/p.maxHp>0.25?'#f39c12':'#c0392b';
-    gctx.fillRect(p.x-24,p.y-62,48*(p.hp/p.maxHp),5);
+    gctx.fillRect(p.x-24,p.y-62,48*(p.hp/p.maxHp),5);}
+    gctx.globalAlpha=1;
     // Frost dot stacks to the right of HP bar
     if((p.frost>0||p.frosted)&&!p.dead){
       for(var fd=0;fd<Math.min(p.frost,3);fd++){
@@ -2014,8 +2071,28 @@ function buildSpellDesc(cls){
   h+='<div class="tsp-skill"><span class="tsn">'+C.s1.name+'</span> [H] &nbsp; '+(C.s1.dmg||'—')+' dmg &middot; '+(C.s1.cd/1000).toFixed(1)+'s cd'+(C.s1.stun?' &middot; stuns '+(C.s1.stun/1000).toFixed(1)+'s':'')+(C.s1.trap?' &middot; snare trap &middot; 3 max &middot; invisible to enemy':'')+'</div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.s2.name+'</span> [J] &nbsp; '+(C.s2.dmg||'—')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd'+(C.s2.aoe?' &middot; AOE spin':'')+(C.s2.nova?' &middot; frost burst':'')+(C.s2.smoke?' &middot; smoke cover':'')+'</div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.move.name+'</span> [SPC] &nbsp; '+C.move.name+(C.move.charge?' &middot; rush toward enemy &middot; dmg reduction':C.move.blink?' &middot; teleport 90px forward':' &middot; wind speed boost 1.2s')+'</div>';
-  h+='<div class="tsp-skill"><span class="tsn">Roll</span> [X] &nbsp; invincibility dash &nbsp;&nbsp; <span class="tsn">Block</span> [F] &nbsp; hold to reduce damage 85%</div>';
-  return h;
+  // Tier progression preview
+  var xpD2=getXP(cls); var curLvl=xpD2.level;
+  var tierThresholds={
+    warrior:[{lvl:1,name:'Conscript'},{lvl:10,name:'Footsoldier'},{lvl:25,name:'Knight'},{lvl:50,name:'Champion'},{lvl:75,name:'Paladin'},{lvl:100,name:'Warlord'}],
+    mage:[{lvl:1,name:'Apprentice'},{lvl:15,name:'Scholar'},{lvl:35,name:'Arcanist'},{lvl:60,name:'Archmage'},{lvl:85,name:'Sorcerer Supreme'}],
+    ranger:[{lvl:1,name:'Scout'},{lvl:20,name:'Huntress'},{lvl:45,name:'Warden'},{lvl:75,name:'Shadowstrider'}]
+  };
+  var tiers=tierThresholds[cls]||tierThresholds.warrior;
+  var nextTier=null;
+  for(var ti=0;ti<tiers.length;ti++){if(tiers[ti].lvl>curLvl){nextTier=tiers[ti];break;}}
+  h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1)">';
+  if(nextTier){
+    h+='<div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:6px">NEXT ARMOR TIER AT <span style="color:var(--gold)">LV.'+nextTier.lvl+'</span></div>';
+    h+='<div id="tier-preview-canvas-wrap" style="display:flex;align-items:center;gap:10px">';
+    h+='<canvas id="tier-preview-cv" width="60" height="80" style="image-rendering:pixelated;display:block"></canvas>';
+    h+='<div style="font-size:10px;color:var(--dim)">'+nextTier.name+'</div>';
+    h+='</div>';
+  } else {
+    h+='<div style="font-size:10px;color:var(--gold);letter-spacing:1px">MAX TIER REACHED</div>';
+  }
+  h+='</div>';
+  return {html:h, nextTierLevel:nextTier?nextTier.lvl:null, cls:cls};
 }
 
 function buildTitleChars() {
@@ -2066,7 +2143,29 @@ function buildTitleChars() {
         card.classList.add('selected');
         selectedCls = cls;
         myClass = cls; // set active class
-        panel.innerHTML = buildSpellDesc(cls);
+        var desc=buildSpellDesc(cls);
+        panel.innerHTML = desc.html;
+        panel.classList.add('show');
+        // Draw next-tier preview sprite
+        if(desc.nextTierLevel){
+          setTimeout(function(){
+            var cv=document.getElementById('tier-preview-cv');
+            if(!cv)return;
+            var pctx=cv.getContext('2d');pctx.imageSmoothingEnabled=false;
+            var previewLevel=desc.nextTierLevel;
+            var previewCls=desc.cls;
+            var animTp=0;
+            // Cancel previous animation
+            if(window._tierPreviewRaf)cancelAnimationFrame(window._tierPreviewRaf);
+            (function animTierPreview(){
+              pctx.clearRect(0,0,60,80);
+              animTp+=0.025;
+              var fn=DRAW[previewCls];
+              if(fn)fn(pctx,30,58,3,Math.sin(animTp)*2,false,previewLevel);
+              window._tierPreviewRaf=requestAnimationFrame(animTierPreview);
+            })();
+          },50);
+        }
         panel.classList.add('show');
       }
     });
