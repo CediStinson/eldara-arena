@@ -3226,7 +3226,7 @@ document.getElementById('lob-back').addEventListener('click',function(){cleanupF
 
 function launchPvP(arenaKey,hostId,hostName,hostCls) {
   var arena=ARENAS[arenaKey]||ARENAS.crypt;
-  var iAmHost=(myId===hostId);
+  iAmHost=(myId===hostId);
   if(!iAmHost&&hostId){enemyIdPvp=hostId;}
   var meClass=myClass||'warrior';
   var me=mkPlayer(myId,meClass,myName||'Player',iAmHost?arena.sp1:arena.sp2,true);
@@ -3316,6 +3316,7 @@ function doStartRematch(guestCls){
 var pvpRematchReady=false;
 var opponentRematchReady=false;
 var opponentRematchCls='';
+var iAmHost=false;
 var lockedArena=null;
 document.querySelectorAll('.ov-cls-btn').forEach(function(b){
   b.addEventListener('click',function(){
