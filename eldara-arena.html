@@ -220,6 +220,19 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
       </div>
     </div>
   </div>
+  <!-- Name change confirm overlay -->
+  <div id="name-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:Courier New,monospace">
+    <div style="background:rgba(10,8,20,0.98);border:1px solid var(--border);padding:32px 40px;display:flex;flex-direction:column;gap:14px;width:360px;text-align:center">
+      <div style="font-size:14px;letter-spacing:3px;color:var(--gold)">RENAME?</div>
+      <div style="font-size:12px;color:var(--dim)">Change your name to</div>
+      <div style="font-size:18px;color:var(--text);letter-spacing:2px" id="name-confirm-new">-</div>
+      <div style="font-size:10px;color:#e74c3c;letter-spacing:1px" id="name-confirm-warn">This is permanent.</div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button id="name-confirm-yes" style="flex:1;padding:12px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:12px;letter-spacing:2px;cursor:pointer">CONFIRM</button>
+        <button id="name-confirm-no" style="flex:1;padding:12px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:12px;letter-spacing:2px;cursor:pointer">CANCEL</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- TRAINING OVERLAY (appears over title) -->
@@ -2005,40 +2018,10 @@ function processAction(msg,gs,me,en) {
   } else if(msg.type==='chat'&&msg.data){
     sidelog(msg.data.who||'?',msg.data.text||'');
   } else if(msg.type==='rematch_ready'){
-    // Opponent is ready for rematch — update their class, start if we're also ready
-    if(en&&msg.data&&msg.data.cls){en.cls=msg.data.cls;}
-    var st=document.getElementById('ov-rematch-status');
-    if(pvpRematchReady){
-      // Both ready — host starts the match
-      if(st){st.style.display='block';st.textContent='Starting...';}
-      if(isHost){
-        pvpRematchReady=false; // reset for next rematch
-        var ak3=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
-        var meR3=gs.players.find(function(p){return p.isMe;});
-        if(meR3)meR3.cls=myClass;
-        pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,guestCls:en?en.cls:''});
-        gs.arena=ARENAS[ak3];gs.arenaKey=ak3;
-        gs.players.forEach(function(p){p.wins=0;});
-        hideOverlay();resetRound(gs);
-      }
-      // Guest resets on rematch_start
-    } else {
-      // We haven't pressed rematch yet — show notification
-      if(st){st.style.display='block';st.textContent='Opponent is ready!';}
-    }
-  } else if(msg.type==='rematch_start'){
-    // Guest receives start signal from host
-    if(msg.data&&msg.data.arenaKey&&ARENAS[msg.data.arenaKey]){
-      gs.arena=ARENAS[msg.data.arenaKey];gs.arenaKey=msg.data.arenaKey;
-    }
-    // Update enemy class
-    if(en&&msg.data&&msg.data.hostCls){en.cls=msg.data.hostCls;}
-    // Update our own class
-    var meR4=gs.players.find(function(p){return p.isMe;});
-    if(meR4)meR4.cls=myClass;
-    gs.players.forEach(function(p){p.wins=0;});
-    pvpRematchReady=false; // reset for next rematch
-    hideOverlay();resetRound(gs);
+    // Legacy inbox handler — show notification, host will detect via Firebase poll
+    var st2=document.getElementById('ov-rematch-status');
+    if(st2&&!pvpRematchReady){st2.style.display='block';st2.textContent='Opponent is ready!';}
+    if(pvpRematchReady&&isHost){checkBothRematchReady();} // we're already ready, kick off check
   } else if(msg.type==='opponent_left'){
     // Opponent left — you win
     var meW=gs.players.find(function(p){return p.isMe;});
@@ -2062,8 +2045,32 @@ function processAction(msg,gs,me,en) {
 var actionPollInterval=null;
 var seenActionKeys={};
 
+function startListeningRematchStart(){
+  // Guest polls for rematch start signal from host
+  if(isHost)return;
+  var rematchPoll=setInterval(function(){
+    if(!gameState||!roomCode){clearInterval(rematchPoll);return;}
+    fbGet('/rooms/'+roomCode+'/rematch/start').then(function(data){
+      if(!data||!data.arenaKey)return;
+      clearInterval(rematchPoll);
+      if(gameState&&gameState.phase==='gameOver'){
+        var enR5=gameState.players.find(function(p){return !p.isMe;});
+        var meR5=gameState.players.find(function(p){return p.isMe;});
+        if(enR5&&data.hostCls)enR5.cls=data.hostCls;
+        if(meR5)meR5.cls=myClass;
+        gameState.arena=ARENAS[data.arenaKey]||gameState.arena;
+        gameState.arenaKey=data.arenaKey;
+        gameState.players.forEach(function(p){p.wins=0;});
+        pvpRematchReady=false;
+        hideOverlay();resetRound(gameState);
+        // Write our ready state too so host knows
+        fbSet('/rooms/'+roomCode+'/rematch/'+myId,{cls:myClass,ts:Date.now()});
+      }
+    });
+  },600);
+}
+
 function startListeningActions() {
-  // Poll my inbox every 150ms — simple and reliable
   var myInbox='/rooms/'+roomCode+'/inbox/'+myId;
   seenActionKeys={};
   if(actionPollInterval)clearInterval(actionPollInterval);
@@ -2516,6 +2523,7 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
   showScreen('game-screen');hideOverlay();resizeCanvas();
   startListeningEnemy(enId);startListeningActions();
+  if(!iAmHost)startListeningRematchStart();
   updateProfileBadge();
   updateHUD(gameState);showBanner('Get Ready!');
 }
@@ -2553,10 +2561,41 @@ document.getElementById('ov-rematch').addEventListener('click',function(){
   var st=document.getElementById('ov-rematch-status');
   if(st){st.style.display='block';st.textContent='Waiting for opponent...';}
   pvpRematchReady=true;
-  pushAction('rematch_ready',{cls:myClass});
-  // If we already received opponent's ready before clicking (race condition), start now
-  // This is handled in processAction
+  // Write ready state to Firebase so both sides can see it
+  fbSet('/rooms/'+roomCode+'/rematch/'+myId,{cls:myClass,ts:Date.now()});
+  // If host: start polling for guest ready
+  // If guest: host will detect and start
+  if(isHost){checkBothRematchReady();}
 });
+
+function checkBothRematchReady(){
+  fbGet('/rooms/'+roomCode+'/rematch').then(function(data){
+    if(!data||!gameState)return;
+    var keys=Object.keys(data).filter(function(k){return k!=='start';});
+    if(keys.length>=2){
+      // Both ready — start!
+      var ak3=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+      var guestKey=keys.find(function(k){return k!==myId;})||keys[0];
+      var guestCls=data[guestKey]&&data[guestKey].cls||'warrior';
+      // Update classes
+      var meR3=gameState.players.find(function(p){return p.isMe;});
+      var enR3=gameState.players.find(function(p){return !p.isMe;});
+      if(meR3)meR3.cls=myClass;
+      if(enR3)enR3.cls=guestCls;
+      gameState.arena=ARENAS[ak3];gameState.arenaKey=ak3;
+      gameState.players.forEach(function(p){p.wins=0;});
+      // Write start signal for guest
+      fbSet('/rooms/'+roomCode+'/rematch/start',{arenaKey:ak3,hostCls:myClass,ts:Date.now()});
+      // Clear rematch entries
+      fbDelete('/rooms/'+roomCode+'/rematch');
+      pvpRematchReady=false;
+      hideOverlay();resetRound(gameState);
+    } else {
+      // Guest not ready yet — poll again
+      setTimeout(checkBothRematchReady,500);
+    }
+  });
+}
 // Class picker in overlay
 var pvpRematchReady=false;
 document.querySelectorAll('.ov-cls-btn').forEach(function(b){
@@ -2873,6 +2912,7 @@ document.getElementById('btn-settings').addEventListener('click',function(){
 document.getElementById('settings-close').addEventListener('click',function(){
   document.getElementById('settings-overlay').style.display='none';
 });
+var _pendingNameChange=null,_pendingNameUsed=0;
 document.getElementById('settings-save').addEventListener('click',function(){
   var newName=document.getElementById('settings-name-inp').value.trim().toUpperCase().substring(0,14);
   var err=document.getElementById('settings-err');
@@ -2881,26 +2921,36 @@ document.getElementById('settings-save').addEventListener('click',function(){
   fbGetAuth('/users/'+authUid+'/profile').then(function(d){
     var used=d&&d.nameChanges||0;
     if(used>=2){err.textContent='No name changes left.';return;}
-    var confirmed=confirm('Rename to "'+newName+'"? This is permanent. You have '+(2-used-1)+' name change'+(2-used-1!==1?'s':'')+' remaining after this.');
-    if(!confirmed)return;
-    // Save to Firebase
-    fbSetAuth('/users/'+authUid+'/profile',{
-      displayName:newName,
-      email:authEmail,
-      nameChanges:used+1,
-      lastSeen:Date.now()
-    }).then(function(){
-      displayName=newName;myName=newName;
-      try{sessionStorage.setItem('eldara_name',newName);}catch(e){}
-      document.getElementById('settings-curname').textContent=newName;
-      var left=Math.max(0,2-(used+1));
-      document.getElementById('settings-changes-left').textContent=left+' free name change'+(left!==1?'s':'')+' remaining';
-      document.getElementById('settings-save').disabled=left<=0;
-      document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
-      document.getElementById('settings-name-inp').value='';
-      updateProfileBadge();
-      err.textContent='';
-    });
+    _pendingNameChange=newName;
+    _pendingNameUsed=used;
+    var left=2-used-1;
+    document.getElementById('name-confirm-new').textContent=newName;
+    document.getElementById('name-confirm-warn').textContent='This is permanent. '+left+' free change'+(left!==1?'s':'')+' remaining after this.';
+    document.getElementById('name-confirm-overlay').style.display='flex';
+  });
+});
+document.getElementById('name-confirm-no').addEventListener('click',function(){
+  document.getElementById('name-confirm-overlay').style.display='none';
+  _pendingNameChange=null;
+});
+document.getElementById('name-confirm-yes').addEventListener('click',function(){
+  document.getElementById('name-confirm-overlay').style.display='none';
+  if(!_pendingNameChange)return;
+  var newName=_pendingNameChange,used=_pendingNameUsed;
+  _pendingNameChange=null;
+  fbSetAuth('/users/'+authUid+'/profile',{
+    displayName:newName,email:authEmail,nameChanges:used+1,lastSeen:Date.now()
+  }).then(function(){
+    displayName=newName;myName=newName;
+    try{sessionStorage.setItem('eldara_name',newName);}catch(e){}
+    document.getElementById('settings-curname').textContent=newName;
+    var left=Math.max(0,2-(used+1));
+    document.getElementById('settings-changes-left').textContent=left+' free name change'+(left!==1?'s':'')+' remaining';
+    document.getElementById('settings-save').disabled=left<=0;
+    document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
+    document.getElementById('settings-name-inp').value='';
+    document.getElementById('settings-err').textContent='';
+    updateProfileBadge();
   });
 });
 
