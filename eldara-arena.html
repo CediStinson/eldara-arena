@@ -110,8 +110,9 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .sslot .cdov{position:absolute;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--dim)}
 .sslot .klbl{position:absolute;bottom:1px;right:2px;font-size:6px;color:var(--dim)}
 /* Bottom skillbar */
-#skillbar{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:none;gap:10px;align-items:flex-end;pointer-events:none;z-index:20}
+#skillbar{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:none;gap:10px;align-items:flex-end;pointer-events:none;z-index:20}
 #game-screen.active #skillbar{display:flex}
+#game-screen.active #ingame-xp-wrap{display:flex!important}
 .sk-big{width:64px;height:68px;background:rgba(10,8,20,0.92);border:2px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;border-radius:4px}
 .sk-big.attack-slot{border-color:#6a7a8a}
 .sk-big.s1-slot{border-color:#4a4a8a}
@@ -203,8 +204,25 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     </div>
   </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);letter-spacing:2px;white-space:nowrap">by Benjamin Siedler 2026</div>
+  <button id="btn-achievements" style="position:absolute;top:50%;left:16px;transform:translateY(-50%);background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:3px" title="Achievements">ACHIEVEMENTS</button>
   <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
   <button id="btn-settings" style="position:absolute;top:46px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Settings">SETTINGS</button>
+  <!-- Achievements overlay -->
+  <div id="ach-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:85;flex-direction:column;font-family:Courier New,monospace">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border)">
+      <div style="font-size:18px;letter-spacing:5px;color:var(--gold)">ACHIEVEMENTS</div>
+      <button id="ach-close" style="background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;padding:6px 14px;cursor:pointer">CLOSE</button>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--border)">
+      <button class="ach-tab active" data-tab="all" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">ALL</button>
+      <button class="ach-tab" data-tab="warrior" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">WARRIOR</button>
+      <button class="ach-tab" data-tab="mage" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">MAGE</button>
+      <button class="ach-tab" data-tab="ranger" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">ROGUE</button>
+      <button class="ach-tab" data-tab="general" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">GENERAL</button>
+    </div>
+    <div id="ach-list" style="flex:1;overflow-y:auto;padding:20px 28px;display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+  </div>
   <!-- Settings overlay -->
   <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:90;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Courier New,monospace">
     <div style="background:rgba(10,8,20,0.97);border:1px solid var(--border);padding:32px 40px;display:flex;flex-direction:column;gap:14px;width:360px">
@@ -236,12 +254,29 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 </div>
 
 <!-- TRAINING OVERLAY (appears over title) -->
-<div id="train-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+<div id="train-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:14px">
   <div style="font-size:11px;letter-spacing:4px;color:var(--dim);margin-bottom:4px">TRAINING</div>
   <div style="font-size:22px;letter-spacing:4px;color:var(--gold)" id="train-cls-label">WARRIOR</div>
   <div style="font-size:11px;color:var(--dim)" id="train-lvl-label">Lv.1 Conscript</div>
-  <button class="menu-btn primary" id="btn-start-train" style="width:260px;margin-top:8px;font-size:15px">START TRAINING</button>
+  <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:Courier New,monospace;font-size:11px;color:var(--dim)">
+      <input type="checkbox" id="train-random-arena" checked style="width:14px;height:14px;cursor:pointer;accent-color:var(--gold)">
+      RANDOM ARENA
+    </label>
+    <button id="btn-choose-arena" style="background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:10px;letter-spacing:2px;padding:5px 10px;cursor:pointer;opacity:0.4">CHOOSE ARENA</button>
+  </div>
+  <div style="font-size:10px;color:rgba(232,184,75,0.7);letter-spacing:1px;min-height:14px" id="train-arena-label"></div>
+  <button class="menu-btn primary" id="btn-start-train" style="width:260px;margin-top:4px;font-size:15px">START TRAINING</button>
   <button class="menu-btn" id="btn-cancel-train" style="width:260px;font-size:13px">&#8592; BACK</button>
+</div>
+
+<!-- Arena picker overlay -->
+<div id="arena-picker-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:60;flex-direction:column;font-family:Courier New,monospace">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border)">
+    <div style="font-size:16px;letter-spacing:4px;color:var(--gold)">CHOOSE ARENA</div>
+    <button id="arena-picker-close" style="background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;padding:6px 14px;cursor:pointer">DONE</button>
+  </div>
+  <div id="arena-picker-list" style="flex:1;overflow-y:auto;padding:24px 28px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start"></div>
 </div>
 
 <!-- PVP SETUP (minimal: host or join only) -->
@@ -339,6 +374,13 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div class="sk-big s2-slot" id="skb-s2"><div class="sk-name" id="skb-s2-name">SKILL 2</div><div class="sk-icon" id="skb-s2-icon">?</div><div class="sk-key">J</div></div>
     <div class="sk-big" id="skb-move" style="border-color:#8a5a20"><div class="sk-name" id="skb-move-name">MOVE</div><div class="sk-icon" id="skb-move-icon">&#9889;</div><div class="sk-key">SPC</div></div>
 
+  </div>
+  <!-- XP bar below skillbar -->
+  <div id="ingame-xp-wrap" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);flex-direction:row;align-items:center;gap:8px;pointer-events:none;z-index:20;display:none">
+    <div style="font-size:9px;color:rgba(160,100,255,0.8);letter-spacing:1px;white-space:nowrap" id="ingame-xp-label">Lv.1</div>
+    <div style="width:200px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden">
+      <div id="ingame-xp-fill" style="height:100%;background:linear-gradient(90deg,#6a20c0,#9a40ff);border-radius:2px;width:0%;transition:width 0.5s ease"></div>
+    </div>
   </div>
   <div id="conn-bar">OFFLINE</div>
   <div id="profile-badge"></div>
@@ -539,120 +581,297 @@ function px(ctx, gx, gy, color, w, h) {
 // ── Warrior (battle-scarred knight) ──
 function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   level=level||1;
+  var wT=level<10?0:level<20?1:level<30?2:3;
   ctx.save(); ctx.translate(x, y);
-  if(dir===2) ctx.scale(-1,1);
+  if(dir!==2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.15)*0.5, leg=Math.sin(anim*0.3)*1.2;
   var sw=(anim>0&&anim<12)?Math.sin(anim*0.5)*6:0;
 
-  // ── WARRIOR TIER BODY (level-dependent) ──
-  var wT=level<10?0:level<25?1:level<50?2:level<75?3:level<100?4:5;
-
-  // Cape — only from tier 2+
-  if(wT>=2){px(ctx,-4,2+bob,'#6a0808',8,10);px(ctx,-4,2+bob,'#8b1010',7,8);px(ctx,-3,10+bob,'#5a0808',6,3);}
-
-  // BODY ARMOR
-  if(wT===0){ // Tier 0: rough cloth shirt
-    px(ctx,-3,0+bob,'#5a4a38',5,9);px(ctx,-2,0+bob,'#6a5a48',3,8);
-    px(ctx,-3,0+bob,'#4a3a28',1,8);px(ctx,2,0+bob,'#4a3a28',1,8);
-    px(ctx,-3,8+bob,'#3a2a18',6,1); // cloth belt
-  } else if(wT===1){ // Tier 1: leather vest
-    px(ctx,-3,0+bob,'#4a3018',6,9);px(ctx,-2,0+bob,'#6a5028',4,8);px(ctx,-1,1+bob,'#8a7038',2,4);
-    px(ctx,-3,8+bob,'#2a1a08',6,1);px(ctx,-1,8+bob,'#707070',2,1);
-  } else if(wT===2){ // Tier 2: chainmail
-    px(ctx,-3,0+bob,'#505868',6,9);px(ctx,-2,0+bob,'#606878',4,8);
-    px(ctx,-1,1+bob,'#707888',2,4);
-    // chain pattern
-    px(ctx,-3,3+bob,'#404858',6,1);px(ctx,-3,6+bob,'#404858',6,1);
-    px(ctx,-3,8+bob,'#303840',6,1);px(ctx,-1,8+bob,'#909090',2,1);
-  } else { // Tier 3+: plate armor
-    if(wT>=3){px(ctx,-5,8+bob,'#4a0606',2,5);}// cloak side
-    px(ctx,-3,0+bob,'#2a2e36',6,9);px(ctx,-2,0+bob,'#3a4050',4,8);px(ctx,-1,1+bob,'#50606e',2,4);
-    px(ctx,-3,0+bob,wT>=5?'#c8a030':'#888',1,1);px(ctx,2,0+bob,wT>=5?'#c8a030':'#888',1,1);
-    px(ctx,-2,-1+bob,'#3a3a42',4,2); // gorget
-    px(ctx,-3,8+bob,'#1a1008',6,2);px(ctx,-1,8+bob,'#808080',2,1);
-    px(ctx,-3,8+bob,wT>=5?'#c8a030':'#555',1,1);px(ctx,2,8+bob,wT>=5?'#c8a030':'#555',1,1);
+  // ── CAPE (tier 2+) ──
+  if(wT>=2){
+    px(ctx,-4,2+bob,'#4a0404',8,11);
+    px(ctx,-4,2+bob,'#620606',7,9);
+    px(ctx,-3,10+bob,'#3a0404',6,4);
+    px(ctx,-5,6+bob,'#380404',2,6);  // left edge shadow
+    px(ctx,3,6+bob,'#380404',2,5);   // right edge
   }
 
-  // PAULDRONS — tier 3+
-  if(wT>=3){
+  // ── BODY ──
+  if(wT===0){
+    // Cloth shirt — layered texture
+    px(ctx,-3,0+bob,'#5a4a38',5,9);
+    px(ctx,-2,0+bob,'#6a5a48',3,8);
+    px(ctx,-1,2+bob,'#7a6a58',1,5);  // center highlight
+    px(ctx,-3,0+bob,'#3e2e1e',1,9);  // left shadow
+    px(ctx,2,0+bob,'#3e2e1e',1,9);   // right shadow
+    px(ctx,-3,8+bob,'#3a2a18',6,1);  // belt line
+    px(ctx,-2,4+bob,'#4a3a28',4,1);  // horizontal fold
+    // Collar
+    px(ctx,-1,-1+bob,'#6a5a48',2,2);
+    px(ctx,-2,0+bob,'#5a4a38',1,1);px(ctx,1,0+bob,'#5a4a38',1,1);
+  } else if(wT===1){
+    // Grey chainmail — detailed rings
+    px(ctx,-3,0+bob,'#585c64',6,9);
+    px(ctx,-2,0+bob,'#686c74',4,8);
+    px(ctx,-1,1+bob,'#787c84',2,5);  // chest highlight
+    px(ctx,-3,0+bob,'#484c54',1,9);  // left shadow
+    px(ctx,2,0+bob,'#484c54',1,9);   // right shadow
+    // Chain ring rows
+    px(ctx,-3,2+bob,'#404450',6,1);
+    px(ctx,-3,4+bob,'#404450',6,1);
+    px(ctx,-3,6+bob,'#404450',6,1);
+    // Belt + buckle
+    px(ctx,-3,8+bob,'#2a2010',6,1);
+    px(ctx,-1,8+bob,'#909090',2,1);  // iron buckle
+    // Gorget (neck guard)
+    px(ctx,-2,-1+bob,'#505868',4,2);
+    px(ctx,-1,-1+bob,'#606878',2,1);
+  } else if(wT===2){
+    // Dark plate — detailed
+    px(ctx,-3,0+bob,'#2a2e36',6,9);
+    px(ctx,-2,0+bob,'#3a4050',4,8);
+    px(ctx,-1,1+bob,'#50606e',2,5);  // chest shine
+    px(ctx,-3,0+bob,'#1e2228',1,9);  // left shadow
+    px(ctx,2,0+bob,'#1e2228',1,9);   // right shadow
+    px(ctx,-2,-1+bob,'#3a3a42',4,2); // gorget
+    px(ctx,-3,8+bob,'#1a1008',6,2);  // belt plate
+    px(ctx,-1,8+bob,'#606060',2,1);  // belt buckle
+    // Breastplate line
+    px(ctx,-1,3+bob,'#3a4a58',1,4);
+    // Pauldrons
     px(ctx,-5,-2+bob,'#2a2e36',3,4);px(ctx,2,-2+bob,'#2a2e36',3,4);
     px(ctx,-5,-2+bob,'#4a5060',1,2);px(ctx,4,-2+bob,'#4a5060',1,2);
-    if(wT>=5){px(ctx,-6,-2+bob,'#c8a030',1,2);px(ctx,5,-2+bob,'#c8a030',1,2);}
+    px(ctx,-5,-2+bob,'#1e2228',2,1); // pauldron shadow top
+  } else {
+    // Warlord — gold trim plate
+    px(ctx,-5,8+bob,'#4a0606',2,5); // cape sliver
+    px(ctx,-3,0+bob,'#2a2e36',6,9);
+    px(ctx,-2,0+bob,'#3a4050',4,8);
+    px(ctx,-1,1+bob,'#50606e',2,5);
+    px(ctx,-3,0+bob,'#1e2228',1,9);
+    px(ctx,2,0+bob,'#1e2228',1,9);
+    // Gold trim details
+    px(ctx,-3,0+bob,'#c8a030',1,1);px(ctx,2,0+bob,'#c8a030',1,1);
+    px(ctx,-3,8+bob,'#c8a030',1,1);px(ctx,2,8+bob,'#c8a030',1,1);
+    px(ctx,-2,-1+bob,'#3a3a42',4,2);
+    px(ctx,-3,8+bob,'#1a1008',6,2);
+    px(ctx,-1,8+bob,'#c8a030',2,1);
+    // Breastplate gold line
+    px(ctx,-1,2+bob,'#c8a030',1,5);
+    // Pauldrons gold
+    px(ctx,-5,-2+bob,'#2a2e36',3,4);px(ctx,2,-2+bob,'#2a2e36',3,4);
+    px(ctx,-5,-2+bob,'#4a5060',1,2);px(ctx,4,-2+bob,'#4a5060',1,2);
+    px(ctx,-6,-2+bob,'#c8a030',1,3);px(ctx,5,-2+bob,'#c8a030',1,3);
+    px(ctx,-5,-2+bob,'#c8a030',3,1);px(ctx,2,-2+bob,'#c8a030',3,1);
   }
 
-  // ARMS
-  if(wT<=1){ // bare/cloth arms
+  // ── ARMS ──
+  if(wT===0){
     px(ctx,-5,1+bob,'#d4a76a',2,6);px(ctx,3,1+bob,'#d4a76a',2,6);
-    if(wT===1){px(ctx,-5,1+bob,'#4a3018',2,2);px(ctx,3,1+bob,'#4a3018',2,2);}
-  } else { // armored arms
+    px(ctx,-5,1+bob,'#c09050',1,5); // shadow
+    px(ctx,4,1+bob,'#c09050',1,5);
+  } else if(wT===1){
+    px(ctx,-5,1+bob,'#585c64',2,7);px(ctx,3,1+bob,'#585c64',2,7);
+    px(ctx,-5,1+bob,'#686c74',1,5); // highlight
+    px(ctx,-5,4+bob,'#484c54',2,1); // chain ring
+    px(ctx,3,4+bob,'#484c54',2,1);
+    px(ctx,-5,7+bob,'#d4a76a',2,2);px(ctx,3,7+bob,'#d4a76a',2,2);
+  } else {
     px(ctx,-5,1+bob,'#2a2e36',2,7);px(ctx,3,1+bob,'#2a2e36',2,7);
     px(ctx,-5,1+bob,'#3a4050',1,5);
-    if(wT>=4){px(ctx,-5,7+bob,'#2a2020',2,2);px(ctx,3,7+bob,'#2a2020',2,2);}
-    else{px(ctx,-5,7+bob,'#d4a76a',2,2);px(ctx,3,7+bob,'#d4a76a',2,2);}
+    px(ctx,-5,4+bob,'#222830',2,1);px(ctx,3,4+bob,'#222830',2,1); // arm crease
+    px(ctx,-5,7+bob,'#2a2020',2,2);px(ctx,3,7+bob,'#2a2020',2,2);
+    if(wT>=3){
+      px(ctx,-5,1+bob,'#c8a030',1,1);px(ctx,3,1+bob,'#c8a030',1,1);
+      px(ctx,-5,3+bob,'#c8a030',2,1);px(ctx,3,3+bob,'#c8a030',2,1); // vambrace gold
+    }
   }
 
-  // LEGS
-  if(wT<=1){ // cloth/leather legs
+  // ── LEGS ──
+  if(wT===0){
     px(ctx,-3,10+bob+leg,'#4a3828',2,6);px(ctx,1,10+bob-leg,'#4a3828',2,6);
+    px(ctx,-3,10+bob+leg,'#3a2818',1,5);px(ctx,2,10+bob-leg,'#3a2818',1,5);
+  } else if(wT===1){
+    px(ctx,-3,10+bob+leg,'#585c64',2,6);px(ctx,1,10+bob-leg,'#585c64',2,6);
+    px(ctx,-3,10+bob+leg,'#686c74',1,4);
+    px(ctx,-3,12+bob+leg,'#484c54',2,1);px(ctx,1,12+bob-leg,'#484c54',2,1); // ring
   } else {
     px(ctx,-3,10+bob+leg,'#2a2e36',2,6);px(ctx,1,10+bob-leg,'#2a2e36',2,6);
     px(ctx,-3,10+bob+leg,'#3a4050',1,4);
+    px(ctx,-3,12+bob+leg,'#222830',2,1);px(ctx,1,12+bob-leg,'#222830',2,1); // crease
+    if(wT>=3){px(ctx,-3,10+bob+leg,'#c8a030',1,1);px(ctx,1,10+bob-leg,'#c8a030',1,1);}
   }
 
-  // BOOTS
-  if(wT<=0){ // cloth wrappings
-    px(ctx,-3,15+bob+leg,'#4a3828',3,2);px(ctx,1,15+bob-leg,'#4a3828',3,2);
-  } else if(wT===1){ // leather boots
-    px(ctx,-4,15+bob+leg,'#3a2010',4,2);px(ctx,1,15+bob-leg,'#3a2010',4,2);
-  } else { // plate sabatons
+  // ── BOOTS ──
+  if(wT===0){
+    px(ctx,-4,15+bob+leg,'#4a3828',3,3);px(ctx,1,15+bob-leg,'#4a3828',3,3);
+    px(ctx,-4,17+bob+leg,'#3a2818',3,1);px(ctx,1,17+bob-leg,'#3a2818',3,1);
+    px(ctx,-4,17+bob+leg,'#2a1808',4,1);px(ctx,1,17+bob-leg,'#2a1808',4,1);
+  } else if(wT===1){
+    px(ctx,-4,15+bob+leg,'#3a2010',4,3);px(ctx,1,15+bob-leg,'#3a2010',4,3);
+    px(ctx,-3,15+bob+leg,'#4a3020',2,2);
+    px(ctx,-4,17+bob+leg,'#1e1008',4,1);px(ctx,1,17+bob-leg,'#1e1008',4,1);
+  } else {
     px(ctx,-4,15+bob+leg,'#2a2e36',4,3);px(ctx,1,15+bob-leg,'#2a2e36',4,3);
+    px(ctx,-3,15+bob+leg,'#3a4050',2,2);
     px(ctx,-3,16+bob+leg,'#1a1a22',3,1);px(ctx,1,16+bob-leg,'#1a1a22',3,1);
-    if(wT>=5){px(ctx,-4,15+bob+leg,'#c8a030',1,1);px(ctx,4,15+bob-leg,'#c8a030',1,1);}
+    px(ctx,-4,17+bob+leg,'#14141c',4,1);px(ctx,1,17+bob-leg,'#14141c',4,1);
+    if(wT>=3){px(ctx,-4,15+bob+leg,'#c8a030',1,1);px(ctx,4,15+bob-leg,'#c8a030',1,1);}
   }
 
-  // ── HELM (tier-dependent) ──
-  if(wT===0){ // cloth hood
-    px(ctx,-2,-7+bob,'#5a4a38',4,6);px(ctx,-3,-6+bob,'#4a3a28',1,4);px(ctx,2,-6+bob,'#4a3a28',1,4);
-    px(ctx,-1,-5+bob,'#d4a76a',2,3); // bare face
+  // ── HELM ──
+  if(wT===0){
+    // Cloth hood — layered
+    px(ctx,-2,-7+bob,'#5a4a38',4,7);
+    px(ctx,-3,-6+bob,'#4a3a28',1,5);px(ctx,2,-6+bob,'#4a3a28',1,5);
+    px(ctx,-2,-8+bob,'#6a5a48',3,1); // top fold
+    px(ctx,-1,-5+bob,'#d4a76a',2,3); // face
+    px(ctx,-1,-5+bob,'#c09050',1,2); // face shadow
     px(ctx,-1,-4+bob,'#101010',2,1); // eyes
-  } else if(wT===1){ // leather cap
-    px(ctx,-2,-7+bob,'#4a3018',4,5);px(ctx,-1,-7+bob,'#6a5028',2,4);
-    px(ctx,-1,-5+bob,'#d4a76a',2,3);px(ctx,-1,-4+bob,'#101010',2,1);
-    px(ctx,-2,-7+bob,'#2a1808',4,1);
-  } else if(wT===2){ // chainmail coif
-    px(ctx,-3,-7+bob,'#505868',5,6);px(ctx,-2,-6+bob,'#606878',3,5);
+    px(ctx,-2,-1+bob,'#4a3a28',4,1); // neck bridge
+  } else if(wT===1){
+    // Chainmail coif + iron cap
+    px(ctx,-3,-7+bob,'#585c64',5,7);px(ctx,-2,-6+bob,'#686c74',3,6);
+    px(ctx,-3,-7+bob,'#484c54',1,6); // coif shadow
     px(ctx,-1,-5+bob,'#d4a76a',2,2);px(ctx,-1,-4+bob,'#101010',2,1);
-    px(ctx,-3,-7+bob,'#404858',5,1);
-  } else { // full plate helm
-    px(ctx,-3,-7+bob,'#2a2e36',6,6);px(ctx,-2,-6+bob,'#3a4050',4,5);px(ctx,-3,-7+bob,'#50606e',1,2);
+    px(ctx,-3,-7+bob,'#484c54',5,1); // top of coif
+    // Iron cap
+    px(ctx,-2,-9+bob,'#707478',4,3);px(ctx,-1,-10+bob,'#808488',2,2);
+    px(ctx,-3,-8+bob,'#606468',6,1); // rim
+    px(ctx,-2,-9+bob,'#909498',1,1); // highlight
+    px(ctx,1,-9+bob,'#585c60',1,2);  // cap shadow
+  } else if(wT===2){
+    // Full plate helm — detailed
+    px(ctx,-3,-7+bob,'#2a2e36',6,6);px(ctx,-2,-6+bob,'#3a4050',4,5);
+    px(ctx,-3,-7+bob,'#1e2228',1,5); // helm shadow
+    px(ctx,1,-6+bob,'#50606e',1,4);  // helm highlight
+    px(ctx,-2,-4+bob,'#080c10',4,2); // visor
+    px(ctx,-2,-4+bob,'rgba(60,140,220,0.9)',1,1);px(ctx,0,-4+bob,'rgba(60,140,220,0.9)',1,1); // eye glow
+    px(ctx,-1,-10+bob,'#8b1010',2,4);px(ctx,-1,-9+bob,'#aa2020',2,3); // plume
+    px(ctx,-1,-10+bob,'#cc3030',1,3); // plume highlight
+    px(ctx,-3,-7+bob,'#484c54',6,1); // helm brow
+  } else {
+    // Warlord helm — gold everywhere
+    px(ctx,-3,-7+bob,'#2a2e36',6,6);px(ctx,-2,-6+bob,'#3a4050',4,5);
+    px(ctx,-3,-7+bob,'#1e2228',1,5);
+    px(ctx,1,-6+bob,'#50606e',1,4);
     px(ctx,-2,-4+bob,'#080c10',4,2);
-    px(ctx,-2,-4+bob,'rgba(60,140,220,0.9)',1,1);px(ctx,0,-4+bob,'rgba(60,140,220,0.9)',1,1);
-    if(wT>=3){px(ctx,-1,-10+bob,'#8b1010',2,4);px(ctx,-1,-9+bob,'#aa2020',2,3);}
-    px(ctx,-3,-7+bob,wT>=5?'#c8a030':'#555',6,1);
+    px(ctx,-2,-4+bob,'rgba(80,160,255,0.95)',1,1);px(ctx,0,-4+bob,'rgba(80,160,255,0.95)',1,1);
+    px(ctx,-1,-10+bob,'#8b1010',2,4);px(ctx,-1,-9+bob,'#cc3030',2,3);
+    px(ctx,-1,-10+bob,'#ee4040',1,3);
+    // Gold trim
+    px(ctx,-3,-7+bob,'#c8a030',6,1);
+    px(ctx,-3,-7+bob,'#c8a030',1,6);px(ctx,2,-7+bob,'#c8a030',1,6);
+    px(ctx,-2,-7+bob,'#e0b840',1,1); // corner gleam
   }
 
-  // Great sword — right hand, worn blade (rotated 180°: tip up, pommel down)
-  var gx=4+sw*0.3;
-  px(ctx,gx,   9+bob,'#c0c8c0',2,2);   // pommel (now at bottom)
-  px(ctx,gx+0.5,6+bob,'#2a2020',1,2);  // grip dark
-  px(ctx,gx,   3+bob,'#5a4a30',2,4);   // grip wrap
-  px(ctx,gx,  -1+bob,'#3a3a42',2,1);   // crossguard
-  px(ctx,gx-1,-1+bob,'#c8a030',4,1);   // crossguard gold
-  px(ctx,gx,  -9+bob,'#b0b8b8',2,10);  // blade (pointing up)
-  px(ctx,gx,  -9+bob,'#d0d8d8',1,9);   // blade edge
-  px(ctx,gx,  -9+bob,'#a0a8a8',2,1);   // blade tip (now at top)
-  if(sw>0){
-    ctx.fillStyle='rgba(180,200,220,0.25)';
-    ctx.fillRect((gx-1)*S,-11*S,4*S,14*S);
+  // ── SWORD (weapon tier by games played) ──
+  var wpT=getWeaponTier('warrior');
+  var gx=4;
+  if(wpT===0){
+    // Short rusty sword — pommel bottom, blade UP
+    px(ctx,gx,9+bob,'#706860',2,2);   // pommel at bottom
+    px(ctx,gx,8+bob,'#504840',2,1);   // pommel-grip join
+    px(ctx,gx,4+bob,'#4a3828',2,5);   // grip
+    px(ctx,gx,5+bob,'#3a2818',1,3);   // grip shadow
+    px(ctx,gx-1,3+bob,'#706860',3,1); // guard
+    // Blade going UP from guard — 7px short
+    px(ctx,gx,-4+bob,'#909888',2,8);  // blade
+    px(ctx,gx,-4+bob,'#a0a898',1,7);  // edge
+    px(ctx,gx,-1+bob,'#887860',1,1);  // rust spot
+    px(ctx,gx,-3+bob,'#887860',1,1);  // rust spot
+    px(ctx,gx,-4+bob,'#807870',1,1);  // pointy tip
+  } else if(wpT===1){
+    // Iron sword — medium 12px blade UP
+    px(ctx,gx,9+bob,'#9098a0',2,2);   // pommel
+    px(ctx,gx,9+bob,'#b0b8c0',1,1);   // shine
+    px(ctx,gx,4+bob,'#3a2810',2,6);   // grip
+    px(ctx,gx,5+bob,'#5a4830',1,4);   // highlight
+    px(ctx,gx-1,3+bob,'#8090a0',4,1); // crossguard
+    // Blade UP from guard
+    px(ctx,gx,-9+bob,'#9090a0',2,13); // blade
+    px(ctx,gx,-9+bob,'#a8b0b8',1,12); // edge
+    px(ctx,gx,-9+bob,'#b0b8c0',2,1);  // taper near tip
+    px(ctx,gx,-10+bob,'#c0c8d0',1,1); // tip point
+  } else if(wpT===2){
+    // Steel greatsword — long 15px blade UP
+    px(ctx,gx,9+bob,'#b8c0b8',2,2);   // pommel
+    px(ctx,gx,9+bob,'#d8e0d8',1,1);
+    px(ctx,gx,4+bob,'#2a1e10',2,6);   // grip
+    px(ctx,gx,5+bob,'#4a3828',1,4);
+    px(ctx,gx-1,3+bob,'#909090',5,1); // wide guard
+    // Blade UP
+    px(ctx,gx,-12+bob,'#b0b8b8',2,16);// blade
+    px(ctx,gx,-12+bob,'#d0d8d8',1,15);// bright edge
+    px(ctx,gx+1,-12+bob,'#c0c8c8',1,11);// second edge
+    px(ctx,gx,-12+bob,'#d8e0e0',2,1); // taper
+    px(ctx,gx,-13+bob,'#e8f0f0',1,1); // tip point
+  } else {
+    // Legendary — 17px blade UP, gold guard, runic glow
+    px(ctx,gx,9+bob,'#c0c8c0',2,2);
+    px(ctx,gx,9+bob,'#f0f0e8',1,1);
+    px(ctx,gx,4+bob,'#2a1e10',2,6);
+    px(ctx,gx,5+bob,'#6a5a38',1,4);
+    px(ctx,gx-2,3+bob,'#c8a030',6,1); // wide gold guard
+    px(ctx,gx-1,2+bob,'#c8a030',1,1);px(ctx,gx+2,2+bob,'#c8a030',1,1);
+    // Blade UP
+    px(ctx,gx,-14+bob,'#b8c0c0',2,18);
+    px(ctx,gx,-14+bob,'#d8e0e0',1,17);
+    px(ctx,gx+1,-14+bob,'#c8d0d0',1,13);
+    px(ctx,gx-1,-12+bob,'#c0c8c8',1,10);
+    // Runic glow
+    px(ctx,gx,-3+bob,'rgba(200,160,40,0.7)',1,1);
+    px(ctx,gx,-7+bob,'rgba(200,160,40,0.7)',1,1);
+    px(ctx,gx,-11+bob,'rgba(200,160,40,0.5)',1,1);
+    // Pointy tip
+    px(ctx,gx,-14+bob,'#d8e0e0',2,1);
+    px(ctx,gx,-15+bob,'#e8f0f0',1,1);
   }
+  // (no swing glow)
 
-  // Shield — left hand, battered kite shield
-  px(ctx,-8, 0+bob,'#2a2e36',3,9);  // shield base
-  px(ctx,-8, 0+bob,'#3a4050',2,8);  // shield face
-  px(ctx,-7, 1+bob,'#8b1010',1,6);  // red stripe
-  px(ctx,-8, 0+bob,'#c8a030',1,1);  // top boss
-  px(ctx,-7, 4+bob,'#c8a030',2,1);  // center boss
-  px(ctx,-8, 8+bob,'#c8a030',3,1);  // bottom trim
+  // ── SHIELD (upgrades with weapon tier) ──
+  px(ctx,-6,2+bob,wT===0?'#d4a76a':'#2a2e36',1,6); // arm
+  if(wpT===0){
+    // Battered wooden round shield
+    px(ctx,-8,1+bob,'#6a4820',3,7);   // wooden face
+    px(ctx,-7,1+bob,'#7a5828',2,6);   // lighter wood
+    px(ctx,-8,1+bob,'#4a3010',1,6);   // left shadow
+    px(ctx,-8,1+bob,'#4a3010',3,1);   // top edge
+    px(ctx,-8,7+bob,'#4a3010',3,1);   // bottom edge
+    px(ctx,-7,4+bob,'#a07830',1,1);   // iron boss center
+  } else if(wpT===1){
+    // Iron-rimmed shield
+    px(ctx,-8,0+bob,'#3a3830',3,9);   // iron rim
+    px(ctx,-7,1+bob,'#6a4820',2,7);   // wood center
+    px(ctx,-8,0+bob,'#6a6860',1,2);   // rim highlight
+    px(ctx,-7,4+bob,'#909090',2,1);   // iron boss
+    px(ctx,-8,4+bob,'#707070',1,1);
+  } else if(wpT===2){
+    // Steel kite shield — proper
+    px(ctx,-8,0+bob,'#2a2e36',3,9);
+    px(ctx,-8,0+bob,'#3a4050',2,8);
+    px(ctx,-8,0+bob,'#1e2228',1,8);
+    px(ctx,-7,1+bob,'#8b1010',1,6);   // red stripe
+    px(ctx,-7,1+bob,'#aa1818',1,3);
+    px(ctx,-8,0+bob,'#c8a030',1,1);   // corner boss
+    px(ctx,-7,4+bob,'#c8a030',2,1);   // center boss
+    px(ctx,-8,8+bob,'#c8a030',3,1);   // bottom trim
+    px(ctx,-8,3+bob,'#404858',3,1);   // horizontal line
+    px(ctx,-8,6+bob,'#404858',3,1);
+  } else {
+    // Warlord shield — gold-trimmed
+    px(ctx,-8,0+bob,'#2a2e36',3,9);
+    px(ctx,-8,0+bob,'#3a4050',2,8);
+    px(ctx,-8,0+bob,'#c8a030',1,9);   // full gold left edge
+    px(ctx,-7,1+bob,'#8b1010',1,6);
+    px(ctx,-7,1+bob,'#cc2020',1,3);   // brighter red
+    px(ctx,-8,0+bob,'#c8a030',3,1);   // gold top
+    px(ctx,-8,8+bob,'#c8a030',3,1);   // gold bottom
+    px(ctx,-7,4+bob,'#e0b840',2,1);   // gold center boss
+    px(ctx,-9,0+bob,'#e0b840',1,3);   // extra gleam
+    px(ctx,-8,3+bob,'#c8a030',3,1);   // divider lines
+    px(ctx,-8,6+bob,'#c8a030',3,1);
+  }
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.4)';ctx.fillRect(-9*S,-11*S,20*S,32*S);}
   ctx.restore();
@@ -661,65 +880,184 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
 // ── Mage (ancient arcane scholar) ──
 function drawMage(ctx, x, y, dir, anim, flash, level) {
   level=level||1;
+  var mT=level<10?0:level<20?1:level<30?2:3;
   ctx.save(); ctx.translate(x, y);
-  if(dir===2) ctx.scale(-1,1);
+  if(dir!==2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.12)*0.6;
-  var oy=Math.sin(anim*0.08)*2;     // orb float
-  var rv=Math.sin(anim*0.06)*1;     // robe sway
+  var oy=Math.sin(anim*0.08)*2;
+  var rv=Math.sin(anim*0.06)*1;
 
-    // ── MAGE TIER BODY (level-dependent) ──
-  var mT=level<15?0:level<35?1:level<60?2:level<85?3:4;
-  var robeBase=mT===0?'#2a2618':mT===1?'#1a2030':mT===2?'#141838':mT===3?'#0e0c28':'#0a0820';
-  var robeMid=mT===0?'#3a3628':mT===1?'#283050':mT===2?'#1c2060':'#1a1848';
-  var robeHi=mT===0?'#4a4438':mT===1?'#384070':mT===2?'#2c3080':'#282068';
-  var trimColor=mT<=1?'#804010':mT===2?'#303890':'#5a20a0';
-  px(ctx,-3,0+bob,robeBase,6,13);px(ctx,-2,0+bob,robeMid,4,12);px(ctx,-1,1+bob,robeHi,2,6);
-  if(mT>=2){px(ctx,-3,0+bob,trimColor,1,12);px(ctx,2,0+bob,trimColor,1,12);}
+  // ── ROBE BODY ──
+  // Colors per tier
+  var robeBase=mT===0?'#2a2618':mT===1?'#12182a':mT===2?'#0e1428':'#080b18';
+  var robeMid =mT===0?'#3a3628':mT===1?'#1a2440':mT===2?'#141e50':'#0e1440';
+  var robeHi  =mT===0?'#4a4438':mT===1?'#243060':mT===2?'#1c2870':'#141a5a';
+  var trimCol =mT===0?'#804010':mT===1?'#2a3480':mT===2?'#4a18a0':'#7a30d0';
+  var shCol   =mT===0?'#1e1a10':mT===1?'#0a0e1a':mT===2?'#090e1e':'#060810';
+
+  // Main robe
+  px(ctx,-3,0+bob,robeBase,6,13);
+  px(ctx,-2,0+bob,robeMid,4,12);
+  px(ctx,-1,1+bob,robeHi,2,6);
+  px(ctx,-3,0+bob,shCol,1,12);px(ctx,2,0+bob,shCol,1,12); // side shadow
+  // Trim stripes on sides (tier 2+)
+  if(mT>=2){px(ctx,-3,0+bob,trimCol,1,12);px(ctx,2,0+bob,trimCol,1,12);}
+  // Center robe opening line
+  px(ctx,-1,0+bob,robeMid,1,6);
+  // Robe hem — flared
   px(ctx,-4,11+bob+rv,robeBase,8,4);
+  px(ctx,-5,13+bob+rv,robeBase,3,2);px(ctx,3,13+bob+rv,robeBase,3,2);
+  // Gold rune hem (tier 3)
   if(mT>=3){
-    px(ctx,-4,13+bob+rv,'#3a1888',8,1);
+    px(ctx,-4,13+bob+rv,'#2a1060',8,1);
     px(ctx,-3,13+bob+rv,'#c8a030',1,1);px(ctx,-1,13+bob+rv,'#c8a030',1,1);
     px(ctx,1,13+bob+rv,'#c8a030',1,1);px(ctx,3,13+bob+rv,'#c8a030',1,1);
   }
+  // Sash/belt (tier 1+)
+  if(mT>=1){
+    px(ctx,-3,9+bob,trimCol,6,1);
+    px(ctx,-1,9+bob,'#c8a030',2,1);
+  } else {
+    px(ctx,-2,9+bob,'#5a4020',4,1);
+  }
+  // Wide sleeves
   px(ctx,-5,0+bob,robeBase,2,10);px(ctx,3,0+bob,robeBase,2,10);
-  if(mT>=2){px(ctx,-5,0+bob,trimColor,1,8);}
+  px(ctx,-5,0+bob,shCol,1,9);px(ctx,4,0+bob,shCol,1,9);
+  if(mT>=2){px(ctx,-5,0+bob,trimCol,1,8);}
+  // Sleeve cuffs
+  if(mT>=1){px(ctx,-5,8+bob,trimCol,2,1);px(ctx,3,8+bob,trimCol,2,1);}
+  // Hands
   px(ctx,-5,9+bob,'#c8a060',2,2);px(ctx,3,9+bob,'#c8a060',2,2);
-  px(ctx,-2,14+bob,'#0a0818',2,3);px(ctx,0,14+bob,'#0a0818',2,3);
+  // Fingers hint
+  px(ctx,-5,10+bob,'#b89050',2,1);px(ctx,3,10+bob,'#b89050',2,1);
+  // Dark slippers
+  px(ctx,-2,14+bob,'#14101a',2,3);px(ctx,0,14+bob,'#14101a',2,3);
+  px(ctx,-2,15+bob,'#0e0c14',2,2);px(ctx,0,15+bob,'#0e0c14',2,2);
+  if(mT>=2){px(ctx,-2,14+bob,trimCol,1,1);px(ctx,1,14+bob,trimCol,1,1);}
 
-  // ── MAGE HEAD/HAT (tier-dependent) ──
-  var eyeColor=mT>=3?'rgba(220,160,20,0.95)':'rgba(80,160,220,0.7)';
-  px(ctx,-2,-6+bob,'#c8a060',4,5); // face
-  px(ctx,-2,-3+bob,eyeColor,1,1);px(ctx,0,-3+bob,eyeColor,1,1); // eyes
-  px(ctx,-1,-2+bob,'#b8906a',1,1); // nose
-  if(mT>=2){px(ctx,-2,-4+bob,'#e0e0e0',2,1);px(ctx,0,-4+bob,'#e0e0e0',2,1);} // brows
-  if(mT>=3){px(ctx,-2,-1+bob,'#d8d8d8',4,3);px(ctx,-2,2+bob,'#c8c8c8',4,5);px(ctx,-1,6+bob,'#b8b8b8',2,3);} // beard
-  if(mT===0){ // simple cloth cap
-    px(ctx,-2,-9+bob,'#5a4838',4,4);px(ctx,-3,-8+bob,'#4a3828',1,3);px(ctx,2,-8+bob,'#4a3828',1,3);
-  } else if(mT===1){ // basic pointed hat, brown
-    px(ctx,-3,-9+bob,'#3a2818',6,4);px(ctx,-2,-13+bob,'#2a1808',4,5);px(ctx,-1,-17+bob,'#1a0800',2,4);
-    px(ctx,-3,-9+bob,'#4a3828',6,1);
-  } else { // grand magical hat
-    px(ctx,-3,-10+bob,mT>=4?'#0a0820':'#0e0c28',6,5);
-    px(ctx,-2,-14+bob,mT>=4?'#14104a':'#1a1848',4,5);
-    px(ctx,-1,-18+bob,mT>=4?'#0a0820':'#0e0c28',2,5);
-    px(ctx,-3,-10+bob,mT>=4?'#7a30c0':'#5a20a0',6,1);
-    px(ctx,-1,-13+bob,'#e8b84b',1,1);px(ctx,1,-16+bob,'#e8b84b',1,1);
-    if(mT>=4){px(ctx,-2,-16+bob,'rgba(200,160,255,0.8)',1,1);}
+  // ── FACE ──
+  var eyeCol=mT>=2?'rgba(210,150,20,0.95)':'rgba(80,160,220,0.8)';
+  var skinCol=mT>=3?'#c09050':'#c8a060'; // older/more weathered at high tier
+  px(ctx,-2,-6+bob,skinCol,4,5);
+  // Eye shadow
+  px(ctx,-2,-4+bob,'#0a0808',1,1);px(ctx,0,-4+bob,'#0a0808',1,1);
+  px(ctx,-2,-4+bob,eyeCol,1,1);px(ctx,0,-4+bob,eyeCol,1,1);
+  // Eyebrows
+  if(mT>=2){
+    px(ctx,-2,-5+bob,'#d0d0d0',2,1);px(ctx,0,-5+bob,'#d0d0d0',2,1);
+  } else {
+    px(ctx,-2,-5+bob,'#5a4020',2,1);px(ctx,0,-5+bob,'#5a4020',2,1);
+  }
+  px(ctx,-1,-3+bob,'#b08050',1,1); // nose
+  px(ctx,-1,-2+bob,'#904030',2,1); // lips
+  // Wrinkles/age lines (tier 3)
+  if(mT>=3){
+    px(ctx,-2,-3+bob,'rgba(0,0,0,0.2)',1,1);
+    px(ctx,1,-3+bob,'rgba(0,0,0,0.2)',1,1);
+  }
+  // Long beard (tier 3)
+  if(mT>=3){
+    px(ctx,-2,-1+bob,'#d8d8d8',4,3);
+    px(ctx,-2,2+bob,'#c8c8c8',4,5);
+    px(ctx,-1,6+bob,'#b8b8b8',2,4);
+    px(ctx,-2,3+bob,'#e0e0e0',1,3);// beard highlight
   }
 
-  // Staff — gnarled ancient wood with levitating crystal
-  px(ctx, 4, 0+bob,'#3a2808',1,14);  // staff shaft dark
-  px(ctx, 4,-1+bob,'#5a3c10',1,13);  // shaft highlight
-  // Crystal orb atop staff — pulsing
-  ctx.fillStyle='rgba(140,80,255,0.3)';
-  ctx.beginPath();ctx.arc(4.5*S,(-5+bob+oy)*S,7*S,0,Math.PI*2);ctx.fill();
-  px(ctx, 3,-7+bob+oy,'#9060e0',3,3); // orb core
-  px(ctx, 4,-6+bob+oy,'rgba(220,180,255,0.95)',2,2); // orb bright center
-  px(ctx, 3,-8+bob+oy,'rgba(180,140,255,0.6)',3,1); // orb top glow
-  // Arcane rune ring on staff
-  px(ctx, 3, 2+bob,'#c8a030',3,1);   // gold ring
-  px(ctx, 3, 6+bob,'#5a20a0',3,1);   // purple ring
+  // ── HAT ──
+  if(mT===0){
+    // Small old pointy hat — faded purple/brown
+    px(ctx,-3,-9+bob,'#3a2840',6,3); // hat base
+    px(ctx,-2,-12+bob,'#2e2038',4,4); // mid cone
+    px(ctx,-1,-15+bob,'#281830',2,3); // upper cone
+    px(ctx,0,-17+bob,'#221428',1,2);  // tip
+    px(ctx,-3,-9+bob,'#4a3858',6,1);  // brim
+    px(ctx,-2,-10+bob,'#382848',1,2); // left shadow
+    px(ctx,1,-12+bob,'#3a2a4a',1,2);  // right shadow
+  } else if(mT===1){
+    // Dark blue pointed hat
+    px(ctx,-3,-9+bob,'#12182a',6,4);
+    px(ctx,-2,-13+bob,'#0e1224',4,5);
+    px(ctx,-1,-17+bob,'#0a0e1e',2,4);
+    px(ctx,-3,-9+bob,'#1e2840',6,1); // brim
+    px(ctx,-2,-10+bob,'#1a2236',1,2); // shadow
+    px(ctx,1,-12+bob,'#1e2a44',1,2);  // highlight
+  } else if(mT===2){
+    // Arcane hat — deep with purple glow trim
+    px(ctx,-3,-10+bob,'#0e0c28',6,5);
+    px(ctx,-2,-14+bob,'#140e3a',4,5);
+    px(ctx,-1,-18+bob,'#0e0a28',2,5);
+    px(ctx,-3,-10+bob,'#4a18a0',6,1); // purple brim glow
+    px(ctx,-2,-11+bob,'#16103a',1,3); // shadow
+    px(ctx,1,-13+bob,'#1e1448',1,3);  // highlight
+    px(ctx,-1,-13+bob,'#e8b84b',1,1); // star
+    px(ctx,1,-16+bob,'#e8b84b',1,1);  // star
+  } else {
+    // Grand archmage hat — darkest, stars, purple aura
+    px(ctx,-3,-10+bob,'#06040e',6,5);
+    px(ctx,-2,-14+bob,'#0a0820',4,5);
+    px(ctx,-1,-18+bob,'#06040e',2,5);
+    px(ctx,-3,-10+bob,'#7a30d0',6,1); // bright purple brim
+    px(ctx,-3,-10+bob,'#9a40f0',3,1); // extra bright left
+    px(ctx,-2,-11+bob,'#0e0a20',1,4); // deep shadow
+    px(ctx,1,-14+bob,'#120e28',1,4);  // highlight
+    // Stars
+    px(ctx,-1,-13+bob,'#f0c840',1,1);
+    px(ctx,1,-16+bob,'#f0c840',1,1);
+    px(ctx,-2,-16+bob,'rgba(200,160,255,0.9)',1,1);
+    px(ctx,0,-12+bob,'rgba(180,120,255,0.7)',1,1);
+    // Floating sparkle
+    px(ctx,2,-15+bob+oy,'rgba(220,180,255,0.8)',1,1);
+  }
 
+  // ── STAFF (thin long shaft, orb scales with weapon tier) ──
+  var mwpT=getWeaponTier('mage');
+  // Thin single-pixel shaft — long and elegant
+  ctx.strokeStyle=mwpT===0?'#3a2408':'#4a3010';
+  ctx.lineWidth=S;
+  ctx.beginPath();ctx.moveTo(4.5*S,12*S+bob*S);ctx.lineTo(4.5*S,-4*S+bob*S);ctx.stroke();
+  ctx.strokeStyle=mwpT===0?'#5a3c14':'#6a5020';
+  ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(5*S,11*S+bob*S);ctx.lineTo(5*S,-3*S+bob*S);ctx.stroke();
+  // Single ring on shaft
+  if(mwpT>=1){
+    ctx.strokeStyle=mwpT>=3?'#c8a030':'#606870';
+    ctx.lineWidth=S;
+    ctx.beginPath();ctx.moveTo(3.5*S,4*S+bob*S);ctx.lineTo(6*S,4*S+bob*S);ctx.stroke();
+  }
+  if(mwpT===0){
+    // Tier 0: tiny purple gem on tip — not floating
+    px(ctx,4,-3+bob,'#6040a0',1,2);  // gem body
+    px(ctx,4,-3+bob,'#9060d0',1,1);  // gem top facet
+    px(ctx,5,-3+bob,'#4a3080',1,1);  // gem shadow
+  } else if(mwpT===1){
+    // Tier 1: small purple stone, bit bigger
+    px(ctx,3,-3+bob,'#6040a0',2,2);  // stone body
+    px(ctx,3,-4+bob,'#8050c0',2,1);  // top facet
+    px(ctx,4,-3+bob,'#4a3080',1,2);  // right shadow
+    px(ctx,3,-5+bob,'#9060d0',1,1);  // tip sparkle
+  } else if(mwpT===2){
+    // Tier 2: crystal orb — medium
+    ctx.fillStyle='rgba(120,60,220,0.22)';
+    ctx.beginPath();ctx.arc(4.5*S,(-7+bob+oy)*S,6*S,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(160,80,255,0.45)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(4.5*S,(-7+bob+oy)*S,6*S,0,Math.PI*2);ctx.stroke();
+    px(ctx,3,-9+bob+oy,'#8050c0',3,3);
+    px(ctx,4,-8+bob+oy,'rgba(220,180,255,0.95)',2,2);
+    px(ctx,3,-10+bob+oy,'rgba(180,130,255,0.5)',3,1);
+    px(ctx,4,-9+bob+oy,'rgba(240,210,255,1)',1,1);
+  } else {
+    // Tier 3: glowing arcane orb
+    ctx.fillStyle='rgba(140,60,255,0.25)';
+    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,8*S,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(180,90,255,0.5)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,8*S,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='rgba(200,120,255,0.2)';ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,12*S,0,Math.PI*2);ctx.stroke();
+    px(ctx,3,-10+bob+oy,'#8050c0',3,3);
+    px(ctx,4,-9+bob+oy,'rgba(230,190,255,0.98)',2,2);
+    px(ctx,3,-11+bob+oy,'rgba(190,140,255,0.55)',3,1);
+    px(ctx,4,-10+bob+oy,'rgba(250,220,255,1)',1,1);
+  }
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.4)';ctx.fillRect(-6*S,-19*S,14*S,38*S);}
   ctx.restore();
@@ -728,7 +1066,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
 // ── Ranger (female elf) ──
 function drawRanger(ctx, x, y, dir, anim, flash, level) {
   level=level||1;
-  var rT=level<20?0:level<45?1:level<75?2:3;
+  var rT=level<10?0:level<20?1:level<30?2:3;
   ctx.save(); ctx.translate(x, y);
   if(dir!==2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.18)*0.5, leg=Math.sin(anim*0.35)*1.2;
@@ -771,66 +1109,67 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
 
   // === BODY ===
   if(rT===0){
-    // Simple dark shirt — black/charcoal
+    // Simple dark shirt — plain, worn
     px(ctx,-2,0+bob,'#1e1c24',4,6);
     px(ctx,-1,0+bob,'#2a2834',2,5);
-    px(ctx,-2,0+bob,'#141218',1,6);
-    px(ctx,1,0+bob,'#141218',1,6);
-    // Small neckline
-    px(ctx,-1,0+bob,'#e8a878',1,1);
-    // Dark belt
-    px(ctx,-2,6+bob,'#2a1c10',4,1);
-    px(ctx,-1,6+bob,'#8a6020',2,1);
-    // Short dark shorts
-    px(ctx,-2,7+bob,'#181420',4,2);
+    px(ctx,-2,0+bob,'#141218',1,6);px(ctx,1,0+bob,'#141218',1,6);
+    px(ctx,-1,0+bob,'#e8a878',1,1); // tiny neckline
+    px(ctx,-2,6+bob,'#2a1c10',4,1); // plain belt
+    px(ctx,-2,7+bob,'#181420',4,2); // dark shorts
     px(ctx,-1,8+bob,'#201828',3,1);
   } else if(rT===1){
-    // Dark leather vest over dark shirt — all blacks/dark browns
-    px(ctx,-2,0+bob,'#1a1620',4,6); // dark shirt
-    px(ctx,-1,0+bob,'#222030',2,5);
-    // Dark leather vest
-    px(ctx,-2,0+bob,'#2a1c0e',1,7);
-    px(ctx,1,0+bob,'#2a1c0e',1,7);
-    px(ctx,-2,0+bob,'#3a2814',1,6);
-    px(ctx,1,0+bob,'#3a2814',1,6);
-    // Shirt visible center — dark
-    px(ctx,-1,0+bob,'#1e1a28',2,6);
-    // Small V hint
-    px(ctx,-1,0+bob,'#e8a878',1,1);
-    // Dark buckle
-    px(ctx,-1,3+bob,'#6a4a18',2,1);
-    // Dark belt
+    // Fitted leather vest — dark, buckled
+    px(ctx,-2,0+bob,'#16141e',4,7); // undershirt very dark
+    px(ctx,-1,0+bob,'#1e1a2a',2,6);
+    // Leather vest panels
+    px(ctx,-2,0+bob,'#2a1c0e',1,8);px(ctx,1,0+bob,'#2a1c0e',1,8);
+    px(ctx,-2,0+bob,'#362410',1,7);px(ctx,1,0+bob,'#362410',1,7);
+    px(ctx,-1,0+bob,'#e8a878',1,2); // V neck
+    // Buckles — 2 visible
+    px(ctx,-1,2+bob,'#7a5a20',2,1);
+    px(ctx,-1,5+bob,'#7a5a20',2,1);
+    // Belt with small brass buckle
     px(ctx,-3,7+bob,'#2a1c0e',5,1);
-    px(ctx,-1,7+bob,'#8a6020',2,1);
-    // Short dark shorts
-    px(ctx,-2,8+bob,'#181420',4,2);
+    px(ctx,0,7+bob,'#9a7030',1,1);
+    px(ctx,-2,8+bob,'#181420',4,2); // shorts
     px(ctx,-1,9+bob,'#201828',3,1);
+  } else if(rT===2){
+    // Dark corset — structured, multiple buckles, midriff showing
+    px(ctx,-2,0+bob,'#141018',4,5);px(ctx,-1,0+bob,'#1c1624',2,4);
+    // Corset body
+    px(ctx,-2,0+bob,'#2e1e0c',4,5);px(ctx,-2,0+bob,'#3a2814',3,4);
+    px(ctx,-1,0+bob,'#241608',1,5);
+    px(ctx,-1,0+bob,'#e8a878',1,3); // V neck
+    // 4 buckles
+    px(ctx,1,1+bob,'#7a5a20',1,1);px(ctx,1,3+bob,'#7a5a20',1,1);
+    px(ctx,-2,1+bob,'#7a5a20',1,1);px(ctx,-2,3+bob,'#7a5a20',1,1);
+    // Midriff strip
+    px(ctx,-1,5+bob,'#e8a878',2,1);px(ctx,-2,5+bob,'#d09060',1,1);
+    // Wide belt + pouch
+    px(ctx,-3,6+bob,'#1e1208',5,2);px(ctx,-1,6+bob,'#7a5a20',2,1);
+    px(ctx,2,7+bob,'#2e1e0c',2,2);px(ctx,2,7+bob,'#3a2814',1,2);
+    // Short shorts
+    px(ctx,-2,8+bob,'#141018',4,2);px(ctx,-1,9+bob,'#1c1420',3,1);
   } else {
-    // Tier 2/3 — dark corset, all black/brown tones
-    px(ctx,-2,0+bob,'#1a1620',4,5); // dark undershirt
-    px(ctx,-1,0+bob,'#222030',2,4);
-    // Dark leather corset
-    px(ctx,-2,0+bob,'#2e1e0c',4,5);
-    px(ctx,-2,0+bob,'#3a2814',3,4);
-    px(ctx,-1,0+bob,'#261a08',1,5);
-    // Neckline — just a sliver
-    px(ctx,-1,0+bob,'#e8a878',1,2);
-    // Dark buckles
-    px(ctx,1,1+bob,'#6a4a18',1,1);
-    px(ctx,1,3+bob,'#6a4a18',1,1);
-    px(ctx,-2,2+bob,'#6a4a18',1,1);
-    px(ctx,-2,4+bob,'#6a4a18',1,1);
-    // Small midriff strip
-    px(ctx,-1,5+bob,'#e8a878',2,1);
-    // Wide dark belt
-    px(ctx,-3,6+bob,'#1e1208',5,2);
-    px(ctx,-1,6+bob,'#6a4a18',2,1);
-    // Pouch
-    if(rT>=2){px(ctx,2,7+bob,'#2e1e0c',2,2);}
-    if(rT>=3){px(ctx,-4,7+bob,'#2e1e0c',2,2);}
-    // Short dark shorts
-    px(ctx,-2,8+bob,'#141018',4,2);
-    px(ctx,-1,9+bob,'#1c1420',3,1);
+    // Full assassin — dark cloak already drawn, elaborate corset
+    px(ctx,-2,0+bob,'#0e0c14',4,5);px(ctx,-1,0+bob,'#161220',2,4);
+    // Premium corset — darkest leather with subtle sheen
+    px(ctx,-2,0+bob,'#261808',4,6);px(ctx,-2,0+bob,'#322010',3,5);
+    px(ctx,-1,0+bob,'#1c1006',1,6);
+    px(ctx,-1,0+bob,'#e8a878',1,3); // V neck
+    // 6 ornate buckles
+    px(ctx,1,1+bob,'#a07830',1,1);px(ctx,1,2+bob,'#a07830',1,1);
+    px(ctx,1,4+bob,'#a07830',1,1);
+    px(ctx,-2,1+bob,'#a07830',1,1);px(ctx,-2,3+bob,'#a07830',1,1);
+    px(ctx,-2,5+bob,'#a07830',1,1);
+    // Midriff
+    px(ctx,-1,6+bob,'#e8a878',2,1);px(ctx,-2,6+bob,'#d09060',1,1);
+    // Thick belt + 2 pouches
+    px(ctx,-3,7+bob,'#18100a',6,2);px(ctx,-1,7+bob,'#a07830',2,1);
+    px(ctx,2,8+bob,'#2e1e0c',3,3);px(ctx,2,8+bob,'#3a2814',2,3);
+    px(ctx,-4,8+bob,'#2e1e0c',2,3);px(ctx,-4,8+bob,'#3a2814',1,3);
+    // Shorts — nearly hidden by belt/pouches
+    px(ctx,-2,9+bob,'#100c16',4,1);
   }
 
   // === ARMS ===
@@ -902,23 +1241,63 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,1,18+bob-leg,'#0e0600',3,1);
   }
 
-  // === RAPIER ===
-  px(ctx,4,5+bob+sw,'#6a4a18',1,4);
-  px(ctx,4,4+bob+sw,'#8a6020',2,1);
-  px(ctx,3,8+bob+sw,'#6a4a18',4,1);
-  px(ctx,4,7+bob+sw,'#6a4a18',1,2);
-  px(ctx,6,8+bob+sw,'#6a4a18',1,2);
-  px(ctx,5,-8+bob+sw,'#c8d0d8',1,17);
-  px(ctx,6,-8+bob+sw,'#dce4ec',1,15);
-  px(ctx,7,-7+bob+sw,'#f0f4f8',1,10);
-  px(ctx,5,-9+bob+sw,'#ffffff',1,1);
-
-  // === DAGGER — left off-hand ===
-  px(ctx,-5,6+bob,'#5a3a10',1,3);
-  px(ctx,-6,5+bob,'#6a4a18',2,1);
-  px(ctx,-6,9+bob,'#b0b8c0',1,5);
-  px(ctx,-7,9+bob,'#c8d0d8',1,4);
-  px(ctx,-6,13+bob,'#e0e8f0',1,1);
+  // === WEAPONS (tier by games played) ===
+  var rwpT=getWeaponTier('ranger');
+  if(rwpT===0){
+    // Tier 0: plain short knife only
+    px(ctx,4,6+bob,'#4a3018',1,4);   // handle
+    px(ctx,3,5+bob,'#505858',2,1);   // guard
+    px(ctx,4,0+bob,'#888e8e',1,7);   // short dull blade
+    px(ctx,5,0+bob,'#9aa0a0',1,5);   // edge
+    px(ctx,4,0+bob,'#707878',1,1);   // tip
+  } else if(rwpT===1){
+    // Tier 1: plain knife + dull off-hand dagger
+    px(ctx,4,6+bob,'#4a3018',1,4);
+    px(ctx,3,5+bob,'#505858',2,1);
+    px(ctx,4,0+bob,'#888e8e',1,7);
+    px(ctx,5,0+bob,'#9aa0a0',1,5);
+    px(ctx,4,0+bob,'#707878',1,1);
+    // Dull short dagger left hand
+    px(ctx,-5,7+bob,'#3a2410',1,3);
+    px(ctx,-6,6+bob,'#606868',2,1);
+    px(ctx,-6,10+bob,'#787e7e',1,5);
+    px(ctx,-7,10+bob,'#888e8e',1,4);
+    px(ctx,-6,10+bob,'#686e6e',1,1);
+  } else if(rwpT===2){
+    // Tier 2: iron rapier + basic dagger (was tier 1)
+    px(ctx,4,5+bob+sw,'#5a3a10',1,4);
+    px(ctx,4,4+bob+sw,'#6a4a18',2,1);
+    px(ctx,3,8+bob+sw,'#8090a0',4,1);
+    px(ctx,5,-8+bob+sw,'#8898a8',1,16);
+    px(ctx,6,-8+bob+sw,'#9aaab8',1,14);
+    px(ctx,5,-9+bob+sw,'#b8c4cc',1,1);
+    px(ctx,6,-9+bob+sw,'#c0ccd4',1,1);
+    // Basic dagger
+    px(ctx,-5,6+bob,'#4a3018',1,3);
+    px(ctx,-6,5+bob,'#808888',2,1);
+    px(ctx,-6,9+bob,'#888e8e',1,5);
+    px(ctx,-7,9+bob,'#9aa0a0',1,4);
+    px(ctx,-6,9+bob,'#888e8e',1,1);
+  } else {
+    // Tier 3: fine steel rapier + ornate dagger (was tier 2)
+    px(ctx,4,5+bob+sw,'#6a4a18',1,4);
+    px(ctx,4,4+bob+sw,'#8a6020',2,1);
+    px(ctx,3,8+bob+sw,'#6a4a18',4,1);
+    px(ctx,4,7+bob+sw,'#6a4a18',1,2);
+    px(ctx,6,8+bob+sw,'#6a4a18',1,2);
+    px(ctx,5,-9+bob+sw,'#c8d0d8',1,18);
+    px(ctx,6,-9+bob+sw,'#dce4ec',1,16);
+    px(ctx,7,-8+bob+sw,'#eef4f8',1,10);
+    px(ctx,5,-10+bob+sw,'#ffffff',1,1);
+    px(ctx,6,-10+bob+sw,'#f0f8ff',1,1);
+    // Ornate dagger gold trim
+    px(ctx,-5,6+bob,'#c8a030',1,3);
+    px(ctx,-6,5+bob,'#c8a030',2,1);
+    px(ctx,-6,9+bob,'#c8d0d8',1,5);
+    px(ctx,-7,9+bob,'#dce8f0',1,4);
+    px(ctx,-6,13+bob,'#f0f8ff',1,1);
+    px(ctx,-7,13+bob,'#ffffff',1,1);
+  }
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.35)';ctx.fillRect(-6*S,-12*S,16*S,34*S);}
   ctx.restore();
@@ -1849,7 +2228,7 @@ function endRound(gs) {
   else{showBanner('DRAW!');}
   // Award XP
   var meR=gs.players.find(function(p){return p.isMe;});
-  if(meR) awardMatchXP(meR.cls, wonRound, gameMode==='pvp');
+  if(meR){awardMatchXP(meR.cls, wonRound, gameMode==='pvp');incrementGamesPlayed(meR.cls);}
   gs.phase='gameOver';
   if(gameMode==='training'){
     // Training: start next game after short delay, no rematch screen
@@ -1927,6 +2306,12 @@ function updateHUD(gs) {
   document.getElementById('sp-myname').textContent=me.name+(me.wins?' ('+me.wins+'\u2605)':'');
   document.getElementById('sp-mylevel').textContent='Lv.'+xpD.level;
   document.getElementById('sp-myxp').style.width=Math.min(100,Math.round(xpD.xp/xpForLevel(xpD.level)*100))+'%';
+  // Update in-game XP bar
+  var xpPct=Math.min(100,Math.round(xpD.xp/xpForLevel(xpD.level)*100));
+  var xpLbl=document.getElementById('ingame-xp-label');
+  var xpFill=document.getElementById('ingame-xp-fill');
+  if(xpLbl)xpLbl.textContent='Lv.'+xpD.level;
+  if(xpFill)xpFill.style.width=xpPct+'%';
   document.getElementById('sp-myhp').style.width=(me.hp/me.maxHp*100)+'%';document.getElementById('sp-myhp-v').textContent=Math.ceil(me.hp)+'/'+me.maxHp;
   document.getElementById('sp-enname').textContent=en.name+(en.wins?' ('+en.wins+'\u2605)':'');
   document.getElementById('sp-enhp').style.width=(en.hp/en.maxHp*100)+'%';document.getElementById('sp-enhp-v').textContent=Math.ceil(en.hp)+'/'+en.maxHp;
@@ -2393,9 +2778,9 @@ function buildSpellDesc(cls){
   // Tier progression preview
   var xpD2=getXP(cls); var curLvl=xpD2.level;
   var tierThresholds={
-    warrior:[{lvl:1,name:'Conscript'},{lvl:10,name:'Footsoldier'},{lvl:25,name:'Knight'},{lvl:50,name:'Champion'},{lvl:75,name:'Paladin'},{lvl:100,name:'Warlord'}],
-    mage:[{lvl:1,name:'Apprentice'},{lvl:15,name:'Scholar'},{lvl:35,name:'Arcanist'},{lvl:60,name:'Archmage'},{lvl:85,name:'Sorcerer Supreme'}],
-    ranger:[{lvl:1,name:'Scout'},{lvl:20,name:'Huntress'},{lvl:45,name:'Warden'},{lvl:75,name:'Shadowstrider'}]
+    warrior:[{lvl:1,name:'Conscript'},{lvl:10,name:'Footsoldier'},{lvl:20,name:'Knight'},{lvl:30,name:'Warlord'}],
+    mage:[{lvl:1,name:'Apprentice'},{lvl:10,name:'Scholar'},{lvl:20,name:'Arcanist'},{lvl:30,name:'Archmage'}],
+    ranger:[{lvl:1,name:'Scout'},{lvl:10,name:'Cutthroat'},{lvl:20,name:'Shadowblade'},{lvl:30,name:'Phantom'}]
   };
   var tiers=tierThresholds[cls]||tierThresholds.warrior;
   var nextTier=null;
@@ -2542,6 +2927,44 @@ document.getElementById('btn-train').addEventListener('click',function(){
 document.getElementById('btn-cancel-train').addEventListener('click',function(){
   document.getElementById('train-overlay').style.display='none';
 });
+
+// Arena random/choose toggle
+document.getElementById('train-random-arena').addEventListener('change',function(){
+  var isRandom=this.checked;
+  document.getElementById('btn-choose-arena').style.opacity=isRandom?'0.4':'1';
+  if(isRandom){lockedArena=null;document.getElementById('train-arena-label').textContent='';}
+});
+
+document.getElementById('btn-choose-arena').addEventListener('click',function(){
+  if(document.getElementById('train-random-arena').checked)return;
+  // Build arena picker
+  var list=document.getElementById('arena-picker-list');
+  list.innerHTML='';
+  var arenaNames={crypt:'The Crypt',volcano:'Volcanic Rift',maze:'Runic Maze',desert:'Desert Colosseum',temple:'Shadow Temple'};
+  var arenaEmojis={crypt:'&#x26B0;',volcano:'&#x1F30B;',maze:'&#x1F300;',desert:'&#x1F3DC;',temple:'&#x1F3DB;'};
+  ARENA_KEYS.forEach(function(ak){
+    var card=document.createElement('div');
+    var isSelected=lockedArena===ak;
+    card.style.cssText='background:'+(isSelected?'rgba(232,184,75,0.1)':'rgba(255,255,255,0.03)')+';border:1px solid '+(isSelected?'var(--gold)':'var(--border)')+';padding:20px 16px;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:8px';
+    card.innerHTML='<div style="font-size:28px">'+arenaEmojis[ak]+'</div><div style="font-size:12px;letter-spacing:2px;color:'+(isSelected?'var(--gold)':'var(--text)')+'">'+arenaNames[ak]+'</div>';
+    card.addEventListener('click',function(){
+      lockedArena=ak;
+      document.getElementById('train-arena-label').textContent='Arena: '+arenaNames[ak];
+      document.getElementById('train-overlay').querySelector('#train-random-arena').checked=false;
+      document.getElementById('arena-picker-overlay').style.display='none';
+      // Rerender with selection highlight
+      document.getElementById('btn-choose-arena').click();
+    });
+    card.addEventListener('mouseenter',function(){if(lockedArena!==ak)card.style.borderColor='rgba(255,255,255,0.2)';});
+    card.addEventListener('mouseleave',function(){if(lockedArena!==ak)card.style.borderColor='var(--border)';});
+    list.appendChild(card);
+  });
+  document.getElementById('arena-picker-overlay').style.display='flex';
+});
+
+document.getElementById('arena-picker-close').addEventListener('click',function(){
+  document.getElementById('arena-picker-overlay').style.display='none';
+});
 document.getElementById('btn-start-train').addEventListener('click',function(){
   document.getElementById('train-overlay').style.display='none';
   cleanupFB(); // make sure no lingering PvP connections
@@ -2643,7 +3066,8 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
 }
 
 function launchTraining(continuing) {
-  var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)],arena=ARENAS[ak];
+  var ak=(lockedArena&&ARENAS[lockedArena])?lockedArena:ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+  var arena=ARENAS[ak];
   var me=mkPlayer(myId,myClass,myName,arena.sp1,true);
   var aiCls=['warrior','mage','ranger'];
   var aiClass=aiCls[Math.floor(Math.random()*aiCls.length)];
@@ -2657,6 +3081,7 @@ function launchTraining(continuing) {
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   document.getElementById('conn-bar').textContent='TRAINING';
   showScreen('game-screen');hideOverlay();resizeCanvas();updateHUD(gameState);
+  var xpW2=document.getElementById('ingame-xp-wrap');if(xpW2)xpW2.style.display='flex';
   // First game gets pregame timer; subsequent games start immediately
   if(continuing){
     gameState.phase='fighting';
@@ -2712,6 +3137,7 @@ function checkBothRematchReady(){
 }
 // Class picker in overlay
 var pvpRematchReady=false;
+var lockedArena=null;
 document.querySelectorAll('.ov-cls-btn').forEach(function(b){
   b.addEventListener('click',function(){
     myClass=b.dataset.cls;
@@ -2802,6 +3228,19 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
 function getClassData(cls) {
   try { return JSON.parse(localStorage.getItem('eldara_cls_'+cls)||'{}'); }
   catch(e){return {};}
+}
+function getGamesPlayed(cls){
+  var d=getClassData(cls);return d.games||0;
+}
+function incrementGamesPlayed(cls){
+  var d=getClassData(cls);
+  d.games=(d.games||0)+1;
+  saveClassData(cls,d);
+  return d.games;
+}
+function getWeaponTier(cls){
+  var g=getGamesPlayed(cls);
+  return g>=50?3:g>=25?2:g>=10?1:0;
 }
 function saveClassData(cls, data) {
   try { localStorage.setItem('eldara_cls_'+cls, JSON.stringify(data)); } catch(e){}
@@ -3118,6 +3557,143 @@ document.getElementById('btn-leave-game').addEventListener('click',function(){
     showScreen('title-screen');
   });
 })();
+
+// ══ ACHIEVEMENTS ══
+var ACHIEVEMENTS = [
+  // WARRIOR
+  {id:'w_unlock',cls:'warrior',tier:0,name:'Conscript',desc:'Unlock the Warrior',icon:'\u2694',req:function(){return getLevel('warrior')>=1;},levelReq:1},
+  {id:'w_t1',cls:'warrior',tier:1,name:'Footsoldier',desc:'Warrior reaches Lv.10',icon:'\u2694',req:function(){return getLevel('warrior')>=10;},levelReq:10},
+  {id:'w_t2',cls:'warrior',tier:2,name:'Knight',desc:'Warrior reaches Lv.20 — Full plate unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=20;},levelReq:20},
+  {id:'w_t3',cls:'warrior',tier:3,name:'Warlord',desc:'Warrior reaches Lv.30 — Gold warlord armor unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=30;},levelReq:30},
+  // MAGE
+  {id:'m_unlock',cls:'mage',tier:0,name:'Apprentice',desc:'Unlock the Mage',icon:'\u2728',req:function(){return getLevel('mage')>=1;},levelReq:1},
+  {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.15 — Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=15;},levelReq:15},
+  {id:'m_t2',cls:'mage',tier:2,name:'Arcanist',desc:'Mage reaches Lv.20 — Arcane purple robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=20;},levelReq:20},
+  {id:'m_t3',cls:'mage',tier:3,name:'Archmage',desc:'Mage reaches Lv.30 — Grand archmage look unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=30;},levelReq:30},
+  // ROGUE
+  {id:'r_unlock',cls:'ranger',tier:0,name:'Scout',desc:'Unlock the Rogue',icon:'\u2020',req:function(){return getLevel('ranger')>=1;},levelReq:1},
+  {id:'r_t1',cls:'ranger',tier:1,name:'Cutthroat',desc:'Rogue reaches Lv.10 — Leather vest unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=10;},levelReq:10},
+  {id:'r_t2',cls:'ranger',tier:2,name:'Shadowblade',desc:'Rogue reaches Lv.20 — Dark corset unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=20;},levelReq:20},
+  {id:'r_t3',cls:'ranger',tier:3,name:'Phantom',desc:'Rogue reaches Lv.30 — Assassin cloak unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=30;},levelReq:30},
+  // GENERAL
+  // WARRIOR WEAPON ACHIEVEMENTS
+  {id:'ww0',cls:'warrior',tier:0,name:'Blade of Burden',desc:'Starting weapon — Rusty Shortsword',icon:'\u2694',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
+  {id:'ww1',cls:'warrior',tier:0,name:'First Steps',desc:'Play 10 games as Warrior — Iron Sword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=10;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'ww2',cls:'warrior',tier:0,name:'Veteran Blade',desc:'Play 25 games as Warrior — Steel Greatsword unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=25;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'ww3',cls:'warrior',tier:0,name:'Warlord Edge',desc:'Play 50 games as Warrior — Legendary Blade unlocked',icon:'\u2694',req:function(){return getGamesPlayed('warrior')>=50;},levelReq:0,weaponAch:true,weaponTier:3},
+  // MAGE WEAPON ACHIEVEMENTS
+  {id:'mw0',cls:'mage',tier:0,name:'Apprentice Stick',desc:'Starting weapon — Gnarled Wooden Staff',icon:'\u2728',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
+  {id:'mw1',cls:'mage',tier:0,name:'Apprentice Staff',desc:'Play 10 games as Mage — Iron Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=10;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'mw2',cls:'mage',tier:0,name:'Crystal Focus',desc:'Play 25 games as Mage — Crystal Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=25;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'mw3',cls:'mage',tier:0,name:'Arcane Catalyst',desc:'Play 50 games as Mage — Legendary Arcane Staff unlocked',icon:'\u2728',req:function(){return getGamesPlayed('mage')>=50;},levelReq:0,weaponAch:true,weaponTier:3},
+  // ROGUE WEAPON ACHIEVEMENTS
+  {id:'rw0',cls:'ranger',tier:0,name:'Street Knife',desc:'Starting weapon — Plain Short Knife',icon:'\u2020',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
+  {id:'rw1',cls:'ranger',tier:0,name:'Street Fighter',desc:'Play 10 games as Rogue — Iron Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=10;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'rw2',cls:'ranger',tier:0,name:'Blade Dancer',desc:'Play 25 games as Rogue — Fine Steel Rapier unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=25;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'rw3',cls:'ranger',tier:0,name:'Phantom Blade',desc:'Play 50 games as Rogue — Legendary Rapier + Ornate Dagger unlocked',icon:'\u2020',req:function(){return getGamesPlayed('ranger')>=50;},levelReq:0,weaponAch:true,weaponTier:3},
+  // GENERAL
+  {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
+  {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return s&&parseInt(s)>0;},levelReq:0},
+  {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.25 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=25||getLevel('mage')>=25||getLevel('ranger')>=25;},levelReq:0},
+  {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.50 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=50&&getLevel('mage')>=50&&getLevel('ranger')>=50;},levelReq:0},
+  {id:'g_legend',cls:'general',tier:0,name:'Legend',desc:'Reach Lv.100 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=100||getLevel('mage')>=100||getLevel('ranger')>=100;},levelReq:0},
+];
+
+function buildAchCard(ach){
+  var earned=false;try{earned=ach.req();}catch(e){}
+  var card=document.createElement('div');
+  card.style.cssText='background:'+(earned?'rgba(232,184,75,0.07)':'rgba(255,255,255,0.02)')+';border:1px solid '+(earned?'rgba(232,184,75,0.4)':'rgba(255,255,255,0.07)')+';padding:14px;display:flex;gap:12px;align-items:flex-start;';
+  
+  // Sprite preview canvas
+  var leftHTML='';
+  if(ach.cls!=='general'){
+    var wpTierAttr=ach.weaponAch?(' data-weapon-tier="'+ach.weaponTier+'"'):'';
+    leftHTML='<canvas class="ach-sprite-cv" data-cls="'+ach.cls+'" data-tier="'+ach.tier+'" data-level="'+ach.levelReq+'"'+wpTierAttr+' width="90" height="140" style="image-rendering:pixelated;flex-shrink:0;width:90px;height:140px;opacity:'+(earned?1:0.35)+'"></canvas>';
+  } else {
+    leftHTML='<div style="width:52px;height:68px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;opacity:'+(earned?1:0.3)+'">'+ach.icon+'</div>';
+  }
+  
+  var nameColor=earned?'var(--gold)':'rgba(255,255,255,0.3)';
+  var checkmark=earned?'<span style="color:#27ae60;font-size:14px;margin-left:6px">\u2713</span>':'<span style="color:rgba(255,255,255,0.15);font-size:11px;margin-left:6px">\u25CB</span>';
+  var progressStr='';
+  if(ach.weaponAch&&!earned){
+    var clsKey=ach.cls;
+    var played=getGamesPlayed(clsKey);
+    var need=ach.weaponTier===1?10:ach.weaponTier===2?25:50;
+    progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+played+' / '+need+' games played</div>';
+  }
+  card.innerHTML=leftHTML+'<div style="flex:1;min-width:0"><div style="font-size:12px;letter-spacing:1px;color:'+nameColor+'">'+ach.name+checkmark+'</div><div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.4">'+ach.desc+'</div>'+(ach.levelReq>1?'<div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:4px">Requires Lv.'+ach.levelReq+'</div>':'')+progressStr+'</div>';
+  return {card:card,earned:earned};
+}
+
+function renderAchievements(tab){
+  var list=document.getElementById('ach-list');if(!list)return;
+  list.innerHTML='';
+  var filtered=ACHIEVEMENTS.filter(function(a){
+    if(tab==='all')return true;
+    if(tab==='general')return a.cls==='general';
+    return a.cls===tab;
+  });
+  // Sort: armor achievements first, then weapon achievements. Within each group, earned first.
+  var earnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&a.cls!=='general'&&a.req();}catch(e){return false;}});
+  var unearnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&a.cls!=='general'&&!a.req();}catch(e){return true;}});
+  var earnedWeapon=filtered.filter(function(a){try{return a.weaponAch&&a.req();}catch(e){return false;}});
+  var unearnedWeapon=filtered.filter(function(a){try{return a.weaponAch&&!a.req();}catch(e){return true;}});
+  var earnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&a.req();}catch(e){return false;}});
+  var unearnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&!a.req();}catch(e){return true;}});
+  var sorted=earnedArmor.concat(unearnedArmor).concat(earnedWeapon).concat(unearnedWeapon).concat(earnedGeneral).concat(unearnedGeneral);
+  
+  sorted.forEach(function(ach){
+    var result=buildAchCard(ach);
+    list.appendChild(result.card);
+  });
+  
+  // Animate sprites
+  list.querySelectorAll('.ach-sprite-cv').forEach(function(cv){
+    var cls=cv.dataset.cls;
+    var lvl=parseInt(cv.dataset.level)||1;
+    var weaponTierOverride=cv.dataset.weaponTier!=null?parseInt(cv.dataset.weaponTier):null;
+    var fn=DRAW[cls];if(!fn)return;
+    var ctx2=cv.getContext('2d');ctx2.imageSmoothingEnabled=false;
+    var t=Math.random()*Math.PI*2;
+    (function anim(){
+      if(!document.getElementById('ach-overlay')||document.getElementById('ach-overlay').style.display==='none')return;
+      ctx2.clearRect(0,0,90,140);
+      t+=0.025;
+      var origFn=getWeaponTier;
+      if(weaponTierOverride!==null){getWeaponTier=function(){return weaponTierOverride;};}
+      fn(ctx2,40,70,3,Math.sin(t)*3,false,lvl);
+      getWeaponTier=origFn;
+      requestAnimationFrame(anim);
+    })();
+  });
+}
+
+// Wire achievements button
+document.getElementById('btn-achievements').addEventListener('click',function(){
+  var ov=document.getElementById('ach-overlay');
+  ov.style.display='flex';
+  renderAchievements('all');
+});
+document.getElementById('ach-close').addEventListener('click',function(){
+  document.getElementById('ach-overlay').style.display='none';
+});
+
+// Tab switching
+document.querySelectorAll('.ach-tab').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.ach-tab').forEach(function(b){
+      b.style.borderBottomColor='transparent';
+      b.style.color='var(--dim)';
+    });
+    btn.style.borderBottomColor='var(--gold)';
+    btn.style.color='var(--gold)';
+    renderAchievements(btn.dataset.tab);
+  });
+});
+
+// Track PvP match played
+var _origLaunchPvP=launchPvP;
 
 function refreshCharCards(){
   // Re-draw card canvases with current levels (called after XP gain)
