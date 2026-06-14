@@ -3894,7 +3894,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     var scale=rx*2/iw*1.02;
     var dw=iw*scale, dh=ih*scale;
     if(platformImg.complete && platformImg.naturalWidth>0){
-      tctx.drawImage(platformImg, cx-dw/2, py-dh*0.5, dw, dh);
+      tctx.drawImage(platformImg, cx-dw/2, py-dh*0.5+8, dw, dh);
     } else {
       // Fallback plain ellipse
       tctx.fillStyle='#0e0c14';
@@ -3902,6 +3902,28 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       tctx.strokeStyle='rgba(55,44,80,0.8)';tctx.lineWidth=2;
       tctx.beginPath();tctx.ellipse(cx,py,rx,ry,0,0,Math.PI*2);tctx.stroke();
     }
+
+    // Cylinder side face (front arc only)
+    tctx.fillStyle='#050408';
+    tctx.beginPath();
+    tctx.ellipse(cx,py+th,rx,ry,0,0,Math.PI);
+    tctx.lineTo(cx+rx,py);
+    tctx.ellipse(cx,py,rx,ry,0,0,Math.PI,true);
+    tctx.closePath();tctx.fill();
+    // Side shading gradient
+    var sideGrad=tctx.createLinearGradient(cx-rx,py,cx+rx,py);
+    sideGrad.addColorStop(0,'rgba(20,15,30,0.9)');
+    sideGrad.addColorStop(0.5,'rgba(8,6,14,0.95)');
+    sideGrad.addColorStop(1,'rgba(3,2,6,1.0)');
+    tctx.fillStyle=sideGrad;
+    tctx.beginPath();
+    tctx.ellipse(cx,py+th,rx,ry,0,0,Math.PI);
+    tctx.lineTo(cx+rx,py);
+    tctx.ellipse(cx,py,rx,ry,0,0,Math.PI,true);
+    tctx.closePath();tctx.fill();
+    // Bottom ellipse edge
+    tctx.strokeStyle='rgba(15,10,25,1.0)';tctx.lineWidth=1.5;
+    tctx.beginPath();tctx.ellipse(cx,py+th,rx,ry,0,0,Math.PI);tctx.stroke();
 
     // ── TORCHES on poles left and right of platform ──
     var t=Date.now()/1000;
