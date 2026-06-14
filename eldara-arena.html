@@ -9,7 +9,7 @@
 *{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated}
 body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;overflow:hidden;height:100vh;width:100vw;user-select:none;font-size:14px}
 #train-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(4px)}
-.screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column}
+.screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#0a0a0f}
 .screen.active{display:flex}
 #title-screen{background:radial-gradient(ellipse at 50% 60%,#1a0d2e 0%,#0a0a0f 70%)}
 #title-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:1}
@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .menu-btn{width:200px;padding:14px 0;background:transparent;border:1px solid var(--border);color:var(--text);font-family:'Courier New',monospace;font-size:13px;letter-spacing:3px;cursor:pointer;transition:all .15s;text-transform:uppercase}
 .menu-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(232,184,75,.06)}
 .menu-btn.primary{border-color:var(--gold);color:var(--gold)}
-#setup-screen{gap:16px}
+
 .setup-box{background:var(--panel);border:1px solid var(--border);padding:32px;width:500px;display:flex;flex-direction:column;gap:14px}
 .setup-title{font-size:13px;letter-spacing:4px;color:var(--dim);text-align:center;margin-bottom:4px}
 .setup-tabs{display:flex;border:1px solid var(--border);margin-bottom:4px}
@@ -204,6 +204,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     </div>
   </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);letter-spacing:2px;white-space:nowrap">by Benjamin Siedler 2026</div>
+
   <button id="btn-achievements" style="position:absolute;top:50%;left:16px;transform:translateY(-50%);background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:3px" title="Achievements">ACHIEVEMENTS</button>
   <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
   <button id="btn-settings" style="position:absolute;top:46px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Settings">SETTINGS</button>
@@ -279,29 +280,24 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div id="arena-picker-list" style="flex:1;overflow-y:auto;padding:24px 28px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start"></div>
 </div>
 
-<!-- PVP SETUP (minimal: host or join only) -->
-<div class="screen" id="setup-screen">
-  <div class="setup-box" style="width:420px;gap:16px">
-    <div class="setup-title" style="font-size:14px;letter-spacing:4px">ONLINE PvP</div>
-    <div class="setup-tabs" id="setup-tabs">
-      <button class="setup-tab active" id="tab-host">HOST ROOM</button>
-      <button class="setup-tab" id="tab-join">JOIN ROOM</button>
-    </div>
-    <div id="join-code-wrap" style="display:none">
-      <span class="form-label">ROOM CODE</span>
-      <input class="form-input" id="join-code" placeholder="6-LETTER CODE" maxlength="6" style="text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:22px">
-    </div>
-    <!-- Hidden compat elements -->
-    <input id="setup-name" style="display:none">
-    <div id="setup-error" class="error-text"></div>
-    <div id="name-input-wrap" style="display:none"><input id="x-compat"></div>
-    <div id="class-info-panel" style="display:none"></div>
-    <div id="char-cards" style="display:none"></div>
-    <div class="btn-row">
-      <button class="menu-btn primary" id="setup-confirm" style="flex:1;font-size:14px">ENTER ARENA</button>
-      <button class="menu-btn" id="setup-back" style="width:110px;font-size:13px">&#8592; BACK</button>
-    </div>
+<!-- PVP SETUP — overlay style matching train-overlay -->
+<div id="setup-screen" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(4px)">
+  <div style="font-size:11px;letter-spacing:4px;color:var(--dim);margin-bottom:4px" id="setup-title-text">ONLINE PvP</div>
+  <div class="setup-tabs" id="setup-tabs" style="display:flex">
+    <button class="setup-tab active" id="tab-host">HOST ROOM</button>
+    <button class="setup-tab" id="tab-join">JOIN ROOM</button>
   </div>
+  <div id="join-code-wrap" style="display:none;flex-direction:column;align-items:center;gap:8px">
+    <span class="form-label">ROOM CODE</span>
+    <input class="form-input" id="join-code" placeholder="6-LETTER CODE" maxlength="6" style="text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:22px;width:260px">
+  </div>
+  <input id="setup-name" style="display:none">
+  <div id="setup-error" class="error-text"></div>
+  <div id="name-input-wrap" style="display:none"><input id="x-compat"></div>
+  <div id="class-info-panel" style="display:none"></div>
+  <div id="char-cards" style="display:none"></div>
+  <button class="menu-btn primary" id="setup-confirm" style="width:260px;margin-top:4px;font-size:15px">ENTER ARENA</button>
+  <button class="menu-btn" id="setup-back" style="width:260px;font-size:13px">&#8592; BACK</button>
 </div>
 
 <!-- LOBBY -->
@@ -3429,7 +3425,54 @@ document.addEventListener('keyup',function(e){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
+  // Always hide setup-screen overlay when navigating anywhere
+  document.getElementById('setup-screen').style.display='none';
   if(id==='title-screen'){
+    // House banner click handler
+    var tc2=document.getElementById('title-screen');
+    if(tc2&&!tc2._houseClickBound){
+      tc2._houseClickBound=true;
+      var houses=[
+        {
+          name:'THE IRONBLOOD CLAN',
+          title:'House of the Red Banner',
+          accent:'#8b1010',
+          lore:'From the frozen steppes beyond the Ashwall, the Ironblood have never bowed to a king. They elect their chieftain the only way they understand — the last one standing. They come to Eldara not for gold, but for the right to call themselves the strongest in the world. Their fighters carry blood debts and old grudges. They do not lose gracefully.'
+        },
+        {
+          name:'HOUSE AELINDRA',
+          title:'The Silver Moon Bloodline',
+          accent:'#7a20c0',
+          lore:'Among the oldest elven families still walking the mortal world, House Aelindra has studied the arcane for over four thousand years. Their library beneath the Moonspire holds spells older than human civilization. They enter the Arena not for sport, but as observers — each champion is a living experiment in the limits of mortal and elven power.'
+        },
+        {
+          name:'GOLD BROTHERS TRADING CO.',
+          title:'Purveyors of Fine & Rare Goods',
+          accent:'#c8a030',
+          lore:'On paper, the Gold Brothers move spices, silks and curiosities across six continents. In practice, they move whatever pays. Their fighters are contracted professionals — assassins, disgraced soldiers, debt collectors who took one job too many. The Company has never lost money on an Arena season. They always back the right champion. Somehow.'
+        }
+      ];
+      tc2.addEventListener('click',function(e){
+        if(!window._bannerHitAreas)return;
+        // Only run on title screen
+        if(!document.getElementById('title-screen').classList.contains('active'))return;
+        var rect=tc2.getBoundingClientRect();
+        var mx=e.clientX-rect.left, my=e.clientY-rect.top;
+        var hit=null;
+        window._bannerHitAreas.forEach(function(b){
+          if(mx>=b.bx-b.bw/2-10&&mx<=b.bx+b.bw/2+10&&my>=b.by-10&&my<=b.by+b.bh+10)hit=b.bi;
+        });
+        if(hit===null){return;} // don't block other clicks
+        var h=houses[hit];
+        var panel=document.getElementById('title-spell-panel');
+        panel.innerHTML='<div style="height:1px;background:'+h.accent+';margin-bottom:10px;border-radius:1px"></div>'
+          +'<div class="cip-name" style="color:'+h.accent+'">'+h.name+'</div>'
+          +'<div class="cip-skill" style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">'+h.title+'</div>'
+          +'<div style="font-size:11px;line-height:1.8;color:rgba(255,255,255,0.82);font-style:italic">'+h.lore+'</div>';
+        panel.classList.add('show');
+      });
+      // title-spell-panel has its own close via character card clicks
+    }
     // Rebuild title chars to reflect latest XP
     setTimeout(function(){
       var container=document.getElementById('title-chars');
@@ -3525,8 +3568,8 @@ function buildSpellDesc(cls){
     ranger:"Nobody knows her real name. She appeared in the slums of Eldara at seventeen with nothing but a stolen blade and a talent for disappearing. She has since made six guilds, three kings, and one god deeply regret crossing her."
   };
   h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">';
-  h+='<div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-bottom:8px">LORE</div>';
-  h+='<div style="font-size:11px;color:rgba(255,255,255,0.55);line-height:1.8;font-style:italic">'+(flavor[cls]||'')+'</div>';
+  h+='<div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:8px">LORE</div>';
+  h+='<div style="font-size:11px;color:rgba(255,255,255,0.82);line-height:1.8;font-style:italic">'+(flavor[cls]||'')+'</div>';
   h+='</div>';
   return {html:h, nextTierLevel:null, cls:cls};
 }
@@ -3630,11 +3673,12 @@ buildTitleChars();
 
 
 
-document.getElementById('btn-pvp').addEventListener('click',function(){
+document.getElementById('btn-pvp').addEventListener('click',function(e){
+  e.stopPropagation();
   gameMode='pvp';setupMode='host';
   document.getElementById('join-code-wrap').style.display='none';
   document.getElementById('setup-error').textContent='';
-  showScreen('setup-screen');
+  document.getElementById('setup-screen').style.display='flex';
 });
 document.getElementById('tab-host').addEventListener('click',function(){
   setupMode='host';
@@ -3648,7 +3692,7 @@ document.getElementById('tab-join').addEventListener('click',function(){
   document.getElementById('tab-host').classList.remove('active');
   document.getElementById('join-code-wrap').style.display='block';
 });
-document.getElementById('btn-train').addEventListener('click',function(){
+document.getElementById('btn-train').addEventListener('click',function(e){e.stopPropagation();
   gameMode='training';
   // Show train overlay with current class info
   var xpD=getXP(myClass);var tierD=getTier(myClass,xpD.level);
@@ -3713,6 +3757,9 @@ function drawArenaPreview(canvas, ak){
 }
 
 document.getElementById('btn-choose-arena').addEventListener('click',function(){
+  // Auto-uncheck random arena
+  var cb=document.getElementById('train-random-arena');
+  if(cb.checked){cb.checked=false;document.getElementById('btn-choose-arena').style.opacity='1';}
   if(document.getElementById('train-random-arena').checked)return;
   var list=document.getElementById('arena-picker-list');
   list.innerHTML='';
@@ -3756,7 +3803,7 @@ document.getElementById('btn-start-train').addEventListener('click',function(){
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   launchTraining();
 });
-document.getElementById('setup-back').addEventListener('click',function(){showScreen('title-screen');});
+document.getElementById('setup-back').addEventListener('click',function(){document.getElementById('setup-screen').style.display='none';});
 
 document.getElementById('setup-confirm').addEventListener('click',function(){
   // Name = display name if logged in, else class name
@@ -4109,6 +4156,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       [[-16,bh-12],[-8,bh-5],[-2,bh-20],[4,bh-8],[10,bh-18],[14,bh-6],[16,bh-14]],
       [[-16,bh-6],[-12,bh-16],[-4,bh-4],[2,bh-19],[8,bh-8],[13,bh-15],[16,bh-10]],
     ];
+    window._bannerHitAreas=bConfigs.map(function(bc,bi){return {bx:bc.bx,by:bc.by,bw:bw,bh:bh,bi:bi};});
     bConfigs.forEach(function(bc,bi){
       var bx=bc.bx, by=bc.by;
       var torn=tornEdges[bi];
@@ -4838,7 +4886,7 @@ document.getElementById('btn-settings').addEventListener('click',function(){
   fbGetAuth('/users/'+authUid+'/profile').then(function(d){
     var used=d&&d.nameChanges||0;
     var left=Math.max(0,2-used);
-    document.getElementById('settings-changes-left').textContent=left+' free name change'+(left!==1?'s':'')+' remaining';
+    document.getElementById('settings-changes-left').textContent=left===0?'No free name changes remaining':left+' free name change'+(left!==1?'s':'')+' remaining';
     document.getElementById('settings-save').disabled=left<=0;
     document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
   });
@@ -4877,9 +4925,10 @@ document.getElementById('name-confirm-yes').addEventListener('click',function(){
   }).then(function(){
     displayName=newName;myName=newName;
     try{sessionStorage.setItem('eldara_name',newName);}catch(e){}
+    try{localStorage.setItem('eldara_name_'+authUid,newName);}catch(e){}
     document.getElementById('settings-curname').textContent=newName;
     var left=Math.max(0,2-(used+1));
-    document.getElementById('settings-changes-left').textContent=left+' free name change'+(left!==1?'s':'')+' remaining';
+    document.getElementById('settings-changes-left').textContent=left===0?'No free name changes remaining':left+' free name change'+(left!==1?'s':'')+' remaining';
     document.getElementById('settings-save').disabled=left<=0;
     document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
     document.getElementById('settings-name-inp').value='';
@@ -4945,17 +4994,17 @@ var ACHIEVEMENTS = [
   {id:'w_unlock',cls:'warrior',tier:0,name:'Conscript',desc:'Unlock the Warrior',icon:'\u2694',req:function(){return getLevel('warrior')>=1;},levelReq:1},
   {id:'w_t1',cls:'warrior',tier:1,name:'Footsoldier',desc:'Warrior reaches Lv.10',icon:'\u2694',req:function(){return getLevel('warrior')>=10;},levelReq:10},
   {id:'w_t2',cls:'warrior',tier:2,name:'Knight',desc:'Warrior reaches Lv.20 — Full plate unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=20;},levelReq:20},
-  {id:'w_t3',cls:'warrior',tier:3,name:'Warlord',desc:'Warrior reaches Lv.30 — Gold warlord armor unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=30;},levelReq:30},
+  {id:'w_t3',cls:'warrior',tier:3,name:'Warlord',desc:'Warrior reaches Lv.30 — Warlord armor unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=30;},levelReq:30},
   // MAGE
   {id:'m_unlock',cls:'mage',tier:0,name:'Apprentice',desc:'Unlock the Mage',icon:'\u2728',req:function(){return getLevel('mage')>=1;},levelReq:1},
   {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.10 — Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=10;},levelReq:10},
   {id:'m_t2',cls:'mage',tier:2,name:'Arcanist',desc:'Mage reaches Lv.20 — Arcane purple robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=20;},levelReq:20},
-  {id:'m_t3',cls:'mage',tier:3,name:'Archmage',desc:'Mage reaches Lv.30 — Grand archmage look unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=30;},levelReq:30},
+  {id:'m_t3',cls:'mage',tier:3,name:'Archmage',desc:'Mage reaches Lv.30 — Archmage robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=30;},levelReq:30},
   // ROGUE
   {id:'r_unlock',cls:'ranger',tier:0,name:'Scout',desc:'Unlock the Rogue',icon:'\u2020',req:function(){return getLevel('ranger')>=1;},levelReq:1},
   {id:'r_t1',cls:'ranger',tier:1,name:'Cutthroat',desc:'Rogue reaches Lv.10 — Leather vest unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=10;},levelReq:10},
   {id:'r_t2',cls:'ranger',tier:2,name:'Shadowblade',desc:'Rogue reaches Lv.20 — Dark corset unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=20;},levelReq:20},
-  {id:'r_t3',cls:'ranger',tier:3,name:'Phantom',desc:'Rogue reaches Lv.30 — Assassin cloak unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=30;},levelReq:30},
+  {id:'r_t3',cls:'ranger',tier:3,name:'Phantom',desc:'Rogue reaches Lv.30 — Phantom armor unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=30;},levelReq:30},
   // GENERAL
   // WARRIOR WEAPON ACHIEVEMENTS
   {id:'ww0',cls:'warrior',tier:0,name:'Blade of Burden',desc:'Starting weapon — Rusty Shortsword',icon:'\u2694',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
@@ -5018,7 +5067,7 @@ function buildAchCard(ach){
     var wearing=hasRedEyes(ach.killCls);
     wearBtn='<button class="wear-eyes-btn" data-cls="'+ach.killCls+'" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearing?'#e74c3c':'var(--gold)')+';color:'+(wearing?'#e74c3c':'var(--gold)')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearing?'TAKE OFF':'WEAR')+'</button>';
   }
-  card.innerHTML=leftHTML+'<div style="flex:1;min-width:0"><div style="font-size:12px;letter-spacing:1px;color:'+nameColor+'">'+ach.name+checkmark+'</div><div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.4">'+ach.desc+'</div>'+(ach.levelReq>1?'<div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:4px">Requires Lv.'+ach.levelReq+'</div>':'')+progressStr+wearBtn+'</div>';
+  card.innerHTML=leftHTML+'<div style="flex:1;min-width:0"><div style="font-size:12px;letter-spacing:1px;color:'+nameColor+'">'+ach.name+checkmark+'</div><div style="font-size:11px;color:rgba(255,255,255,0.82);margin-top:4px;line-height:1.5">'+ach.desc+'</div>'+(ach.levelReq>1?'<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px">Requires Lv.'+ach.levelReq+'</div>':'')+progressStr+wearBtn+'</div>';
   return {card:card,earned:earned};
 }
 
@@ -5161,7 +5210,7 @@ document.getElementById('ov-menu').addEventListener('click',function(){clearUrlC
     var params=new URLSearchParams(window.location.search);
     var joinCode=params.get('join');
     if(!joinCode||joinCode.length<4) return;
-    showScreen('setup-screen');
+    document.getElementById('setup-screen').style.display='flex';
     document.getElementById('setup-title-text').textContent='ONLINE PvP';
     document.getElementById('setup-tabs').style.display='flex';
     document.getElementById('join-code-wrap').style.display='block';
