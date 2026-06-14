@@ -3935,10 +3935,10 @@ function processQueueData(data){
       var _guestWait=fbListen('/rooms/'+roomCode+'/guest',function(gd){
         if(!gd)return;
         _guestWait();
-        enemyNamePvp=gd.name;enemyClsPvp=gd.cls;enemyIdPvp=gd.id;
+        enemyIdPvp=gd.id;enemyNamePvp=gd.name;enemyClsPvp=gd.cls;
         fbSet('/rooms/'+roomCode+'/matchStart',{arenaKey:null,hostCls:myClass,spawnFlip:pvpSpawnFlip});
         document.getElementById('setup-screen').style.display='none';
-        launchPvP(roomCode,gd.id,gd.name,gd.cls);
+        launchPvP(null,myId,myName,myClass);
       });
     } else {
       // Guest — wait for matchmade notification from host
@@ -3956,7 +3956,8 @@ function processQueueData(data){
           // Join the room
           fbSet('/rooms/'+roomCode+'/guest',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
             document.getElementById('setup-screen').style.display='none';
-            launchPvP(roomCode,mData.hostId,mData.hostName,mData.hostCls);
+            enemyIdPvp=mData.hostId;enemyNamePvp=mData.hostName;enemyClsPvp=mData.hostCls;
+            launchPvP(null,mData.hostId,mData.hostName,mData.hostCls);
           });
         });
       }
@@ -4068,8 +4069,8 @@ document.getElementById('lob-start').addEventListener('click',function(){
 document.getElementById('lob-back').addEventListener('click',function(){leaveQueue();cleanupFB();showScreen('title-screen');});
 
 function launchPvP(arenaKey,hostId,hostName,hostCls) {
-  var arena=ARENAS[arenaKey]||ARENAS.crypt;
-  iAmHost=(myId===hostId);
+  var arena=ARENAS[arenaKey]||ARENAS[ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)]];
+  iAmHost=(myId===hostId)||isHost;
   if(!iAmHost&&hostId){enemyIdPvp=hostId;}
   var meClass=myClass||'warrior';
   // Randomize spawn sides — host picks randomly, guest gets the other
