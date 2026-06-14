@@ -503,8 +503,10 @@ function loadUserProfile() {
     });
     showScreen('title-screen');
     updateProfileBadge();
+    registerOnline();
   }).catch(function() {
     showScreen('title-screen');
+    registerOnline();
   });
 }
 
@@ -3479,6 +3481,7 @@ function showScreen(id){
   // Always hide setup-screen overlay when navigating anywhere
   document.getElementById('setup-screen').style.display='none';
   if(id==='title-screen'){
+    registerOnline(); // refresh online presence
     // House banner click handler
     var tc2=document.getElementById('title-screen');
     if(tc2&&!tc2._houseClickBound){
@@ -3730,7 +3733,7 @@ document.getElementById('btn-pvp').addEventListener('click',function(e){
   document.getElementById('join-code-wrap').style.display='none';
   document.getElementById('setup-error').textContent='';
   document.getElementById('setup-screen').style.display='flex';
-  registerOnline();startOnlinePolling();
+  registerOnline();startOnlinePolling();updateOnlineCount();
 });
 document.getElementById('tab-host').addEventListener('click',function(){
   setupMode='host';
