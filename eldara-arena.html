@@ -297,6 +297,11 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div id="class-info-panel" style="display:none"></div>
   <div id="char-cards" style="display:none"></div>
   <button class="menu-btn primary" id="setup-confirm" style="width:260px;margin-top:4px;font-size:15px">ENTER ARENA</button>
+  <div style="display:flex;align-items:center;gap:10px;width:260px">
+    <button class="menu-btn" id="btn-joinqueue" style="flex:1;font-size:12px;letter-spacing:2px;border-color:rgba(232,184,75,0.4)">&#9654; JOIN QUEUE</button>
+  </div>
+  <div style="font-size:10px;color:var(--dim);letter-spacing:1px;min-height:14px" id="queue-status"></div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:1px" id="online-count"></div>
   <button class="menu-btn" id="setup-back" style="width:260px;font-size:13px">&#8592; BACK</button>
 </div>
 
@@ -304,7 +309,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 <div class="screen" id="lobby-screen">
   <div class="lobby-left">
     <div class="lob-header">
-      <div class="lob-htitle">YOUR FIGHTER</div>
+      <div class="lob-htitle" id="lob-class-label">WARRIOR</div>
       <div class="lob-hname" id="lob-myname">&#8212;</div>
     </div>
     <div class="room-box">
@@ -3679,6 +3684,7 @@ document.getElementById('btn-pvp').addEventListener('click',function(e){
   document.getElementById('join-code-wrap').style.display='none';
   document.getElementById('setup-error').textContent='';
   document.getElementById('setup-screen').style.display='flex';
+  registerOnline();updateOnlineCount();
 });
 document.getElementById('tab-host').addEventListener('click',function(){
   setupMode='host';
@@ -3803,6 +3809,125 @@ document.getElementById('btn-start-train').addEventListener('click',function(){
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   launchTraining();
 });
+// ── MATCHMAKING QUEUE ──
+var _queueTimer=null, _queueSeconds=0, _queueListener=null, _inQueue=false;
+var _onlineListener=null;
+
+function formatQueueTime(s){var m=Math.floor(s/60),sec=s%60;return m>0?m+'m '+sec+'s':sec+'s';}
+
+function leaveQueue(){
+  _inQueue=false;
+  if(_queueTimer){clearInterval(_queueTimer);_queueTimer=null;}
+  if(_queueListener){_queueListener();_queueListener=null;}
+  if(authUid)fbSet('/queue/'+authUid,null);
+  document.getElementById('queue-status').textContent='';
+  document.getElementById('btn-joinqueue').textContent='▶ JOIN QUEUE';
+  document.getElementById('btn-joinqueue').style.borderColor='rgba(232,184,75,0.4)';
+}
+
+function joinQueue(){
+  if(!authUid||isGuest){document.getElementById('queue-status').textContent='Sign in to use matchmaking.';return;}
+  if(_inQueue){leaveQueue();return;}
+  _inQueue=true;
+  _queueSeconds=0;
+  document.getElementById('btn-joinqueue').textContent='&#9632; LEAVE QUEUE';
+  document.getElementById('btn-joinqueue').style.borderColor='rgba(200,50,50,0.6)';
+  // Write self to queue
+  var qData={uid:authUid,name:myName,cls:myClass,ts:Date.now()};
+  fbSet('/queue/'+authUid,qData);
+  // Start timer
+  _queueTimer=setInterval(function(){
+    _queueSeconds++;
+    document.getElementById('queue-status').textContent='In queue: '+formatQueueTime(_queueSeconds);
+    // Refresh our queue entry every 10s so it doesn't expire
+    if(_queueSeconds%10===0&&_inQueue)fbSet('/queue/'+authUid,{uid:authUid,name:myName,cls:myClass,ts:Date.now()});
+  },1000);
+  // Listen to queue for a match
+  _queueListener=fbListen('/queue',function(data){
+    if(!data||!_inQueue)return;
+    var others=Object.keys(data).filter(function(k){return k!==authUid;});
+    if(others.length===0)return;
+    // Found opponent — host match if our UID is lexicographically smaller
+    var oppKey=others[0];
+    var opp=data[oppKey];
+    if(!opp||!opp.uid)return;
+    if(authUid<oppKey){
+      // We are host — create room
+      leaveQueue();
+      fbSet('/queue/'+oppKey,null); // remove opponent too
+      gameMode='pvp';setupMode='host';
+      myName=displayName||CLS[myClass].name.toUpperCase();
+      roomCode=genCode();isHost=true;iAmHost=true;
+      // Write matchmade flag to opponent's queue slot so they know the room
+      fbSet('/matchmade/'+oppKey,{roomCode:roomCode,hostId:authUid,hostName:myName,hostCls:myClass,ts:Date.now()});
+      fbSet('/rooms/'+roomCode+'/host',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
+        startListeningLobbyChat();
+        esGuest=fbListen('/rooms/'+roomCode+'/guest',function(gData){
+          if(!gData)return;
+          enemyNamePvp=gData.name;enemyClsPvp=gData.cls;enemyIdPvp=gData.id;
+          document.getElementById('lob-status').textContent=gData.name+' joined! Start when ready.';
+          updateLobbyPlayers([{name:myName,you:true},{name:gData.name}]);
+          document.getElementById('lob-start').style.display='block';
+          addLobbyMsg('System',gData.name+' joined the room!',true);
+        });
+        document.getElementById('setup-screen').style.display='none';
+        showScreen('lobby-screen');
+        document.getElementById('lob-myname').textContent=myName;
+        document.getElementById('lob-class-label').textContent=CLS[myClass].name.toUpperCase();
+        document.getElementById('lob-code').textContent=roomCode;
+        updateLobbyPlayers([{name:myName,you:true}]);
+        document.getElementById('lob-status').textContent='Matched! Waiting for opponent to join...';
+        // Auto-start when opponent joins
+        var autoStart=fbListen('/rooms/'+roomCode+'/guest',function(gd){
+          if(!gd)return;autoStart();
+          pvpSpawnFlip=Math.random()<0.5;
+          fbSet('/rooms/'+roomCode+'/matchStart',{arenaKey:null,hostCls:myClass,spawnFlip:pvpSpawnFlip});
+          launchPvP(roomCode,gd.id,gd.name,gd.cls);
+        });
+      });
+    } else {
+      // Opponent is host — wait for matchmade notification
+      if(!_matchmadeListener){
+        _matchmadeListener=fbListen('/matchmade/'+authUid,function(mData){
+          if(!mData||!mData.roomCode)return;
+          leaveQueue();
+          if(_matchmadeListener){_matchmadeListener();_matchmadeListener=null;}
+          fbSet('/matchmade/'+authUid,null);
+          gameMode='pvp';setupMode='join';
+          myName=displayName||CLS[myClass].name.toUpperCase();
+          iAmHost=false;isHost=false;
+          enemyNamePvp=mData.hostName;enemyClsPvp=mData.hostCls;enemyIdPvp=mData.hostId;
+          var code=mData.roomCode;roomCode=code;
+          fbSet('/rooms/'+code+'/guest',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
+            document.getElementById('setup-screen').style.display='none';
+            fbGet('/rooms/'+code+'/matchStart').then(function(ms){
+              if(ms&&ms.arenaKey!==undefined){
+                if(ms.spawnFlip!==undefined)pvpSpawnFlip=ms.spawnFlip;
+                launchPvP(code,mData.hostId,mData.hostName,mData.hostCls);
+              }
+            });
+          });
+        });
+      }
+    }
+  });
+}
+var _matchmadeListener=null;
+
+document.getElementById('btn-joinqueue').addEventListener('click',function(){joinQueue();});
+
+// Online player count — listen to /queue length + active sessions (approximate via /online)
+function updateOnlineCount(){
+  fbGet('/online').then(function(d){
+    if(!d)return;
+    var n=Object.keys(d).length;
+    document.getElementById('online-count').textContent='Players online: '+n;
+  }).catch(function(){});
+}
+// Write to /online when setup screen opens, remove on close
+function registerOnline(){if(authUid&&!isGuest)fbSet('/online/'+authUid,{ts:Date.now()});}
+function unregisterOnline(){if(authUid)fbSet('/online/'+authUid,null);}
+
 document.getElementById('setup-back').addEventListener('click',function(){document.getElementById('setup-screen').style.display='none';});
 
 document.getElementById('setup-confirm').addEventListener('click',function(){
@@ -3827,6 +3952,7 @@ document.getElementById('setup-confirm').addEventListener('click',function(){
       });
       showScreen('lobby-screen');
       document.getElementById('lob-myname').textContent=myName;
+      document.getElementById('lob-class-label').textContent=CLS[myClass]&&CLS[myClass].name?CLS[myClass].name.toUpperCase():'WARRIOR';
       document.getElementById('lob-code').textContent=roomCode;
       updateLobbyPlayers([{name:myName,you:true}]);
       errEl.textContent='';
@@ -3851,6 +3977,7 @@ document.getElementById('setup-confirm').addEventListener('click',function(){
         });
         showScreen('lobby-screen');
         document.getElementById('lob-myname').textContent=myName;
+        document.getElementById('lob-class-label').textContent=CLS[myClass]&&CLS[myClass].name?CLS[myClass].name.toUpperCase():'WARRIOR';
         document.getElementById('lob-code').textContent=code;
         updateLobbyPlayers([{name:myName,you:true},{name:hostData.name}]);
         document.getElementById('lob-status').textContent='Waiting for host to start...';
@@ -3873,7 +4000,7 @@ document.getElementById('lob-start').addEventListener('click',function(){
   launchPvP(ak,myId,myName,myClass);
 });
 
-document.getElementById('lob-back').addEventListener('click',function(){cleanupFB();showScreen('title-screen');});
+document.getElementById('lob-back').addEventListener('click',function(){leaveQueue();cleanupFB();showScreen('title-screen');});
 
 function launchPvP(arenaKey,hostId,hostName,hostCls) {
   var arena=ARENAS[arenaKey]||ARENAS.crypt;
