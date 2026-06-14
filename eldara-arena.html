@@ -3985,8 +3985,13 @@ document.getElementById('btn-joinqueue').addEventListener('click',function(){joi
 
 // Online player count — listen to /queue length + active sessions (approximate via /online)
 function updateOnlineCount(){
-  fbGet('/online').then(function(d){
-    var n=d?Object.keys(d).length:0;
+  fbGet('/users').then(function(d){
+    if(!d){var el=document.getElementById('online-count');if(el)el.textContent='Players online: 0';return;}
+    var now=Date.now();
+    var n=Object.keys(d).filter(function(k){
+      var u=d[k];
+      return u&&u.online&&u.lastSeen&&(now-u.lastSeen<120000); // online in last 2 min
+    }).length;
     var el=document.getElementById('online-count');
     if(el)el.textContent='Players online: '+n;
   }).catch(function(){});
@@ -4000,8 +4005,16 @@ function stopOnlinePolling(){
   if(window._onlinePollTimer){clearInterval(window._onlinePollTimer);window._onlinePollTimer=null;}
 }
 // Write to /online when setup screen opens, remove on close
-function registerOnline(){if(authUid&&!isGuest)fbSet('/online/'+authUid,{ts:Date.now()});}
-function unregisterOnline(){if(authUid)fbSet('/online/'+authUid,null);}
+function registerOnline(){
+  if(authUid&&!isGuest){
+    fbSetAuth('/users/'+authUid,{lastSeen:Date.now(),displayName:displayName||'',online:true}).catch(function(){});
+  }
+}
+function unregisterOnline(){
+  if(authUid&&!isGuest){
+    fbSetAuth('/users/'+authUid,{lastSeen:Date.now(),online:false}).catch(function(){});
+  }
+}
 
 document.getElementById('setup-back').addEventListener('click',function(){leaveQueue();document.getElementById('setup-screen').style.display='none';});
 
