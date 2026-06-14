@@ -3929,7 +3929,7 @@ function processQueueData(data){
       roomCode=genCode();
       pvpSpawnFlip=Math.random()<0.5;
       var arenaKey=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
-      var matchData={roomCode:roomCode,hostId:authUid,hostName:myName,hostCls:myClass,spawnFlip:pvpSpawnFlip,arenaKey:arenaKey,ts:Date.now()};
+      var matchData={roomCode:roomCode,hostId:myId,hostName:myName,hostCls:myClass,spawnFlip:pvpSpawnFlip,arenaKey:arenaKey,ts:Date.now()};
       // Write room host + notify opponent
       fbSet('/rooms/'+roomCode+'/host',{id:myId,name:myName,cls:myClass,ts:Date.now()});
       fbSet('/matchmade/'+oppKey,matchData);
