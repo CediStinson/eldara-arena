@@ -3918,62 +3918,45 @@ function processQueueData(data){
     if(!opp||!opp.uid)return;
     // Ignore stale queue entries (older than 30s — player probably closed tab)
     if(opp.ts&&Date.now()-opp.ts>30000)return;
-    _matchmaking=true; // prevent double-trigger
+    _matchmaking=true;
     if(authUid<oppKey){
-      // We are host — create room
+      // We are host — create room and write matchStart immediately
       leaveQueue();
-      fbSet('/queue/'+oppKey,null); // remove opponent too
-      gameMode='pvp';setupMode='host';
+      fbSet('/queue/'+oppKey,null);
+      gameMode='pvp';iAmHost=true;isHost=true;
       myName=displayName||CLS[myClass].name.toUpperCase();
-      roomCode=genCode();isHost=true;iAmHost=true;
-      // Write matchmade flag to opponent's queue slot so they know the room
-      fbSet('/matchmade/'+oppKey,{roomCode:roomCode,hostId:authUid,hostName:myName,hostCls:myClass,ts:Date.now()});
-      fbSet('/rooms/'+roomCode+'/host',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
-        startListeningLobbyChat();
-        esGuest=fbListen('/rooms/'+roomCode+'/guest',function(gData){
-          if(!gData)return;
-          enemyNamePvp=gData.name;enemyClsPvp=gData.cls;enemyIdPvp=gData.id;
-          document.getElementById('lob-status').textContent=gData.name+' joined! Start when ready.';
-          updateLobbyPlayers([{name:myName,you:true},{name:gData.name}]);
-          document.getElementById('lob-start').style.display='block';
-          addLobbyMsg('System',gData.name+' joined the room!',true);
-        });
+      roomCode=genCode();
+      pvpSpawnFlip=Math.random()<0.5;
+      var matchData={roomCode:roomCode,hostId:authUid,hostName:myName,hostCls:myClass,spawnFlip:pvpSpawnFlip,ts:Date.now()};
+      // Write room host + notify opponent
+      fbSet('/rooms/'+roomCode+'/host',{id:myId,name:myName,cls:myClass,ts:Date.now()});
+      fbSet('/matchmade/'+oppKey,matchData);
+      // Wait for guest to join then launch
+      var _guestWait=fbListen('/rooms/'+roomCode+'/guest',function(gd){
+        if(!gd)return;
+        _guestWait();
+        enemyNamePvp=gd.name;enemyClsPvp=gd.cls;enemyIdPvp=gd.id;
+        fbSet('/rooms/'+roomCode+'/matchStart',{arenaKey:null,hostCls:myClass,spawnFlip:pvpSpawnFlip});
         document.getElementById('setup-screen').style.display='none';
-        showScreen('lobby-screen');
-        document.getElementById('lob-myname').textContent=myName;
-        document.getElementById('lob-class-label').textContent=CLS[myClass].name.toUpperCase();
-        document.getElementById('lob-code').textContent=roomCode;
-        updateLobbyPlayers([{name:myName,you:true}]);
-        document.getElementById('lob-status').textContent='Matched! Waiting for opponent to join...';
-        // Auto-start when opponent joins
-        var autoStart=fbListen('/rooms/'+roomCode+'/guest',function(gd){
-          if(!gd)return;autoStart();
-          pvpSpawnFlip=Math.random()<0.5;
-          fbSet('/rooms/'+roomCode+'/matchStart',{arenaKey:null,hostCls:myClass,spawnFlip:pvpSpawnFlip});
-          launchPvP(roomCode,gd.id,gd.name,gd.cls);
-        });
+        launchPvP(roomCode,gd.id,gd.name,gd.cls);
       });
     } else {
-      // Opponent is host — wait for matchmade notification
+      // Guest — wait for matchmade notification from host
       if(!_matchmadeListener){
         _matchmadeListener=fbListen('/matchmade/'+authUid,function(mData){
           if(!mData||!mData.roomCode)return;
+          _matchmadeListener();_matchmadeListener=null;
           leaveQueue();
-          if(_matchmadeListener){_matchmadeListener();_matchmadeListener=null;}
           fbSet('/matchmade/'+authUid,null);
-          gameMode='pvp';setupMode='join';
+          gameMode='pvp';iAmHost=false;isHost=false;
           myName=displayName||CLS[myClass].name.toUpperCase();
-          iAmHost=false;isHost=false;
+          roomCode=mData.roomCode;
+          if(mData.spawnFlip!==undefined)pvpSpawnFlip=mData.spawnFlip;
           enemyNamePvp=mData.hostName;enemyClsPvp=mData.hostCls;enemyIdPvp=mData.hostId;
-          var code=mData.roomCode;roomCode=code;
-          fbSet('/rooms/'+code+'/guest',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
+          // Join the room
+          fbSet('/rooms/'+roomCode+'/guest',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
             document.getElementById('setup-screen').style.display='none';
-            fbGet('/rooms/'+code+'/matchStart').then(function(ms){
-              if(ms&&ms.arenaKey!==undefined){
-                if(ms.spawnFlip!==undefined)pvpSpawnFlip=ms.spawnFlip;
-                launchPvP(code,mData.hostId,mData.hostName,mData.hostCls);
-              }
-            });
+            launchPvP(roomCode,mData.hostId,mData.hostName,mData.hostCls);
           });
         });
       }
