@@ -1855,7 +1855,8 @@ function mkPlayer(id,cls,name,spawn,isMe) {
 }
 
 function mkGS(arenaKey,me,en) {
-  return {arena:ARENAS[arenaKey],arenaKey:arenaKey,players:[me,en],projs:[],effects:[],traps:[],
+  var ak=arenaKey||ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+  return {arena:ARENAS[ak],arenaKey:ak,players:[me,en],projs:[],effects:[],traps:[],
     tick:0,phase:'pregame',countdown:5000,roundTimer:99,roundMs:0,round:1,dopps:[]};
 }
 
@@ -3927,7 +3928,8 @@ function processQueueData(data){
       myName=displayName||CLS[myClass].name.toUpperCase();
       roomCode=genCode();
       pvpSpawnFlip=Math.random()<0.5;
-      var matchData={roomCode:roomCode,hostId:authUid,hostName:myName,hostCls:myClass,spawnFlip:pvpSpawnFlip,ts:Date.now()};
+      var arenaKey=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+      var matchData={roomCode:roomCode,hostId:authUid,hostName:myName,hostCls:myClass,spawnFlip:pvpSpawnFlip,arenaKey:arenaKey,ts:Date.now()};
       // Write room host + notify opponent
       fbSet('/rooms/'+roomCode+'/host',{id:myId,name:myName,cls:myClass,ts:Date.now()});
       fbSet('/matchmade/'+oppKey,matchData);
@@ -3936,9 +3938,9 @@ function processQueueData(data){
         if(!gd)return;
         _guestWait();
         enemyIdPvp=gd.id;enemyNamePvp=gd.name;enemyClsPvp=gd.cls;
-        fbSet('/rooms/'+roomCode+'/matchStart',{arenaKey:null,hostCls:myClass,spawnFlip:pvpSpawnFlip});
+        fbSet('/rooms/'+roomCode+'/matchStart',{arenaKey:arenaKey,hostCls:myClass,spawnFlip:pvpSpawnFlip});
         document.getElementById('setup-screen').style.display='none';
-        launchPvP(null,myId,myName,myClass);
+        launchPvP(arenaKey,myId,myName,myClass);
       });
     } else {
       // Guest — wait for matchmade notification from host
@@ -3957,7 +3959,7 @@ function processQueueData(data){
           fbSet('/rooms/'+roomCode+'/guest',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
             document.getElementById('setup-screen').style.display='none';
             enemyIdPvp=mData.hostId;enemyNamePvp=mData.hostName;enemyClsPvp=mData.hostCls;
-            launchPvP(null,mData.hostId,mData.hostName,mData.hostCls);
+            launchPvP(mData.arenaKey||null,mData.hostId,mData.hostName,mData.hostCls);
           });
         });
       }
