@@ -561,14 +561,42 @@ function fbDelete(path) {
 // LISTEN: real-time via SSE (Firebase supports text/event-stream)
 function fbListen(path, cb) {
   var es = new EventSource(FB_BASE + path + '.json?Accept=text/event-stream');
+  var _state = null;
   es.addEventListener('put', function(e) {
-    try { var d = JSON.parse(e.data); cb(d.data); } catch(err) {}
+    try {
+      var d = JSON.parse(e.data);
+      if(d.path === '/') { _state = d.data; } // full replace
+      else {
+        // Nested put
+        if(!_state) _state = {};
+        var parts = d.path.replace(/^\//,'').split('/');
+        var obj = _state;
+        for(var i=0;i<parts.length-1;i++){
+          if(!obj[parts[i]])obj[parts[i]]={};
+          obj=obj[parts[i]];
+        }
+        obj[parts[parts.length-1]] = d.data;
+      }
+      cb(_state);
+    } catch(err) {}
   });
   es.addEventListener('patch', function(e) {
-    try { var d = JSON.parse(e.data); cb(d.data); } catch(err) {}
+    try {
+      var d = JSON.parse(e.data);
+      if(!_state) _state = {};
+      // Merge patch into state
+      var parts = d.path ? d.path.replace(/^\//,'').split('/').filter(Boolean) : [];
+      var obj = _state;
+      for(var i=0;i<parts.length;i++){
+        if(!obj[parts[i]])obj[parts[i]]={};
+        obj=obj[parts[i]];
+      }
+      Object.assign(obj, d.data);
+      cb(_state);
+    } catch(err) {}
   });
   es.onerror = function() { /* silently retry */ };
-  return es; // call es.close() to stop
+  return function(){es.close();}; // return close function
 }
 
 // ═══════════════════════════════════════════
@@ -3413,8 +3441,26 @@ document.addEventListener('keyup',function(e){
   }
 });
 window.addEventListener('blur',function(){
-  // Clear all keys when window loses focus to prevent stuck keys
   Object.keys(keys).forEach(function(k){keys[k]=false;});
+});
+window.addEventListener('beforeunload',function(){
+  // Best-effort cleanup — browser may not complete async calls but tries
+  if(_inQueue&&authUid){
+    // Synchronous XHR as last resort (fetch won't complete on tab close)
+    try{
+      var xhr=new XMLHttpRequest();
+      xhr.open('DELETE',FB_BASE+'/queue/'+authUid+'.json?auth='+authToken,false);
+      xhr.send();
+      xhr.open('DELETE',FB_BASE+'/online/'+authUid+'.json?auth='+authToken,false);
+      xhr.send();
+    }catch(e){}
+  } else if(authUid){
+    try{
+      var xhr2=new XMLHttpRequest();
+      xhr2.open('DELETE',FB_BASE+'/online/'+authUid+'.json?auth='+authToken,false);
+      xhr2.send();
+    }catch(e){}
+  }
 });
 document.addEventListener('keyup',function(e){
   keys[e.code]=false;
@@ -3684,7 +3730,7 @@ document.getElementById('btn-pvp').addEventListener('click',function(e){
   document.getElementById('join-code-wrap').style.display='none';
   document.getElementById('setup-error').textContent='';
   document.getElementById('setup-screen').style.display='flex';
-  registerOnline();updateOnlineCount();
+  registerOnline();startOnlinePolling();
 });
 document.getElementById('tab-host').addEventListener('click',function(){
   setupMode='host';
@@ -3811,18 +3857,20 @@ document.getElementById('btn-start-train').addEventListener('click',function(){
 });
 // ── MATCHMAKING QUEUE ──
 var _queueTimer=null, _queueSeconds=0, _queueListener=null, _inQueue=false;
+var _queuePollTimer=null;
 var _onlineListener=null;
 
 function formatQueueTime(s){var m=Math.floor(s/60),sec=s%60;return m>0?m+'m '+sec+'s':sec+'s';}
 
 function leaveQueue(){
-  _inQueue=false;
+  _inQueue=false;_matchmaking=false;
   if(_queueTimer){clearInterval(_queueTimer);_queueTimer=null;}
-  if(_queueListener){_queueListener();_queueListener=null;}
+  if(_queuePollTimer){clearInterval(_queuePollTimer);_queuePollTimer=null;}
+  if(_queueListener){try{_queueListener();}catch(e){}  _queueListener=null;}
   if(authUid)fbSet('/queue/'+authUid,null);
-  document.getElementById('queue-status').textContent='';
-  document.getElementById('btn-joinqueue').textContent='▶ JOIN QUEUE';
-  document.getElementById('btn-joinqueue').style.borderColor='rgba(232,184,75,0.4)';
+  var _qs=document.getElementById('queue-status');if(_qs)_qs.textContent='';
+  var _qb=document.getElementById('btn-joinqueue');
+  if(_qb){_qb.textContent='▶ JOIN QUEUE';_qb.style.borderColor='rgba(232,184,75,0.4)';}
 }
 
 function joinQueue(){
@@ -3830,7 +3878,7 @@ function joinQueue(){
   if(_inQueue){leaveQueue();return;}
   _inQueue=true;
   _queueSeconds=0;
-  document.getElementById('btn-joinqueue').textContent='&#9632; LEAVE QUEUE';
+  document.getElementById('btn-joinqueue').textContent='■ LEAVE QUEUE';
   document.getElementById('btn-joinqueue').style.borderColor='rgba(200,50,50,0.6)';
   // Write self to queue
   var qData={uid:authUid,name:myName,cls:myClass,ts:Date.now()};
@@ -3840,17 +3888,34 @@ function joinQueue(){
     _queueSeconds++;
     document.getElementById('queue-status').textContent='In queue: '+formatQueueTime(_queueSeconds);
     // Refresh our queue entry every 10s so it doesn't expire
-    if(_queueSeconds%10===0&&_inQueue)fbSet('/queue/'+authUid,{uid:authUid,name:myName,cls:myClass,ts:Date.now()});
+    if(_queueSeconds%10===0&&_inQueue){fbSet('/queue/'+authUid,{uid:authUid,name:myName,cls:myClass,ts:Date.now()});registerOnline();}
   },1000);
-  // Listen to queue for a match
+  // Poll queue every 3s as reliable fallback
+  _queuePollTimer=setInterval(function(){
+    if(!_inQueue)return;
+    fbGet('/queue').then(function(data){
+      if(!data||!_inQueue)return;
+      processQueueData(data);
+    });
+  },3000);
+  // Also listen via SSE
   _queueListener=fbListen('/queue',function(data){
     if(!data||!_inQueue)return;
+    processQueueData(data);
+  });
+}
+var _matchmaking=false;
+function processQueueData(data){
+    if(!data||!_inQueue||_matchmaking)return;
     var others=Object.keys(data).filter(function(k){return k!==authUid;});
     if(others.length===0)return;
     // Found opponent — host match if our UID is lexicographically smaller
     var oppKey=others[0];
     var opp=data[oppKey];
     if(!opp||!opp.uid)return;
+    // Ignore stale queue entries (older than 30s — player probably closed tab)
+    if(opp.ts&&Date.now()-opp.ts>30000)return;
+    _matchmaking=true; // prevent double-trigger
     if(authUid<oppKey){
       // We are host — create room
       leaveQueue();
@@ -3910,7 +3975,6 @@ function joinQueue(){
         });
       }
     }
-  });
 }
 var _matchmadeListener=null;
 
@@ -3919,16 +3983,24 @@ document.getElementById('btn-joinqueue').addEventListener('click',function(){joi
 // Online player count — listen to /queue length + active sessions (approximate via /online)
 function updateOnlineCount(){
   fbGet('/online').then(function(d){
-    if(!d)return;
-    var n=Object.keys(d).length;
-    document.getElementById('online-count').textContent='Players online: '+n;
+    var n=d?Object.keys(d).length:0;
+    var el=document.getElementById('online-count');
+    if(el)el.textContent='Players online: '+n;
   }).catch(function(){});
+}
+function startOnlinePolling(){
+  updateOnlineCount();
+  if(window._onlinePollTimer)clearInterval(window._onlinePollTimer);
+  window._onlinePollTimer=setInterval(updateOnlineCount,5000);
+}
+function stopOnlinePolling(){
+  if(window._onlinePollTimer){clearInterval(window._onlinePollTimer);window._onlinePollTimer=null;}
 }
 // Write to /online when setup screen opens, remove on close
 function registerOnline(){if(authUid&&!isGuest)fbSet('/online/'+authUid,{ts:Date.now()});}
 function unregisterOnline(){if(authUid)fbSet('/online/'+authUid,null);}
 
-document.getElementById('setup-back').addEventListener('click',function(){document.getElementById('setup-screen').style.display='none';});
+document.getElementById('setup-back').addEventListener('click',function(){leaveQueue();document.getElementById('setup-screen').style.display='none';});
 
 document.getElementById('setup-confirm').addEventListener('click',function(){
   // Name = display name if logged in, else class name
@@ -5065,6 +5137,7 @@ document.getElementById('name-confirm-yes').addEventListener('click',function(){
 });
 
 document.getElementById('btn-logout').addEventListener('click',function(){
+  leaveQueue();stopOnlinePolling();unregisterOnline();
   authToken=null;authUid=null;authEmail=null;displayName='';isGuest=false;
   try{sessionStorage.removeItem('eldara_token');sessionStorage.removeItem('eldara_uid');sessionStorage.removeItem('eldara_name');}catch(e){}
   showScreen('auth-screen');
