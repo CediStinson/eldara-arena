@@ -140,8 +140,8 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 #pregame-timer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:120px;font-weight:900;font-family:'Courier New',monospace;color:var(--gold);text-shadow:0 0 60px #e8b84b,0 0 120px #e8b84b44;pointer-events:none;opacity:0;transition:opacity .3s;z-index:45;line-height:1}
 
 /* AUTH SCREEN */
-#auth-screen{background:radial-gradient(ellipse at 50% 60%,#1a0d2e 0%,#0a0a0f 70%)}
-.auth-box{background:rgba(10,8,20,0.97);border:1px solid var(--border);padding:36px 40px;width:380px;display:flex;flex-direction:column;gap:12px}
+#auth-screen{background:url('login_bg.png') center center / cover no-repeat;display:flex;align-items:center;justify-content:center;}
+.auth-box{background:rgba(5,3,12,0.88);border:1px solid rgba(120,60,200,0.4);box-shadow:0 0 40px rgba(80,20,160,0.3),inset 0 0 20px rgba(0,0,0,0.5);backdrop-filter:blur(2px);padding:36px 40px;width:380px;display:flex;flex-direction:column;gap:12px}
 .auth-logo{font-size:28px;font-weight:900;letter-spacing:5px;color:var(--gold);text-align:center;margin-bottom:4px}
 .auth-sub{font-size:11px;letter-spacing:4px;color:var(--dim);text-align:center;margin-bottom:8px}
 .auth-tabs{display:flex;border:1px solid var(--border);margin-bottom:4px}
@@ -2406,27 +2406,52 @@ function draw(gs) {
   // ── DOPPELGANGERS ──
   if(gs.dopps){
     gs.dopps.forEach(function(d){
-      var fade=d.life/d.maxLife;
+      // Full opacity until last 300ms — then quick arcane blitz vanish
+      var vanishDur=300;
+      var isVanishing=d.life<vanishDur;
+      var vanishT=isVanishing?d.life/vanishDur:1; // 1=full, 0=gone
+      // Arcane blitz flash — bright purple flicker as it disappears
+      var blitzAlpha=isVanishing?(1-vanishT)*0.9:0;
       gctx.save();
       if(d.isMe){
-        // Owner sees: semi-transparent blue tint — clearly a decoy
-        gctx.globalAlpha=fade*0.35;
+        gctx.globalAlpha=vanishT*0.35;
         DRAW[d.cls](gctx,d.x,d.y,d.dir,d.anim*10,false,d.level||1);
         gctx.fillStyle='rgba(80,60,255,0.4)';
         gctx.fillRect(d.x-18,d.y-58,36,72);
+        if(isVanishing){
+          gctx.globalAlpha=blitzAlpha*0.5;
+          gctx.fillStyle='rgba(160,80,255,0.8)';
+          gctx.fillRect(d.x-20,d.y-60,40,75);
+        }
       } else {
-        // Opponent sees: full opacity, looks exactly like the real mage
-        gctx.globalAlpha=fade;
+        gctx.globalAlpha=vanishT;
         DRAW[d.cls](gctx,d.x,d.y,d.dir,d.anim*10,false,d.level||1);
-        // Full name tag (enemy color = red)
-        gctx.globalAlpha=fade;
+        gctx.globalAlpha=vanishT;
         gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(d.x-30,d.y-56,60,14);
         gctx.fillStyle='#cc5555';
         gctx.font='bold 9px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
         gctx.fillText(d.name||'???',d.x,d.y-49);
-        // Full HP bar (fake — always shows full)
         gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(d.x-24,d.y-62,48,5);
         gctx.fillStyle='#27ae60';gctx.fillRect(d.x-24,d.y-62,48,5);
+        // Purple arcane blitz flash on vanish
+        if(isVanishing){
+          gctx.globalAlpha=blitzAlpha;
+          gctx.fillStyle='rgba(180,60,255,0.95)';
+          gctx.fillRect(d.x-22,d.y-62,44,78);
+          // Expanding arcane ring
+          gctx.strokeStyle='rgba(200,100,255,'+(blitzAlpha*0.9)+')';
+          gctx.lineWidth=3;
+          gctx.beginPath();
+          gctx.arc(d.x,d.y-20,(1-vanishT)*40+5,0,Math.PI*2);
+          gctx.stroke();
+          // Sparkle particles
+          for(var si=0;si<6;si++){
+            var sa=si/6*Math.PI*2;
+            var sr=(1-vanishT)*30+4;
+            gctx.fillStyle='rgba(220,140,255,'+(blitzAlpha*0.8)+')';
+            gctx.beginPath();gctx.arc(d.x+Math.cos(sa)*sr,d.y-20+Math.sin(sa)*sr,2,0,Math.PI*2);gctx.fill();
+          }
+        }
       }
       gctx.globalAlpha=1;
       gctx.restore();
@@ -2525,8 +2550,9 @@ function draw(gs) {
     gctx.globalAlpha=1;
     // Stealth bar (rogue only, while stealthed — drains to empty)
     if(p.isMe&&p.cls==='ranger'&&p.stealthed&&p.stealthTimer>0){
-      var stealthMax=CLS.ranger.s2&&CLS.ranger.s2.stealth||7000;
-      var stealthRatio=p.stealthTimer/stealthMax;
+      var stealthMax=(CLS.ranger.s2&&CLS.ranger.s2.stealthDur)||7000;
+      stealthRatio=Math.min(1,stealthRatio);
+      var stealthRatio=Math.min(1,p.stealthTimer/stealthMax);
       var sbW=48,sbX=p.x-24,sbY=p.y-72;
       gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(sbX,sbY,sbW,5);
       // Color shifts red as timer drains
@@ -3381,28 +3407,17 @@ function buildSpellDesc(cls){
   h+='<div class="tsp-skill"><span class="tsn">'+C.s1.name+'</span> [H] &nbsp; '+(C.s1.dmg||'—')+' dmg &middot; '+(C.s1.cd/1000).toFixed(1)+'s cd'+(C.s1.stun?' &middot; stuns '+(C.s1.stun/1000).toFixed(1)+'s':'')+(C.s1.trap?' &middot; snare trap &middot; 3 max &middot; invisible to enemy':'')+'</div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.s2.name+'</span> [J] &nbsp; '+(C.s2.dmg||'—')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd'+(C.s2.aoe?' &middot; AOE spin':'')+(C.s2.smoke?' &middot; smoke cover':'')+'</div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.move.name+'</span> [SPC] &nbsp; '+C.move.name+(C.move.charge?' &middot; rush toward enemy &middot; dmg reduction':C.move.blink?' &middot; teleport 90px forward':' &middot; wind speed boost 1.2s')+'</div>';
-  // Tier progression preview
-  var xpD2=getXP(cls); var curLvl=xpD2.level;
-  var tierThresholds={
-    warrior:[{lvl:1,name:'Conscript'},{lvl:10,name:'Footsoldier'},{lvl:20,name:'Knight'},{lvl:30,name:'Warlord'}],
-    mage:[{lvl:1,name:'Apprentice'},{lvl:10,name:'Scholar'},{lvl:20,name:'Arcanist'},{lvl:30,name:'Archmage'}],
-    ranger:[{lvl:1,name:'Scout'},{lvl:10,name:'Cutthroat'},{lvl:20,name:'Shadowblade'},{lvl:30,name:'Phantom'}]
+  // Flavor text / backstory
+  var flavor={
+    warrior:"Once a nameless conscript on the front lines, he survived sieges that killed entire battalions. He doesn't fight for glory or coin — only the next battle matters. Veterans say his eyes went cold the day he stopped counting the dead.",
+    mage:"An elven arcanist of a forgotten bloodline, he left his people's forest centuries ago seeking older, darker magic. He speaks little, but when he raises his staff, even warlords step back. The grey in his hair is not age — it is the cost of what he knows.",
+    ranger:"Nobody knows her real name. She appeared in the slums of Eldara at seventeen with nothing but a stolen blade and a talent for disappearing. She has since made six guilds, three kings, and one god deeply regret crossing her."
   };
-  var tiers=tierThresholds[cls]||tierThresholds.warrior;
-  var nextTier=null;
-  for(var ti=0;ti<tiers.length;ti++){if(tiers[ti].lvl>curLvl){nextTier=tiers[ti];break;}}
-  h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1)">';
-  if(nextTier){
-    h+='<div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:6px">NEXT ARMOR TIER AT <span style="color:var(--gold)">LV.'+nextTier.lvl+'</span></div>';
-    h+='<div id="tier-preview-canvas-wrap" style="display:flex;align-items:center;gap:10px">';
-    h+='<canvas id="tier-preview-cv" width="60" height="80" style="image-rendering:pixelated;display:block"></canvas>';
-    h+='<div style="font-size:10px;color:var(--dim)">'+nextTier.name+'</div>';
-    h+='</div>';
-  } else {
-    h+='<div style="font-size:10px;color:var(--gold);letter-spacing:1px">MAX TIER REACHED</div>';
-  }
+  h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">';
+  h+='<div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-bottom:8px">LORE</div>';
+  h+='<div style="font-size:11px;color:rgba(255,255,255,0.55);line-height:1.8;font-style:italic">'+(flavor[cls]||'')+'</div>';
   h+='</div>';
-  return {html:h, nextTierLevel:nextTier?nextTier.lvl:null, cls:cls};
+  return {html:h, nextTierLevel:null, cls:cls};
 }
 
 function buildTitleChars() {
