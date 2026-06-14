@@ -463,7 +463,8 @@ function onAuthSuccess(result, uname) {
   isGuest = false;
   // uname is only set on registration — for login, load from Firebase profile
   if(uname) { displayName = uname; myName = uname; }
-  else { displayName = ''; myName = ''; } // will be set by loadUserProfile
+  // Also try uid-keyed localStorage for persistence across sessions
+  try { var lsName=localStorage.getItem('eldara_name_'+authUid); if(lsName){displayName=lsName;myName=lsName;} else if(!uname){displayName='';myName='';} } catch(e) { if(!uname){displayName='';myName='';} } // will be set by loadUserProfile
   try {
     sessionStorage.setItem('eldara_token', authToken);
     sessionStorage.setItem('eldara_uid', authUid);
@@ -477,6 +478,7 @@ function loadUserProfile() {
     if (data && data.displayName) {
       displayName = data.displayName;
       myName = displayName;
+      try { localStorage.setItem('eldara_name_'+authUid, displayName); } catch(e) {}
       // Update session storage with correct name
       try { sessionStorage.setItem('eldara_name', displayName); } catch(e) {}
     } else if(!displayName) {
@@ -1293,7 +1295,8 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,1,0+bob,'#7a5820',1,1);px(ctx,1,2+bob,'#7a5820',1,1);
     px(ctx,1,4+bob,'#7a5820',1,1);px(ctx,-2,2+bob,'#7a5820',1,1);
     // Midriff skin strip below corset
-    px(ctx,-2,6+bob,'#e8a878',4,2);px(ctx,-1,6+bob,'#f0b888',2,1);
+    // No midriff gap — corset extends to panty
+    px(ctx,-2,6+bob,'#1c1008',4,2);px(ctx,-1,6+bob,'#281606',2,1);
     // Thin strap belt only
     px(ctx,-3,7+bob,'#2a1808',5,1);px(ctx,0,7+bob,'#7a5820',1,1);
     // Half hood — smooth rounded shape over hair
@@ -1606,7 +1609,7 @@ var ARENAS = {
     [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],[1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
     [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],[1,0,0,0,3,0,0,0,0,0,0,3,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  volcano:{name:'Volcanic Rift',sp1:{x:1,y:6},sp2:{x:13,y:3},tiles:[
+  volcano:{name:'Volcanic Rift',sp1:{x:1,y:6},sp2:{x:13,y:4},tiles:[
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,2,0,0,0,0,1,1,0,0,0,0,0,1],
     [1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
@@ -1779,12 +1782,12 @@ var CLS = {
   mage:{name:'Mage',icon:'\uD83D\uDD2E',atkIcon:'\uD83E\uDDCA',atkLabel:'Ice Shard',color:'#3a30a0',
     hp:80,spd:2.2,atkDmg:10,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
     s1:{name:'Fireball',icon:'\uD83D\uDD25',cd:2800,dmg:25,proj:true,speed:340,range:230,charged:true,chargeMax:1500,chargeDmgMax:55},
-    s2:{name:'Frost Shield',icon:'\u2744',cd:12000,arcaneShield:true,arcaneShieldDur:8000,arcaneShieldHits:3},
+    s2:{name:'Frost Shield',icon:'\u2744',cd:10000,arcaneShield:true,arcaneShieldDur:8000,arcaneShieldHits:3},
     move:{name:'Blink',icon:'\uD83D\uDCA8',cd:4000,blink:140}},
   ranger:{name:'Rogue',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Rapier',color:'#8a6a20',
     hp:105,spd:3.0,atkDmg:10,atkRange:58,atkMs:240,atkType:'melee',
-    s1:{name:'Headbutt',icon:'\u26A1',cd:5500,dmg:12,range:56,stun:500},
-    s2:{name:'Stealth',icon:'\u25CF',cd:11000,stealth:true,stealthDur:7000,spdMult:0.65},
+    s1:{name:'Headbutt',icon:'\u26A1',cd:5500,dmg:12,range:56,stun:700},
+    s2:{name:'Stealth',icon:'\u25CF',cd:10000,stealth:true,stealthDur:7000,spdMult:0.65},
     move:{name:'Shadow Step',icon:'\u27A1',cd:5000,shadowStep:true,stepRange:280,stepDmg:12}}
 };
 
@@ -2029,7 +2032,7 @@ function doSkill(gs,user,target,num) {
     spawnEfx(gs,'cast',user.x,user.y);
   } else if(sk.stun||sk.disarm) {
     if(dist(user,target)<(sk.range||55)+10&&!target.rollInv){
-      if(sk.dmg)dealDmg(gs,target,sk.dmg,'bash');
+      if(sk.dmg)dealDmg(gs,target,sk.dmg,'bash');spawnEfx(gs,'bash',target.x,target.y);
       target.stunned=sk.stun||600;
       spawnEfx(gs,'stun',target.x,target.y);
       sidelog('!!',target.name+' stunned!');
@@ -2235,7 +2238,8 @@ function update(gs,dt) {
     // Ranger gale tick
     if(p.galing){p.galeTimer-=dt;if(p.galeTimer<=0){p.galing=false;}}
     if(p.rollTimer>0)p.rollTimer-=dt;if(p.rolling>0){p.rolling-=dt;if(p.rolling<=0)p.rolling=0;}
-    if(p.stunned>0)p.stunned-=dt;if(p.s1cd>0)p.s1cd-=dt;if(p.s2cd>0)p.s2cd-=dt;if(p.hitFlash>0)p.hitFlash-=dt;
+    if(p.stunned>0)p.stunned-=dt;else p.stunned=0; // clamp to 0, never negative
+    if(p.s1cd>0)p.s1cd-=dt;if(p.s2cd>0)p.s2cd-=dt;if(p.hitFlash>0)p.hitFlash-=dt;
 
     // Lava tile (t===2): burning DoT. Bridge (t===6): safe to walk on
     var tileUnderX=Math.floor(p.x/TILE),tileUnderY=Math.floor((p.y-COLL_OFFSET_Y)/TILE);
@@ -2460,7 +2464,25 @@ function draw(gs) {
   for(var ei=0;ei<gs.effects.length;ei++) {
     var ef=gs.effects[ei],a=ef.life/ef.max;
     gctx.globalAlpha=Math.max(0,a);
-    if(ef.type==='slash'||ef.type==='bash'){gctx.strokeStyle='rgba(255,255,255,0.85)';gctx.lineWidth=3;gctx.beginPath();gctx.arc(ef.x,ef.y,24*(1-a)+6,(1-a)*Math.PI,(1-a+0.65)*Math.PI);gctx.stroke();}
+    if(ef.type==='slash'){gctx.strokeStyle='rgba(255,255,255,0.85)';gctx.lineWidth=3;gctx.beginPath();gctx.arc(ef.x,ef.y,24*(1-a)+6,(1-a)*Math.PI,(1-a+0.65)*Math.PI);gctx.stroke();}
+    else if(ef.type==='bash'){
+      // Shield impact — concentric rings + star burst
+      gctx.strokeStyle='rgba(180,200,220,'+a*0.9+')';gctx.lineWidth=3;
+      gctx.beginPath();gctx.arc(ef.x,ef.y,(1-a)*32+4,0,Math.PI*2);gctx.stroke();
+      gctx.strokeStyle='rgba(220,230,255,'+a*0.6+')';gctx.lineWidth=1.5;
+      gctx.beginPath();gctx.arc(ef.x,ef.y,(1-a)*18+2,0,Math.PI*2);gctx.stroke();
+      // 4 impact lines radiating out
+      gctx.strokeStyle='rgba(200,220,255,'+a*0.8+')';gctx.lineWidth=2;
+      for(var bi=0;bi<4;bi++){
+        var ba=bi/4*Math.PI*2;
+        var br=(1-a)*22;
+        gctx.beginPath();gctx.moveTo(ef.x+Math.cos(ba)*4,ef.y+Math.sin(ba)*4);
+        gctx.lineTo(ef.x+Math.cos(ba)*br,ef.y+Math.sin(ba)*br);gctx.stroke();
+      }
+      // Central flash
+      gctx.fillStyle='rgba(240,245,255,'+a*0.9+')';
+      gctx.beginPath();gctx.arc(ef.x,ef.y,6*a,0,Math.PI*2);gctx.fill();
+    }
     else if(ef.type==='aoe'){gctx.fillStyle='rgba(200,200,255,0.5)';gctx.beginPath();gctx.arc(ef.x,ef.y,42*(1-a+0.05),0,Math.PI*2);gctx.fill();}
     else if(ef.type==='cast'){gctx.fillStyle='rgba(232,184,75,0.55)';gctx.beginPath();gctx.arc(ef.x,ef.y,18*(1-a+0.05),0,Math.PI*2);gctx.fill();}
     else if(ef.type==='stun'){gctx.fillStyle='#f39c12';gctx.font='13px serif';gctx.textAlign='center';gctx.fillText('\u2605',ef.x+Math.cos(ef.anim*0.28)*18,ef.y-36+Math.sin(ef.anim*0.28)*6);}
@@ -2500,7 +2522,20 @@ function draw(gs) {
       gctx.strokeStyle='rgba(255,160,40,'+a*0.6+')';gctx.lineWidth=2;
       gctx.beginPath();gctx.arc(ef.x,ef.y,(1-a)*50+5,0,Math.PI*2);gctx.stroke();
     }
-    else if(ef.type==='charge_start'){gctx.fillStyle='rgba(220,30,0,'+a*0.7+')';gctx.beginPath();gctx.arc(ef.x,ef.y,40*(1-a+0.05),0,Math.PI*2);gctx.fill();}
+    else if(ef.type==='charge_start'){
+      // Ground-level rush burst at feet
+      var fy=ef.y+20; // feet position
+      gctx.fillStyle='rgba(220,30,0,'+a*0.6+')';
+      gctx.beginPath();gctx.ellipse(ef.x,fy,40*(1-a+0.05)*1.8,16*(1-a+0.05),0,0,Math.PI*2);gctx.fill();
+      gctx.strokeStyle='rgba(255,100,20,'+a*0.8+')';gctx.lineWidth=2;
+      gctx.beginPath();gctx.ellipse(ef.x,fy,(1-a)*50+5,10*(1-a)+2,0,0,Math.PI*2);gctx.stroke();
+      // Dust streaks behind
+      for(var di=0;di<4;di++){
+        var dox=(di-1.5)*12, doy=(Math.random()-0.5)*8;
+        gctx.fillStyle='rgba(200,100,50,'+a*0.4+')';
+        gctx.beginPath();gctx.ellipse(ef.x+dox,fy+doy,6*(1-a+0.1),3*(1-a+0.1),0,0,Math.PI*2);gctx.fill();
+      }
+    }
     else if(ef.type==='arcane_block'){
       // Ice shatter effect — crystal shards burst outward
       gctx.strokeStyle='rgba(180,240,255,'+a+')';gctx.lineWidth=3;
@@ -2547,6 +2582,32 @@ function draw(gs) {
       });
       gctx.restore();
     }
+    // War Cry buff — glowing red head and eyes
+    if(p.cls==='warrior'&&p.warCryBuff>0){
+      var wcRatio=Math.min(1,p.warCryBuff/3000);
+      var wcPulse=0.5+Math.sin(Date.now()*0.012)*0.5;
+      var wcAlpha=wcRatio*0.85;
+      // Head glow
+      var wcGrad=gctx.createRadialGradient(p.x,p.y-38,0,p.x,p.y-38,24);
+      wcGrad.addColorStop(0,'rgba(255,30,0,'+(wcAlpha*wcPulse)+')');
+      wcGrad.addColorStop(0.5,'rgba(200,10,0,'+(wcAlpha*0.5)+')');
+      wcGrad.addColorStop(1,'rgba(180,0,0,0)');
+      gctx.fillStyle=wcGrad;
+      gctx.beginPath();gctx.arc(p.x,p.y-38,24,0,Math.PI*2);gctx.fill();
+      // Eye glow pixels — warrior eyes at roughly -4 relative to center
+      gctx.save();
+      gctx.translate(p.x,p.y);
+      if(p.dir!==2)gctx.scale(-1,1);
+      var wcEyeAlpha=0.7+wcPulse*0.3;
+      gctx.fillStyle='rgba(255,40,0,'+wcEyeAlpha+')';
+      gctx.fillRect(-2*S,-4*S,S,S); // left eye
+      gctx.fillRect(0*S,-4*S,S,S);  // right eye
+      // Eye halo
+      gctx.fillStyle='rgba(255,80,0,'+(wcEyeAlpha*0.4)+')';
+      gctx.fillRect(-3*S,-5*S,3*S,3*S);
+      gctx.fillRect(-1*S,-5*S,3*S,3*S);
+      gctx.restore();
+    }
     gctx.globalAlpha=1;
     // Stealth bar (rogue only, while stealthed — drains to empty)
     if(p.isMe&&p.cls==='ranger'&&p.stealthed&&p.stealthTimer>0){
@@ -2586,6 +2647,26 @@ function draw(gs) {
         gctx.strokeStyle='rgba(255,200,0,'+(0.5+Math.sin(Date.now()*0.015)*0.5)+')';
         gctx.lineWidth=1;gctx.strokeRect(barX,barY,barW,5);
       }
+      // Burning hands — glow intensifies with charge, fixed segments
+      var seg=chargeRatio<0.34?1:chargeRatio<0.67?2:3;
+      var handR=4+seg*3; // 7, 10, 13
+      var handAlpha=0.3+seg*0.2;
+      var handHx=p.x-16, handHy=p.y+28;
+      var handFx=p.x+16, handFy=p.y+28;
+      // Hand glow left
+      var hg=gctx.createRadialGradient(handHx,handHy,0,handHx,handHy,handR*2);
+      hg.addColorStop(0,'rgba(255,200,50,'+handAlpha+')');
+      hg.addColorStop(1,'rgba(255,60,0,0)');
+      gctx.fillStyle=hg;gctx.beginPath();gctx.arc(handHx,handHy,handR*2,0,Math.PI*2);gctx.fill();
+      gctx.fillStyle='rgba(255,220,80,'+handAlpha+')';
+      gctx.beginPath();gctx.arc(handHx,handHy,handR*0.5,0,Math.PI*2);gctx.fill();
+      // Hand glow right
+      var hg2=gctx.createRadialGradient(handFx,handFy,0,handFx,handFy,handR*2);
+      hg2.addColorStop(0,'rgba(255,200,50,'+handAlpha+')');
+      hg2.addColorStop(1,'rgba(255,60,0,0)');
+      gctx.fillStyle=hg2;gctx.beginPath();gctx.arc(handFx,handFy,handR*2,0,Math.PI*2);gctx.fill();
+      gctx.fillStyle='rgba(255,220,80,'+handAlpha+')';
+      gctx.beginPath();gctx.arc(handFx,handFy,handR*0.5,0,Math.PI*2);gctx.fill();
     }
     // Frost slow: light blue tint overlay
     if(p.frostSlow>0&&!p.dead){
@@ -2728,10 +2809,36 @@ function draw(gs) {
     var pr2=gs.projs[ri],angle=Math.atan2(pr2.vy,pr2.vx);
     gctx.save();gctx.translate(pr2.x,pr2.y);gctx.rotate(angle);
     if(pr2.type==='fireball'){
-      var grd=gctx.createRadialGradient(0,0,0,0,0,15);
-      grd.addColorStop(0,'rgba(255,220,60,0.9)');grd.addColorStop(0.4,'rgba(220,80,10,0.7)');grd.addColorStop(1,'rgba(200,30,0,0)');
-      gctx.fillStyle=grd;gctx.beginPath();gctx.arc(0,0,15,0,Math.PI*2);gctx.fill();
-      gctx.fillStyle='#fffce0';gctx.beginPath();gctx.arc(0,0,4,0,Math.PI*2);gctx.fill();
+      // Size based on charge: instant=7, 1 bar=11, 2 bars=16, 3 bars=22
+      var fbDmg=pr2.dmg||25;
+      var fbR=fbDmg<=25?7:fbDmg<=35?11:fbDmg<=45?16:22;
+      // Comet tail (drawn behind head, opposite to travel direction)
+      var tailLen=fbR*2.5;
+      var tailGrd=gctx.createLinearGradient(fbR,0,-tailLen,0);
+      tailGrd.addColorStop(0,'rgba(255,160,20,0.7)');
+      tailGrd.addColorStop(0.4,'rgba(255,80,0,0.4)');
+      tailGrd.addColorStop(1,'rgba(255,40,0,0)');
+      gctx.fillStyle=tailGrd;
+      gctx.beginPath();
+      gctx.moveTo(fbR*0.8,fbR*0.35);
+      gctx.quadraticCurveTo(-tailLen*0.5,fbR*0.6,-tailLen,0);
+      gctx.quadraticCurveTo(-tailLen*0.5,-fbR*0.6,fbR*0.8,-fbR*0.35);
+      gctx.closePath();gctx.fill();
+      // Outer glow
+      var ogrd=gctx.createRadialGradient(0,0,0,0,0,fbR+4);
+      ogrd.addColorStop(0,'rgba(255,200,50,0.5)');
+      ogrd.addColorStop(1,'rgba(255,60,0,0)');
+      gctx.fillStyle=ogrd;gctx.beginPath();gctx.arc(0,0,fbR+4,0,Math.PI*2);gctx.fill();
+      // Main fireball head
+      var grd=gctx.createRadialGradient(fbR*0.2,-fbR*0.2,0,0,0,fbR);
+      grd.addColorStop(0,'rgba(255,255,200,1)');
+      grd.addColorStop(0.3,'rgba(255,200,40,0.95)');
+      grd.addColorStop(0.7,'rgba(255,80,0,0.85)');
+      grd.addColorStop(1,'rgba(200,20,0,0)');
+      gctx.fillStyle=grd;gctx.beginPath();gctx.arc(0,0,fbR,0,Math.PI*2);gctx.fill();
+      // Bright core
+      gctx.fillStyle='rgba(255,255,240,0.95)';
+      gctx.beginPath();gctx.arc(fbR*0.1,-fbR*0.1,fbR*0.3,0,Math.PI*2);gctx.fill();
     } else if(pr2.type==='ice'){
       // Ice shard — long aggressive spear, oriented along travel direction
       // Outer cold glow trail
@@ -3237,7 +3344,8 @@ document.addEventListener('keydown',function(e){
     var acted=['KeyG','KeyH','KeyJ','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
     if(acted.indexOf(e.code)>=0)e.preventDefault();
   }
-  if(keys[e.code])return;keys[e.code]=true;
+  if(e.repeat)return; // block browser key-repeat for all keys
+  keys[e.code]=true;
   if(isTyping)return;
   if(!gameState||gameState.phase!=='fighting')return;
   var me=gameState.players.find(function(p){return p.isMe;});
@@ -3245,7 +3353,8 @@ document.addEventListener('keydown',function(e){
   if(!me||!en)return;
   if(!me||me.dead)return;
   if(e.code==='KeyG'){
-    if(me.atkTimer<=0&&!me.disarmed&&!me.stunned){
+    if(me.fireballCharging){me.fireballCharging=false;me.fireballCharge=0;}
+    if(me.atkTimer<=0&&!me.disarmed&&!(me.stunned>0)){
       var wasSneak=me.stealthed&&me.stealthFirstHit;
       doAttack(gameState,me,en);
       if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y),cls:me.cls,sneak:wasSneak});
@@ -3264,14 +3373,14 @@ document.addEventListener('keydown',function(e){
     }
   }
   if(e.code==='KeyJ'){
-    // While stunned: allow warcry, frost shield, stealth
+    if(me.fireballCharging){me.fireballCharging=false;me.fireballCharge=0;}
     var sk2=CLS[me.cls]&&CLS[me.cls].s2;
     if(!me.stunned||(sk2&&(sk2.warcry||sk2.arcaneShield||sk2.stealth))){
       doSkill(gameState,me,en,2);if(gameMode==='pvp')pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});
     }
   }
   if(e.code==='Space'){
-    // While stunned: only allow blink (mage escape)
+    if(me.fireballCharging){me.fireballCharging=false;me.fireballCharge=0;}
     var mv=CLS[me.cls]&&CLS[me.cls].move;
     if(!me.stunned||(mv&&mv.blink)){
       doMoveAbility(gameState,me,en);if(gameMode==='pvp')pushAction('move',{x:Math.round(me.x),y:Math.round(me.y)});
@@ -3894,7 +4003,9 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     var scale=rx*2/iw*1.02;
     var dw=iw*scale, dh=ih*scale;
     if(platformImg.complete && platformImg.naturalWidth>0){
+      tctx.globalAlpha=0.72;
       tctx.drawImage(platformImg, cx-dw/2, py-dh*0.5+8, dw, dh);
+      tctx.globalAlpha=1;
     } else {
       // Fallback plain ellipse
       tctx.fillStyle='#0e0c14';
@@ -3983,56 +4094,322 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     });
 
 
-    // ══ BANNERS hanging from platform rim ══
-    // Place directly: left, center, right of the front rim
+    // ══ BANNERS hanging from platform rim — long, torn, faded ══
     var bConfigs=[
-      {bx:cx-rx*0.45, by:py+ry*0.6+th-4,  skew:-0.08},
+      {bx:cx-rx*0.45, by:py+ry*0.6+th-4,  skew:-0.06},
       {bx:cx,          by:py+ry*0.85+th-2, skew:0},
-      {bx:cx+rx*0.45, by:py+ry*0.6+th-4,  skew:0.08},
+      {bx:cx+rx*0.45, by:py+ry*0.6+th-4,  skew:0.06},
     ];
-    var bw=36,bh=65;
-    bConfigs.forEach(function(bc){
+    var bw=32,bh=110; // much longer
+    var bTime=Date.now()/1000;
+    // Torn edge points — random but seeded per banner index
+    var tornEdges=[
+      // left banner torn bottom
+      [[-16,bh-8],[-10,bh-18],[-5,bh-6],[2,bh-22],[8,bh-10],[12,bh-4],[16,bh-15]],
+      [[-16,bh-12],[-8,bh-5],[-2,bh-20],[4,bh-8],[10,bh-18],[14,bh-6],[16,bh-14]],
+      [[-16,bh-6],[-12,bh-16],[-4,bh-4],[2,bh-19],[8,bh-8],[13,bh-15],[16,bh-10]],
+    ];
+    bConfigs.forEach(function(bc,bi){
       var bx=bc.bx, by=bc.by;
+      var torn=tornEdges[bi];
+      var sk=bc.skew;
+      // Gentle wind sway — each banner slightly different phase
+      var swayAmp=3.5;
+      var swayPhase=bTime*0.9+bi*1.2;
+      var sway=Math.sin(swayPhase)*swayAmp;
+      var sway2=Math.sin(swayPhase+0.8)*swayAmp*0.6; // secondary flutter
+
+      // ── Stone block attachment behind banner ──
+      var sw2=44, sh2=22; // stone block size
+      var sx=bx-sw2/2, sy=by-sh2+10;
+      // Drop shadow
+      tctx.fillStyle='rgba(0,0,0,0.5)';
+      tctx.fillRect(sx+3,sy+3,sw2,sh2);
+      // Main stone block face
+      tctx.fillStyle='#282630';tctx.fillRect(sx,sy,sw2,sh2);
+      // Top face (lighter — 3D effect)
+      tctx.fillStyle='#323040';tctx.fillRect(sx,sy,sw2,sh2*0.45);
+      // Left highlight
+      tctx.fillStyle='#2e2c3c';tctx.fillRect(sx,sy,3,sh2);
+      // Right shadow
+      tctx.fillStyle='#1c1a28';tctx.fillRect(sx+sw2-3,sy,3,sh2);
+      // Bottom shadow
+      tctx.fillStyle='#1a1824';tctx.fillRect(sx,sy+sh2-3,sw2,3);
+      // Mortar crack line
+      tctx.strokeStyle='rgba(10,8,18,0.8)';tctx.lineWidth=1;
+      tctx.strokeRect(sx,sy,sw2,sh2);
+      // Surface crack detail
+      tctx.strokeStyle='rgba(15,12,22,0.5)';tctx.lineWidth=0.8;
+      tctx.beginPath();tctx.moveTo(sx+8,sy+4);tctx.lineTo(sx+14,sy+10);tctx.lineTo(sx+10,sy+16);tctx.stroke();
+      tctx.beginPath();tctx.moveTo(sx+28,sy+3);tctx.lineTo(sx+32,sy+12);tctx.stroke();
+      // Iron ring/hook in center
+      tctx.strokeStyle='rgba(50,50,60,0.9)';tctx.lineWidth=2;
+      tctx.beginPath();tctx.arc(bx,sy+sh2*0.5,4,0,Math.PI*2);tctx.stroke();
+      tctx.fillStyle='rgba(35,35,45,0.9)';tctx.beginPath();tctx.arc(bx,sy+sh2*0.5,2,0,Math.PI*2);tctx.fill();
+
       tctx.save();
-      tctx.translate(bx,by);
-      tctx.transform(1,0,bc.skew,1,0,0);
-      tctx.translate(-bx,-by);
-      // Banner shadow
-      tctx.fillStyle='rgba(0,0,0,0.3)';
-      tctx.fillRect(bx-bw/2+3,by+3,bw,bh-8);
-      // Banner body
-      tctx.fillStyle='#5a0808';tctx.fillRect(bx-bw/2,by,bw,bh-12);
-      tctx.fillStyle='#8b1010';tctx.fillRect(bx-bw/2+1,by,bw-2,bh-13);
-      // Shading
-      tctx.fillStyle='rgba(200,60,60,0.2)';tctx.fillRect(bx-bw/2+1,by,bw/3,bh-13);
-      tctx.fillStyle='rgba(0,0,0,0.2)';tctx.fillRect(bx+bw/6,by,bw/3,bh-13);
-      // Swallowtail
-      tctx.fillStyle='#08060f';
+      tctx.globalAlpha=0.55;
+
+      // Shadow
+      tctx.globalAlpha=0.18;
+      tctx.fillStyle='#000000';
+      tctx.fillRect(bx-bw/2+4,by+4,bw,bh);
+      tctx.globalAlpha=0.55;
+
+      // Banner body — top skewed, bottom hangs straight
+      // Top attachment points (skewed toward platform curve)
+      var topSkew=sk*bh*0.18; // only shift top by a fraction
+      var tlx=bx-bw/2+topSkew, trx=bx+bw/2+topSkew; // top left/right x
+      var blx=bx-bw/2, brx=bx+bw/2; // bottom left/right x (straight)
+      // Transition point — banner straightens out after ~20% height
+      var midY=by+bh*0.22;
       tctx.beginPath();
-      tctx.moveTo(bx-bw/2,by+bh-12);
-      tctx.lineTo(bx,by+bh-26);
-      tctx.lineTo(bx+bw/2,by+bh-12);
-      tctx.closePath();tctx.fill();
-      // Gold border
-      tctx.strokeStyle='#c8a030';tctx.lineWidth=1.5;
-      tctx.strokeRect(bx-bw/2+1,by,bw-2,bh-13);
-      // Gold swallowtail lines
-      tctx.strokeStyle='#c8a030';tctx.lineWidth=1;
+      tctx.moveTo(tlx,by);
+      tctx.lineTo(trx,by);
+      // Right edge: curves from skewed top, then sways with wind
+      tctx.quadraticCurveTo(brx+2+sway,midY,brx+sway,by+bh*0.5);
+      tctx.quadraticCurveTo(brx+sway+sway2,by+bh*0.7,brx+sway*0.7,by+bh*0.85);
+      torn.forEach(function(pt){tctx.lineTo(bx+pt[0]+sway*0.5,by+pt[1]);});
+      tctx.lineTo(blx-sway*0.5+sway2,by+bh*0.8);
+      tctx.quadraticCurveTo(blx-sway*0.5,by+bh*0.5,blx-sway*0.3,midY);
+      tctx.quadraticCurveTo(blx-2,midY*0.5+by*0.5,tlx,by);
+      tctx.closePath();
+      tctx.fillStyle='#3a0606';tctx.fill();
+
+      // Faded red face
       tctx.beginPath();
-      tctx.moveTo(bx-bw/2+1,by+bh-13);
-      tctx.lineTo(bx,by+bh-26);
-      tctx.lineTo(bx+bw/2-1,by+bh-13);
-      tctx.stroke();
-      // Gold cross
-      tctx.strokeStyle='#c8a030';tctx.lineWidth=1.5;
-      tctx.beginPath();tctx.moveTo(bx,by+8);tctx.lineTo(bx,by+bh-22);tctx.stroke();
-      tctx.beginPath();tctx.moveTo(bx-9,by+16);tctx.lineTo(bx+9,by+16);tctx.stroke();
-      // Iron rod
-      tctx.fillStyle='#383840';tctx.fillRect(bx-bw/2-3,by-5,bw+6,6);
-      tctx.fillStyle='#505058';tctx.fillRect(bx-bw/2-2,by-5,bw+4,3);
-      // Gold end caps
-      tctx.fillStyle='#c8a030';tctx.beginPath();tctx.arc(bx-bw/2-3,by-2,3,0,Math.PI*2);tctx.fill();
-      tctx.fillStyle='#c8a030';tctx.beginPath();tctx.arc(bx+bw/2+3,by-2,3,0,Math.PI*2);tctx.fill();
+      tctx.moveTo(tlx+1,by);
+      tctx.lineTo(trx-1,by);
+      tctx.quadraticCurveTo(brx+sway,midY,brx+sway*0.9,by+bh*0.85);
+      torn.forEach(function(pt){tctx.lineTo(bx+pt[0]+sway*0.45,by+pt[1]-1);});
+      tctx.lineTo(blx-sway*0.4,by+bh*0.8);
+      tctx.quadraticCurveTo(blx-sway*0.3,midY,tlx+1,by);
+      tctx.closePath();
+      tctx.fillStyle='#5a0a0a';tctx.fill();
+
+      // Left highlight strip (worn, partial)
+      tctx.fillStyle='rgba(180,40,40,0.12)';
+      tctx.fillRect(bx-bw/2+1,by,bw/4,bh*0.7);
+
+      // Heavy dirt/mud stains — dark blotches
+      tctx.fillStyle='rgba(0,0,0,0.38)';
+      tctx.fillRect(bx+bw/6,by+bh*0.2,bw/3,bh*0.35);
+      tctx.fillRect(bx-bw/3,by+bh*0.5,bw/2,bh*0.28);
+      tctx.fillRect(bx-bw/4,by+bh*0.72,bw*0.6,bh*0.18);
+      // Brown mud patches
+      tctx.fillStyle='rgba(40,20,5,0.35)';
+      tctx.fillRect(bx-bw/2+2,by+bh*0.6,bw*0.4,bh*0.22);
+      tctx.fillRect(bx+2,by+bh*0.38,bw*0.35,bh*0.15);
+      // Dark water stain streaks running down
+      tctx.fillStyle='rgba(0,0,0,0.22)';
+      tctx.fillRect(bx-6,by+bh*0.05,2,bh*0.7);
+      tctx.fillRect(bx+4,by+bh*0.15,3,bh*0.65);
+      tctx.fillRect(bx-2,by+bh*0.3,1,bh*0.5);
+      tctx.fillRect(bx+9,by+bh*0.4,2,bh*0.4);
+      // Greenish mold patches
+      tctx.fillStyle='rgba(20,40,10,0.28)';
+      tctx.fillRect(bx-bw/2+2,by+bh*0.75,bw*0.45,bh*0.15);
+      tctx.fillRect(bx+bw/4,by+bh*0.55,bw*0.2,bh*0.12);
+      // Dried blood/rust spots
+      tctx.fillStyle='rgba(60,10,5,0.32)';
+      tctx.fillRect(bx-3,by+bh*0.45,8,6);
+      tctx.fillRect(bx+8,by+bh*0.62,5,4);
+      tctx.fillRect(bx-9,by+bh*0.8,6,5);
+      // Overall grime — dark bottom half
+      tctx.fillStyle='rgba(0,0,0,0.22)';
+      tctx.fillRect(bx-bw/2,by+bh*0.5,bw,bh*0.5);
+
+      // Banner symbol — different per banner index
+      if(bi===2){
+        // Right banner: Gold Brothers Trading Co. — black banner
+        // Paint fully black over the red
+        tctx.globalAlpha=0.96;
+        tctx.fillStyle='#060408';
+        tctx.beginPath();
+        tctx.moveTo(tlx,by);tctx.lineTo(trx,by);
+        tctx.quadraticCurveTo(brx+sway,midY,brx+sway*0.9,by+bh*0.85);
+        torn.forEach(function(pt){tctx.lineTo(bx+pt[0]+sway*0.45,by+pt[1]-1);});
+        tctx.lineTo(blx-sway*0.4,by+bh*0.8);
+        tctx.quadraticCurveTo(blx-sway*0.3,midY,tlx+1,by);
+        tctx.closePath();tctx.fill();
+        tctx.globalAlpha=0.55;
+
+        // GTBC logo — small and tight, centered upper third
+        var lx=bx+sway*0.2, ly=by+bh*0.28;
+        var gold='rgba(175,135,22,0.62)', goldBright='rgba(205,162,28,0.78)';
+        var arm=7; // small cross arms
+
+        // Two diagonal lines
+        tctx.strokeStyle=gold;tctx.lineWidth=1.5;
+        tctx.beginPath();tctx.moveTo(lx-arm,ly-arm);tctx.lineTo(lx+arm,ly+arm);tctx.stroke();
+        tctx.beginPath();tctx.moveTo(lx+arm,ly-arm);tctx.lineTo(lx-arm,ly+arm);tctx.stroke();
+
+        // Small X at each arm tip
+        var xs=2;
+        [[lx-arm,ly-arm],[lx+arm,ly-arm],[lx-arm,ly+arm],[lx+arm,ly+arm]].forEach(function(xp){
+          tctx.strokeStyle=goldBright;tctx.lineWidth=1;
+          tctx.beginPath();tctx.moveTo(xp[0]-xs,xp[1]-xs);tctx.lineTo(xp[0]+xs,xp[1]+xs);tctx.stroke();
+          tctx.beginPath();tctx.moveTo(xp[0]+xs,xp[1]-xs);tctx.lineTo(xp[0]-xs,xp[1]+xs);tctx.stroke();
+        });
+
+        // Letters just inside the X arms — tight to center
+        tctx.fillStyle=goldBright;tctx.font='bold 5px serif';tctx.textAlign='center';tctx.textBaseline='middle';
+        tctx.fillText('T',lx,ly-arm+1);
+        tctx.fillText('G',lx-arm+1,ly);
+        tctx.fillText('B',lx+arm-1,ly);
+        tctx.fillStyle=gold;tctx.font='4px serif';
+        tctx.fillText('Co',lx,ly+arm-1);
+      } else if(bi===0){
+        // Left banner: demonic skull head — scaled down, shifted down, pure black
+        var lx=bx+sway*0.2, ly=by+bh*0.32;
+        var sc=0.72; // scale factor — smaller
+        tctx.save();
+        tctx.translate(lx,ly);tctx.scale(sc,sc);tctx.translate(-lx,-ly);
+        var blk='#000000';
+
+        // Curved horns
+        tctx.strokeStyle=blk;tctx.lineWidth=2.5;tctx.lineCap='round';
+        tctx.beginPath();tctx.moveTo(lx-4,ly-8);
+        tctx.quadraticCurveTo(lx-13,ly-16,lx-9,ly-24);tctx.stroke();
+        tctx.beginPath();tctx.moveTo(lx+4,ly-8);
+        tctx.quadraticCurveTo(lx+13,ly-16,lx+9,ly-24);tctx.stroke();
+        tctx.lineWidth=1.5;
+        tctx.beginPath();tctx.moveTo(lx-9,ly-24);tctx.lineTo(lx-7,ly-28);tctx.stroke();
+        tctx.beginPath();tctx.moveTo(lx+9,ly-24);tctx.lineTo(lx+7,ly-28);tctx.stroke();
+
+        // Head shape
+        tctx.fillStyle=blk;
+        tctx.beginPath();
+        tctx.moveTo(lx-8,ly-8);
+        tctx.quadraticCurveTo(lx-12,ly-2,lx-10,ly+3);
+        tctx.quadraticCurveTo(lx-6,ly+10,lx,ly+12);
+        tctx.quadraticCurveTo(lx+6,ly+10,lx+10,ly+3);
+        tctx.quadraticCurveTo(lx+12,ly-2,lx+8,ly-8);
+        tctx.quadraticCurveTo(lx+5,ly-12,lx,ly-10);
+        tctx.quadraticCurveTo(lx-5,ly-12,lx-8,ly-8);
+        tctx.closePath();tctx.fill();
+
+        // Eye sockets — very subtle banner colour showing through
+        tctx.fillStyle='rgba(80,8,6,0.45)';
+        tctx.beginPath();tctx.moveTo(lx-8,ly-2);tctx.lineTo(lx-5,ly-6);tctx.lineTo(lx-2,ly-2);tctx.lineTo(lx-4,ly+1);tctx.closePath();tctx.fill();
+        tctx.beginPath();tctx.moveTo(lx+8,ly-2);tctx.lineTo(lx+5,ly-6);tctx.lineTo(lx+2,ly-2);tctx.lineTo(lx+4,ly+1);tctx.closePath();tctx.fill();
+
+        // Nostrils
+        tctx.fillStyle='rgba(60,5,4,0.38)';
+        tctx.beginPath();tctx.ellipse(lx-3,ly+5,2,1.5,0.3,0,Math.PI*2);tctx.fill();
+        tctx.beginPath();tctx.ellipse(lx+3,ly+5,2,1.5,-0.3,0,Math.PI*2);tctx.fill();
+
+        // Fangs
+        tctx.fillStyle=blk;
+        tctx.beginPath();tctx.moveTo(lx-5,ly+10);tctx.lineTo(lx-4,ly+15);tctx.lineTo(lx-2,ly+10);tctx.closePath();tctx.fill();
+        tctx.beginPath();tctx.moveTo(lx-1,ly+11);tctx.lineTo(lx,ly+16);tctx.lineTo(lx+1,ly+11);tctx.closePath();tctx.fill();
+        tctx.beginPath();tctx.moveTo(lx+2,ly+10);tctx.lineTo(lx+4,ly+15);tctx.lineTo(lx+5,ly+10);tctx.closePath();tctx.fill();
+        tctx.restore();
+
+      } else {
+        // Center banner: House of the High Elves — deep purple, gold rim, elven emblem
+        // Paint over with deep purple
+        tctx.globalAlpha=0.94;
+        tctx.fillStyle='#0e0618';
+        tctx.beginPath();
+        tctx.moveTo(tlx,by);tctx.lineTo(trx,by);
+        tctx.quadraticCurveTo(brx+sway,midY,brx+sway*0.9,by+bh*0.85);
+        torn.forEach(function(pt){tctx.lineTo(bx+pt[0]+sway*0.45,by+pt[1]-1);});
+        tctx.lineTo(blx-sway*0.4,by+bh*0.8);
+        tctx.quadraticCurveTo(blx-sway*0.3,midY,tlx+1,by);
+        tctx.closePath();tctx.fill();
+        tctx.globalAlpha=0.55;
+
+        // Gold border — left and right edges only
+        tctx.strokeStyle='rgba(195,152,22,0.65)';tctx.lineWidth=1.5;
+        tctx.beginPath();
+        tctx.moveTo(tlx+1,by+2);tctx.lineTo(blx+2,by+bh*0.78);
+        tctx.stroke();
+        tctx.beginPath();
+        tctx.moveTo(trx-1,by+2);tctx.lineTo(brx-2,by+bh*0.72);
+        tctx.stroke();
+
+        // Elven emblem — scaled down, centered upper third
+        var lx=bx+sway*0.2, ly=by+bh*0.28;
+        tctx.save();tctx.translate(lx,ly);tctx.scale(0.78,0.78);tctx.translate(-lx,-ly);
+        var gold='rgba(195,152,22,0.72)', goldHi='rgba(225,182,35,0.85)', goldDim='rgba(160,122,18,0.5)';
+
+        // Outer decorative diamond frame
+        tctx.strokeStyle=gold;tctx.lineWidth=1;
+        tctx.beginPath();
+        tctx.moveTo(lx,ly-16);tctx.lineTo(lx+11,ly);
+        tctx.lineTo(lx,ly+16);tctx.lineTo(lx-11,ly);
+        tctx.closePath();tctx.stroke();
+
+        // Inner diamond
+        tctx.beginPath();
+        tctx.moveTo(lx,ly-11);tctx.lineTo(lx+7,ly);
+        tctx.lineTo(lx,ly+11);tctx.lineTo(lx-7,ly);
+        tctx.closePath();tctx.stroke();
+
+        // Corner flourishes at diamond tips
+        [[lx,ly-16,0,-1],[lx+11,ly,1,0],[lx,ly+16,0,1],[lx-11,ly,-1,0]].forEach(function(f){
+          tctx.strokeStyle=goldHi;tctx.lineWidth=1;
+          tctx.beginPath();
+          tctx.moveTo(f[0]-f[3]*3,f[1]-f[2]*3);
+          tctx.lineTo(f[0]+f[3]*3,f[1]+f[2]*3);
+          tctx.stroke();
+          // Small perpendicular tick
+          tctx.beginPath();
+          tctx.moveTo(f[0]-f[2]*2,f[1]-f[3]*2);
+          tctx.lineTo(f[0]+f[2]*2,f[1]+f[3]*2);
+          tctx.stroke();
+        });
+
+        // Central sun/star — elven radiant symbol
+        tctx.strokeStyle=goldHi;tctx.lineWidth=1.2;
+        for(var si=0;si<8;si++){
+          var sa=si/8*Math.PI*2-Math.PI/8;
+          var sr1=si%2===0?3:2, sr2=si%2===0?7:5;
+          tctx.beginPath();
+          tctx.moveTo(lx+Math.cos(sa)*sr1,ly+Math.sin(sa)*sr1);
+          tctx.lineTo(lx+Math.cos(sa)*sr2,ly+Math.sin(sa)*sr2);
+          tctx.stroke();
+        }
+        // Central gem dot
+        tctx.fillStyle=goldHi;
+        tctx.beginPath();tctx.arc(lx,ly,2,0,Math.PI*2);tctx.fill();
+
+        // Elvish arch above — two curved branches meeting at top
+        tctx.strokeStyle=gold;tctx.lineWidth=1;
+        tctx.beginPath();tctx.moveTo(lx-6,ly-11);
+        tctx.quadraticCurveTo(lx-10,ly-18,lx,ly-21);tctx.stroke();
+        tctx.beginPath();tctx.moveTo(lx+6,ly-11);
+        tctx.quadraticCurveTo(lx+10,ly-18,lx,ly-21);tctx.stroke();
+        // Leaf tip at top
+        tctx.fillStyle=goldHi;
+        tctx.beginPath();tctx.arc(lx,ly-21,1.5,0,Math.PI*2);tctx.fill();
+
+        // Root/base flourish below
+        tctx.strokeStyle=gold;tctx.lineWidth=1;
+        tctx.beginPath();tctx.moveTo(lx-6,ly+11);
+        tctx.quadraticCurveTo(lx-9,ly+17,lx-4,ly+20);tctx.stroke();
+        tctx.beginPath();tctx.moveTo(lx+6,ly+11);
+        tctx.quadraticCurveTo(lx+9,ly+17,lx+4,ly+20);tctx.stroke();
+        tctx.beginPath();tctx.moveTo(lx-4,ly+20);tctx.lineTo(lx+4,ly+20);tctx.stroke();
+        tctx.restore();
+      }
+
+      // Faded gold border — patchy top only
+      tctx.strokeStyle='rgba(140,100,15,0.3)';tctx.lineWidth=1;
+      tctx.beginPath();tctx.moveTo(tlx+1,by);tctx.lineTo(trx-1,by);tctx.stroke();
+      tctx.beginPath();tctx.moveTo(tlx+1,by);tctx.lineTo(blx+1,by+bh*0.55);tctx.stroke();
+      tctx.beginPath();tctx.moveTo(trx-1,by);tctx.lineTo(brx-1,by+bh*0.4);tctx.stroke();
+
+      // Iron rod — dark and aged, follows top skew
+      tctx.globalAlpha=0.65;
+      tctx.fillStyle='#252528';tctx.fillRect(tlx-3,by-5,bw+6,5);
+      tctx.fillStyle='#35353a';tctx.fillRect(tlx-2,by-5,bw+4,3);
+      tctx.fillStyle='rgba(160,120,20,0.7)';
+      tctx.beginPath();tctx.arc(tlx-3,by-2,2.5,0,Math.PI*2);tctx.fill();
+      tctx.beginPath();tctx.arc(trx+3,by-2,2.5,0,Math.PI*2);tctx.fill();
+
+      tctx.globalAlpha=1;
       tctx.restore();
     });
 
@@ -4293,23 +4670,20 @@ function getTier(cls,level) {
     warrior:[
       {min:1,  name:'Conscript'},
       {min:10, name:'Footsoldier'},
-      {min:25, name:'Knight'},
-      {min:50, name:'Champion'},
-      {min:75, name:'Paladin'},
-      {min:100,name:'Warlord'}
+      {min:20, name:'Knight'},
+      {min:30, name:'Warlord'}
     ],
     mage:[
       {min:1,  name:'Apprentice'},
-      {min:15, name:'Scholar'},
-      {min:35, name:'Arcanist'},
-      {min:60, name:'Archmage'},
-      {min:85, name:'Sorcerer Supreme'}
+      {min:10, name:'Scholar'},
+      {min:20, name:'Arcanist'},
+      {min:30, name:'Archmage'}
     ],
     ranger:[
       {min:1,  name:'Scout'},
-      {min:20, name:'Huntress'},
-      {min:45, name:'Warden'},
-      {min:75, name:'Shadowstrider'}
+      {min:10, name:'Cutthroat'},
+      {min:20, name:'Shadowblade'},
+      {min:30, name:'Phantom'}
     ]
   };
   var t=tiers[cls]||tiers.warrior;
@@ -4574,7 +4948,7 @@ var ACHIEVEMENTS = [
   {id:'w_t3',cls:'warrior',tier:3,name:'Warlord',desc:'Warrior reaches Lv.30 — Gold warlord armor unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=30;},levelReq:30},
   // MAGE
   {id:'m_unlock',cls:'mage',tier:0,name:'Apprentice',desc:'Unlock the Mage',icon:'\u2728',req:function(){return getLevel('mage')>=1;},levelReq:1},
-  {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.10 — Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=15;},levelReq:15},
+  {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.10 — Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=10;},levelReq:10},
   {id:'m_t2',cls:'mage',tier:2,name:'Arcanist',desc:'Mage reaches Lv.20 — Arcane purple robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=20;},levelReq:20},
   {id:'m_t3',cls:'mage',tier:3,name:'Archmage',desc:'Mage reaches Lv.30 — Grand archmage look unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=30;},levelReq:30},
   // ROGUE
