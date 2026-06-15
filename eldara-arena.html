@@ -2418,6 +2418,7 @@ function lerpRemote(en) {
   if(remoteState.warCryShake!=null) en.warCryShake=remoteState.warCryShake;
   if(remoteState.fireballCharging!=null) en.fireballCharging=remoteState.fireballCharging;
   if(remoteState.fireballCharge!=null) en.fireballCharge=remoteState.fireballCharge;
+  if(remoteState.crownOn!=null) en.crownOn=remoteState.crownOn;
   // Sync opponent projectiles for rendering only
   // Only remove/replace visual-only projs — never touch real damage projs from processAction
   if(gameState){
@@ -2629,6 +2630,38 @@ function draw(gs) {
     if(p.warCryShake>0){var sf=p.warCryShake/600;shakeX=(Math.random()-0.5)*6*sf;shakeY=(Math.random()-0.5)*4*sf;}
     DRAW[p.cls](gctx,p.x+shakeX,p.y+shakeY,p.dir,p.anim,p.hitFlash>0,p.level||1);
     // Red eyes cosmetic — pulsing pixels only, no circles
+    // Cardboard crown cosmetic (shown when hasCrown() and it's my player, or crown synced for opponent)
+    if((p.isMe&&hasCrown())||(!p.isMe&&p.crownOn)){
+      gctx.save();
+      gctx.translate(p.x,p.y);
+      if(p.dir!==2)gctx.scale(-1,1);
+      var S3=3,crow=p.y-68; // crown y position above head
+      // Crown base band
+      gctx.fillStyle='#c8781a';gctx.fillRect(-8*S3,crow,16*S3,3*S3);
+      // Lighter front face
+      gctx.fillStyle='#d4883a';gctx.fillRect(-8*S3,crow,16*S3,2*S3);
+      // Corrugation lines (cardboard texture)
+      gctx.fillStyle='#a05c10';
+      for(var ci=0;ci<4;ci++){gctx.fillRect((-6+ci*3)*S3,crow,S3,3*S3);}
+      // Three points on top
+      gctx.fillStyle='#c8781a';
+      // Left point
+      gctx.beginPath();gctx.moveTo(-8*S3,crow);gctx.lineTo(-6*S3,crow-4*S3);gctx.lineTo(-4*S3,crow);gctx.fill();
+      // Center point (taller)
+      gctx.beginPath();gctx.moveTo(-2*S3,crow);gctx.lineTo(0,crow-6*S3);gctx.lineTo(2*S3,crow);gctx.fill();
+      // Right point
+      gctx.beginPath();gctx.moveTo(4*S3,crow);gctx.lineTo(6*S3,crow-4*S3);gctx.lineTo(8*S3,crow);gctx.fill();
+      // Lighter highlights on points
+      gctx.fillStyle='#d4883a';
+      gctx.beginPath();gctx.moveTo(-7*S3,crow);gctx.lineTo(-6*S3,crow-3*S3);gctx.lineTo(-5*S3,crow);gctx.fill();
+      gctx.beginPath();gctx.moveTo(-1*S3,crow);gctx.lineTo(0,crow-5*S3);gctx.lineTo(S3,crow);gctx.fill();
+      gctx.beginPath();gctx.moveTo(5*S3,crow);gctx.lineTo(6*S3,crow-3*S3);gctx.lineTo(7*S3,crow);gctx.fill();
+      // Jewels — tiny colored dots
+      gctx.fillStyle='#e84040';gctx.fillRect(-7*S3,crow+S3,2*S3,2*S3); // left red
+      gctx.fillStyle='#40a0e8';gctx.fillRect(-S3,crow+S3,2*S3,2*S3);   // center blue
+      gctx.fillStyle='#40e840';gctx.fillRect(5*S3,crow+S3,2*S3,2*S3);  // right green
+      gctx.restore();
+    }
     if(p.isMe&&hasRedEyes(p.cls)||(!p.isMe&&p.redEyes)){
       var re=getRedEyePos(p.cls,p.level||1);
       var rePulse=0.6+Math.sin(Date.now()*0.008)*0.4;
@@ -2982,6 +3015,12 @@ function endRound(gs) {
     if(gameMode==='pvp'&&wonRound&&dead&&!dead.isMe){
       var kills=incrementPvPKills(meR.cls);
       if(kills===100){showBanner('RED EYES UNLOCKED!');setRedEyes(meR.cls,true);}
+      // GM kill easter egg
+      if(dead.name&&dead.name.indexOf('<GM>')>=0&&!hasKilledGM()){
+        setKilledGM();setCrown(true);
+        showBanner('YOU KILLED A GM!! 👑');
+        renderAchievements(currentAchTab||'all');
+      }
     }
   }
   gs.phase='gameOver';
@@ -3149,6 +3188,7 @@ function pushState(me) {
     moveCd:Math.round(me.moveCd||0),level:me.level||1,cls:me.cls,
     warCryBuff:Math.round(me.warCryBuff||0),warCryShake:Math.round(me.warCryShake||0),
     fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
+    crownOn:hasCrown(),
     projs:myProjs.length>0?myProjs:null
   });
 }
@@ -3729,7 +3769,7 @@ function buildTitleChars() {
     xpBar.appendChild(xpFill); card.appendChild(xpBar);
     // Canvas LAST (below text = character body)
     card.appendChild(cv);
-    container.appendChild(card);
+    if(card)container.appendChild(card);
     // Click: show spell panel
     card.addEventListener('click', function() {
       if (selectedCls === cls) {
@@ -4924,6 +4964,21 @@ function incrementPvPKills(cls){
   saveClassData(cls,d);
   return d.pvpKills;
 }
+function hasCrown(){
+  try{return localStorage.getItem('eldara_crown')==='true';}catch(e){return false;}
+}
+function setCrown(val){
+  try{localStorage.setItem('eldara_crown',val?'true':'false');}catch(e){}
+  if(authUid&&!isGuest)fbSet('/users/'+authUid+'/crown',val);
+}
+function toggleCrown(){setCrown(!hasCrown());renderAchievements(currentAchTab||'all');}
+function hasKilledGM(){
+  try{return localStorage.getItem('eldara_killed_gm')==='true';}catch(e){return false;}
+}
+function setKilledGM(){
+  try{localStorage.setItem('eldara_killed_gm','true');}catch(e){}
+  if(authUid&&!isGuest)fbSet('/users/'+authUid+'/killedGM',true);
+}
 function hasRedEyes(cls){
   var d=getClassData(cls);
   return d.redEyes===true;
@@ -5052,8 +5107,8 @@ document.getElementById('auth-submit').addEventListener('click', function() {
     if (!uname) { showAuthError('Please enter a display name.'); return; }
     if (uname.length < 3) { showAuthError('Name must be at least 3 characters.'); return; }
     // Block special symbols (allow letters incl. umlauts, numbers, spaces, underscores, hyphens)
-    if (/[<>\[\](){}.,;:!?@#$%^&*=+|\\/"'`~]/.test(uname)) {
-      showAuthError('Name contains invalid characters.'); return;
+    if (/[<>\[\](){}.,;:!?@#$%^&*=+|\\/\"\'`~]/.test(uname)) {
+      showAuthError('Name contains invalid characters. No < > [ ] ( ) symbols allowed.'); return;
     }
   }
   btn.disabled = true;
@@ -5192,6 +5247,8 @@ document.getElementById('settings-save').addEventListener('click',function(){
   var newName=document.getElementById('settings-name-inp').value.trim().toUpperCase().substring(0,14);
   var err=document.getElementById('settings-err');
   if(!newName){err.textContent='Enter a name.';return;}
+  if(newName.length<3){err.textContent='Name must be at least 3 characters.';return;}
+  if(/[<>\[\](){}.,;:!?@#$%^&*=+|\\/\"\'`~]/.test(newName)){err.textContent='Name contains invalid characters.';return;}
   if(newName===displayName){err.textContent='Same as current name.';return;}
   fbGetAuth('/users/'+authUid+'/profile').then(function(d){
     var used=d&&d.nameChanges||0;
@@ -5325,6 +5382,9 @@ var ACHIEVEMENTS = [
   {id:'kr',cls:'ranger',tier:0,name:'Phantom Reaper',desc:'Kill 100 players as Rogue — Red Eyes unlocked',icon:'\u2020',req:function(){return getPvPKills('ranger')>=100;},levelReq:0,killAch:true,killCls:'ranger'},
   // GENERAL
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
+  {id:'g_gm_kill',cls:'general',tier:0,name:'I Killed a GM!',desc:'You absolute mad lad. You actually did it.',icon:'\uD83D\uDC51',hidden:true,
+    req:function(){return hasKilledGM();},levelReq:0,
+    wearBtn:'<button onclick="toggleCrown()" style="margin-top:6px;padding:4px 10px;background:transparent;border:1px solid #c8781a;color:#c8781a;font-family:Courier New,monospace;font-size:9px;letter-spacing:1px;cursor:pointer">'+( hasCrown()?'REMOVE CROWN':'WEAR CROWN')+'</button>'},
   {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return (s&&parseInt(s)>0)||(_pvpPlayedFirebase>0);},levelReq:0},
   {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.30 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=30||getLevel('mage')>=30||getLevel('ranger')>=30;},levelReq:0},
   {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.30 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=30&&getLevel('mage')>=30&&getLevel('ranger')>=30;},levelReq:0},
