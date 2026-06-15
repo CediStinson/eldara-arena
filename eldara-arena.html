@@ -482,10 +482,14 @@ function loadUserProfile() {
       try { localStorage.setItem('eldara_name_'+authUid, displayName); } catch(e) {}
       // Update session storage with correct name
       try { sessionStorage.setItem('eldara_name', displayName); } catch(e) {}
-    } else if(!displayName) {
-      // Fallback if no profile yet (shouldn't happen after register)
-      displayName = authEmail.split('@')[0].substring(0,12).toUpperCase();
-      myName = displayName;
+    } else if(!displayName||displayName==='') {
+      // Only fall back if we truly have nothing
+      var emailFallback=authEmail?authEmail.split('@')[0].substring(0,12).toUpperCase():'';
+      if(emailFallback){
+        displayName=emailFallback;myName=emailFallback;
+        // Try to save this so it stops falling back
+        fbSetAuth('/users/'+authUid+'/profile',{displayName:displayName,email:authEmail}).catch(function(){});
+      }
     }
     return fbGetAuth('/users/' + authUid + '/classes');
   }).then(function(data) {
@@ -5004,14 +5008,38 @@ document.getElementById('auth-tab-register').addEventListener('click', function(
 document.getElementById('auth-submit').addEventListener('click', function() {
   var email = document.getElementById('auth-email').value.trim();
   var pass = document.getElementById('auth-pass').value;
-  var uname = document.getElementById('auth-username').value.trim().toUpperCase().substring(0,12);
+  var uname = document.getElementById('auth-username').value.trim().toUpperCase().substring(0,16);
   var btn = document.getElementById('auth-submit');
   if (!email || !pass) { showAuthError('Please fill in all fields.'); return; }
   if (pass.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
-  if (authMode2 === 'register' && !uname) { showAuthError('Please enter a display name.'); return; }
+  if (authMode2 === 'register') {
+    if (!uname) { showAuthError('Please enter a display name.'); return; }
+    if (uname.length < 3) { showAuthError('Name must be at least 3 characters.'); return; }
+    // Block special symbols (allow letters incl. umlauts, numbers, spaces, underscores, hyphens)
+    if (/[<>\[\](){}.,;:!?@#$%^&*=+|\\/"'`~]/.test(uname)) {
+      showAuthError('Name contains invalid characters.'); return;
+    }
+  }
   btn.disabled = true;
   btn.textContent = 'CONNECTING...';
-  var promise = authMode2 === 'register' ? signUp(email, pass) : signIn(email, pass);
+  if(authMode2 === 'register'){
+    // Check nickname uniqueness
+    btn.disabled=true;btn.textContent='CHECKING...';
+    fbGet('/nicknames/'+uname.replace(/\s+/g,'_')).then(function(exists){
+      if(exists){
+        showAuthError('That name is already taken. Choose another.');
+        btn.disabled=false;btn.textContent='CREATE ACCOUNT';
+        return;
+      }
+      doRegister(email,pass,uname,btn);
+    }).catch(function(){doRegister(email,pass,uname,btn);});
+    return;
+  }
+  doRegister(email,pass,uname,btn);
+});
+// Pulled out so we can call after nickname check
+function doRegister(email,pass,uname,btn){
+  var promise = uname ? signUp(email, pass) : signIn(email, pass);
   promise.then(function(result) {
     if (result.error) {
       var msg = result.error.message || 'Error';
@@ -5025,22 +5053,27 @@ document.getElementById('auth-submit').addEventListener('click', function() {
       btn.textContent = authMode2 === 'register' ? 'CREATE ACCOUNT' : 'ENTER THE ARENA';
       return;
     }
-    if (authMode2 === 'register') {
-      // Save display name to Firebase
+    if (!uname) {
+      // Login
+      onAuthSuccess(result, '');
+      return;
+    }
+    if (true) {
+      // Register — save profile + nickname index
       fbSetAuth('/users/'+result.localId+'/profile', {
         displayName: uname, email: email, created: Date.now()
       }).then(function() {
+        // Save to nickname index so we can check uniqueness
+        fbSet('/nicknames/'+uname.replace(/\s+/g,'_'), result.localId);
         onAuthSuccess(result, uname);
       });
-    } else {
-      onAuthSuccess(result, '');
     }
   }).catch(function(e) {
     showAuthError('Connection error. Check your internet.');
     btn.disabled = false;
     btn.textContent = 'ENTER THE ARENA';
   });
-});
+}
 
 document.getElementById('auth-guest').addEventListener('click', function() {
   isGuest = true;
