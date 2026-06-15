@@ -2655,7 +2655,7 @@ function draw(gs) {
       if(p.dir!==2)gctx.scale(-1,1);
       // Tilted slightly — lopsided, sitting crooked on the head
       gctx.rotate(0.18);
-      var CS=1.4; // slightly bigger than before
+      var CS=1.3; // slightly bigger than before
       // Worn cardboard colour — dull browns, no sheen
       var cb='#8b5a1a', cl='#a06828', cd='#5a3208', cw='#7a4e14';
       // Base band — slightly uneven height (crappy)
@@ -3861,7 +3861,7 @@ document.getElementById('btn-pvp').addEventListener('click',function(e){
   document.getElementById('join-code-wrap').style.display='none';
   document.getElementById('setup-error').textContent='';
   document.getElementById('setup-screen').style.display='flex';
-  registerOnline();startOnlinePolling();updateOnlineCount();
+  registerOnline();startOnlinePolling();
 });
 document.getElementById('tab-host').addEventListener('click',function(){
   setupMode='host';
@@ -3997,7 +3997,8 @@ function leaveQueue(){
   _inQueue=false;_matchmaking=false;
   if(_queueTimer){clearInterval(_queueTimer);_queueTimer=null;}
   if(_queuePollTimer){clearInterval(_queuePollTimer);_queuePollTimer=null;}
-  if(_queueListener){try{_queueListener();}catch(e){}  _queueListener=null;}
+  if(_queueListener){try{_queueListener();}catch(e){} _queueListener=null;}
+  if(_matchmadeListener){try{_matchmadeListener();}catch(e){} _matchmadeListener=null;}
   if(authUid)fbSet('/queue/'+authUid,null);
   var _qs=document.getElementById('queue-status');if(_qs)_qs.textContent='';
   var _qb=document.getElementById('btn-joinqueue');
@@ -4123,7 +4124,7 @@ function unregisterOnline(){
   if(authUid&&!isGuest)fbSet('/presence/'+authUid,null);
 }
 
-document.getElementById('setup-back').addEventListener('click',function(){leaveQueue();document.getElementById('setup-screen').style.display='none';});
+document.getElementById('setup-back').addEventListener('click',function(){leaveQueue();stopOnlinePolling();document.getElementById('setup-screen').style.display='none';});
 
 document.getElementById('setup-confirm').addEventListener('click',function(){
   // Name = display name if logged in, else class name
@@ -5417,6 +5418,7 @@ var ACHIEVEMENTS = [
 
 function buildAchCard(ach){
   var earned=false;try{earned=ach.req();}catch(e){}
+  if(ach.hidden&&!earned)return null; // completely hidden until earned
   var card=document.createElement('div');
   card.style.cssText='background:'+(earned?'rgba(232,184,75,0.07)':'rgba(255,255,255,0.02)')+';border:1px solid '+(earned?'rgba(232,184,75,0.4)':'rgba(255,255,255,0.07)')+';padding:14px;display:flex;gap:12px;align-items:flex-start;';
   
@@ -5465,17 +5467,20 @@ function renderAchievements(tab){
     if(tab==='general')return a.cls==='general';
     return a.cls===tab;
   });
-  // Sort: armor achievements first, then weapon achievements. Within each group, earned first.
-  var earnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&a.cls!=='general'&&a.req();}catch(e){return false;}});
-  var unearnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&a.cls!=='general'&&!a.req();}catch(e){return true;}});
+  // Sort: armor first, weapon, kill (red eyes) last. Earned before unearned within each group.
+  var earnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&!a.killAch&&a.cls!=='general'&&a.req();}catch(e){return false;}});
+  var unearnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&!a.killAch&&a.cls!=='general'&&!a.req();}catch(e){return true;}});
   var earnedWeapon=filtered.filter(function(a){try{return a.weaponAch&&a.req();}catch(e){return false;}});
   var unearnedWeapon=filtered.filter(function(a){try{return a.weaponAch&&!a.req();}catch(e){return true;}});
+  var earnedKill=filtered.filter(function(a){try{return a.killAch&&a.req();}catch(e){return false;}});
+  var unearnedKill=filtered.filter(function(a){try{return a.killAch&&!a.req();}catch(e){return true;}});
   var earnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&a.req();}catch(e){return false;}});
   var unearnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&!a.req();}catch(e){return true;}});
-  var sorted=earnedArmor.concat(unearnedArmor).concat(earnedWeapon).concat(unearnedWeapon).concat(earnedGeneral).concat(unearnedGeneral);
+  var sorted=earnedArmor.concat(unearnedArmor).concat(earnedWeapon).concat(unearnedWeapon).concat(earnedKill).concat(unearnedKill).concat(earnedGeneral).concat(unearnedGeneral);
   
   sorted.forEach(function(ach){
     var result=buildAchCard(ach);
+    if(!result||!result.card)return;
     list.appendChild(result.card);
   });
   // Wire wear buttons
@@ -5630,7 +5635,7 @@ showScreen = function(id) {
   if(id==='title-screen') { _lobbyShown=false; clearUrlCode(); }
 };
 
-document.getElementById('lob-back').addEventListener('click',function(){clearUrlCode();_lobbyShown=false;});
+// lob-back handled above
 // ov-menu handled above
 
 // On load: check for ?join=CODE in URL and auto-fill join form
