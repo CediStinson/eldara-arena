@@ -140,7 +140,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 #pregame-timer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:120px;font-weight:900;font-family:'Courier New',monospace;color:var(--gold);text-shadow:0 0 60px #e8b84b,0 0 120px #e8b84b44;pointer-events:none;opacity:0;transition:opacity .3s;z-index:45;line-height:1}
 
 /* AUTH SCREEN */
-#auth-screen{background:url('login_bg.png') center center / cover no-repeat;display:flex;align-items:center;justify-content:center;}
+#auth-screen{background:url('login_bg.webp') center center / cover no-repeat;display:flex;align-items:center;justify-content:center;}
 .auth-box{background:rgba(5,3,12,0.88);border:1px solid rgba(120,60,200,0.4);box-shadow:0 0 40px rgba(80,20,160,0.3),inset 0 0 20px rgba(0,0,0,0.5);backdrop-filter:blur(2px);padding:36px 40px;width:380px;display:flex;flex-direction:column;gap:12px}
 .auth-logo{font-size:28px;font-weight:900;letter-spacing:5px;color:var(--gold);text-align:center;margin-bottom:4px}
 .auth-sub{font-size:11px;letter-spacing:4px;color:var(--dim);text-align:center;margin-bottom:8px}
@@ -168,7 +168,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 <!-- AUTH -->
 <div class="screen active" id="auth-screen">
   <div class="auth-box">
-    <div class="auth-logo">ELDARA ARENA</div>
+    <img src="eldara-arena_logo.webp" alt="Eldara Arena" style="width:280px;margin-bottom:8px;object-fit:contain">
     <div class="auth-sub">sign in to save your progress</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="auth-tab-login">SIGN IN</button>
@@ -192,7 +192,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <canvas id="title-canvas"></canvas>
   <!-- Logo fixed at top -->
   <div class="title-header">
-    <div class="title-logo">ELDARA ARENA</div>
+    <img src="eldara-arena_logo.webp" alt="Eldara Arena" style="width:380px;margin-bottom:8px;object-fit:contain;filter:drop-shadow(0 0 30px rgba(232,184,75,0.4))">
   </div>
   <!-- Main content centered -->
   <div class="title-content">
@@ -364,7 +364,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div class="ov-sub" id="ov-sub">You won the match!</div>
     <div class="ov-btns">
       <button class="menu-btn primary" id="ov-rematch" style="width:150px">REMATCH</button>
-      <button class="menu-btn" id="ov-menu" style="width:110px">MENU</button>
+      <button class="menu-btn" id="ov-menu" style="width:110px">LEAVE</button>
     </div>
   </div>
   <div id="round-banner"></div>
@@ -504,10 +504,19 @@ function loadUserProfile() {
     showScreen('title-screen');
     updateProfileBadge();
     registerOnline();
+    loadPvpPlayed();
   }).catch(function() {
     showScreen('title-screen');
     registerOnline();
   });
+}
+var _pvpPlayedFirebase=0;
+// Load pvpPlayed from Firebase on login
+function loadPvpPlayed(){
+  if(!authUid||isGuest)return;
+  fbGet('/users/'+authUid+'/pvpPlayed').then(function(n){
+    if(n)_pvpPlayedFirebase=parseInt(n)||0;
+  }).catch(function(){});
 }
 
 function saveUserProfile() {
@@ -2400,6 +2409,10 @@ function lerpRemote(en) {
   if(remoteState.wins!=null) en.wins=remoteState.wins;
   if(remoteState.hitFlash) en.hitFlash=80;
   if(remoteState.stunned>0) en.stunned=remoteState.stunned;
+  if(remoteState.warCryBuff!=null) en.warCryBuff=remoteState.warCryBuff;
+  if(remoteState.warCryShake!=null) en.warCryShake=remoteState.warCryShake;
+  if(remoteState.fireballCharging!=null) en.fireballCharging=remoteState.fireballCharging;
+  if(remoteState.fireballCharge!=null) en.fireballCharge=remoteState.fireballCharge;
   // Sync opponent projectiles for rendering only
   // Only remove/replace visual-only projs — never touch real damage projs from processAction
   if(gameState){
@@ -3093,6 +3106,8 @@ function pushState(me) {
     hitFlash:me.hitFlash>0?1:0,dead:me.dead,wins:me.wins,
     stealthed:me.stealthed||false,redEyes:hasRedEyes(me.cls),shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
     moveCd:Math.round(me.moveCd||0),level:me.level||1,cls:me.cls,
+    warCryBuff:Math.round(me.warCryBuff||0),warCryShake:Math.round(me.warCryShake||0),
+    fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
     projs:myProjs.length>0?myProjs:null
   });
 }
@@ -3273,21 +3288,23 @@ function processAction(msg,gs,me,en) {
       showScreen('title-screen');
     },1200);
   } else if(msg.type==='opponent_left'){
-    // Opponent left — you win
     var meW=gs.players.find(function(p){return p.isMe;});
-    if(gs.phase!=='gameOver'){
+    if(gs.phase==='gameOver'){
+      // Opponent left from end screen — just go to menu
+      hideOverlay();gameState=null;cleanupFB();showScreen('title-screen');
+      return;
+    } else {
       gs.phase='gameOver';
-      if(meW) awardMatchXP(meW.cls,true,true);
+      if(meW)awardMatchXP(meW.cls,true,true);
       showBanner('Opponent left!');
       setTimeout(function(){
         document.getElementById('ov-rematch').style.display='none';
         showOverlay('VICTORY','Opponent disconnected.');
-      },800);
-    } else {
-      // Match was already over but opponent left before rematch — just close overlay cleanly
+      },1200);
+    } if(false){
       document.getElementById('ov-rematch').style.display='none';
       var st=document.getElementById('ov-rematch-status');
-      if(st){st.style.display='block';st.textContent='Opponent left the lobby.';}
+      if(st){st.style.display='block';st.textContent='Opponent left.';}
     }
   }
 }
@@ -4100,6 +4117,12 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   updateHUD(gameState);showBanner('Get Ready!');
   // Track PvP games played
   try{var pvpN=parseInt(localStorage.getItem('eldara_pvp_played')||'0')+1;localStorage.setItem('eldara_pvp_played',pvpN);}catch(e){}
+  // Also save to Firebase so it persists across devices
+  if(authUid&&!isGuest){
+    fbGet('/users/'+authUid+'/pvpPlayed').then(function(n){
+      fbSet('/users/'+authUid+'/pvpPlayed',(parseInt(n||0)+1));
+    }).catch(function(){});
+  }
 }
 
 function launchTraining(continuing) {
@@ -4191,7 +4214,7 @@ document.getElementById('ov-menu').addEventListener('click',function(){
   gameState=null;hideOverlay();
   var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
   if(gameMode==='pvp'&&enemyIdPvp){
-    pushAction('opponent_left_lobby',{roomCode:roomCode});
+    pushAction('opponent_left',{});
     setTimeout(function(){cleanupFB();showScreen('title-screen');},300);
   } else {
     cleanupFB();showScreen('title-screen');
@@ -4934,7 +4957,7 @@ function getTier(cls,level) {
 
 // Award XP at end of round
 function awardMatchXP(cls, won, isPvP) {
-  var base=isPvP?(won?80:30):(won?20:5);
+  var base=isPvP?(won?50:15):(won?15:2);
   var d=addXP(cls,base);
   var tier=getTier(cls,d.level);
   var clsDisplay=cls==='ranger'?'Rogue':cls.charAt(0).toUpperCase()+cls.slice(1);
@@ -5141,8 +5164,6 @@ document.getElementById('btn-logout').addEventListener('click',function(){
 
 // Leave game button
 document.getElementById('btn-leave-game').addEventListener('click',function(){
-  if(!gameState)return;
-  // Show inline confirm instead of browser confirm()
   var confirmDiv=document.getElementById('leave-confirm');
   if(confirmDiv){confirmDiv.style.display='flex';return;}
 });
@@ -5165,8 +5186,8 @@ document.getElementById('btn-leave-game').addEventListener('click',function(){
   });
   document.getElementById('leave-yes').addEventListener('click',function(){
     div.style.display='none';
-    if(!gameState)return; // already left
     saveUserProfile();
+    if(!gameState){cleanupFB();showScreen('title-screen');return;}
     // Only notify opponent if we're in an active PvP game
     if(gameMode==='pvp'&&enemyIdPvp){
       pushAction('opponent_left',{}); // always notify, opponent handles phase check
@@ -5221,7 +5242,7 @@ var ACHIEVEMENTS = [
   {id:'kr',cls:'ranger',tier:0,name:'Phantom Reaper',desc:'Kill 100 players as Rogue — Red Eyes unlocked',icon:'\u2020',req:function(){return getPvPKills('ranger')>=100;},levelReq:0,killAch:true,killCls:'ranger'},
   // GENERAL
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
-  {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return s&&parseInt(s)>0;},levelReq:0},
+  {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return (s&&parseInt(s)>0)||(_pvpPlayedFirebase>0);},levelReq:0},
   {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.30 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=30||getLevel('mage')>=30||getLevel('ranger')>=30;},levelReq:0},
   {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.30 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=30&&getLevel('mage')>=30&&getLevel('ranger')>=30;},levelReq:0},
   {id:'g_legend',cls:'general',tier:0,name:'Legend',desc:'Reach Lv.100 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=100||getLevel('mage')>=100||getLevel('ranger')>=100;},levelReq:0},
