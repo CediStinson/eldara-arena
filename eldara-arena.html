@@ -3309,6 +3309,21 @@ function startListeningActions() {
   var myInbox='/rooms/'+roomCode+'/inbox/'+myId;
   seenActionKeys={};
   if(actionPollInterval)clearInterval(actionPollInterval);
+  // Also poll for direct leave signal (survives room deletion)
+  var leaveSignalInterval=setInterval(function(){
+    if(!gameState){clearInterval(leaveSignalInterval);return;}
+    fbGet('/leave_signals/'+myId).then(function(d){
+      if(!d)return;
+      fbDelete('/leave_signals/'+myId);
+      if(!gameState)return;
+      var meW2=gameState.players.find(function(p){return p.isMe;});
+      if(meW2&&gameState.phase!=='gameOver')awardMatchXP(meW2.cls,true,true);
+      pvpRematchReady=false;opponentRematchReady=false;
+      hideOverlay();gameState=null;cleanupFB();
+      var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
+      showScreen('title-screen');
+    }).catch(function(){});
+  },500);
   actionPollInterval=setInterval(function(){
     if(!gameState)return;
     fbGet(myInbox).then(function(data){
@@ -3351,13 +3366,14 @@ function startListeningLobbyChat() {
 
 function cleanupFB() {
   if(actionPollInterval){clearInterval(actionPollInterval);actionPollInterval=null;}
-  if(esEnemy){esEnemy.close();esEnemy=null;}
-  if(esActions){esActions.close();esActions=null;}
-  if(esGuest){esGuest.close();esGuest=null;}
-  if(esMatchStart){esMatchStart.close();esMatchStart=null;}
-  if(esChat){esChat.close();esChat=null;}
-  if(roomCode)fbDelete('/rooms/'+roomCode+'/inbox/'+myId);
-  if(isHost&&roomCode)fbDelete('/rooms/'+roomCode);
+  if(esEnemy){try{esEnemy();}catch(e){}esEnemy=null;}
+  if(esActions){try{esActions();}catch(e){}esActions=null;}
+  if(esGuest){try{esGuest();}catch(e){}esGuest=null;}
+  if(esMatchStart){try{esMatchStart();}catch(e){}esMatchStart=null;}
+  if(esChat){try{esChat();}catch(e){}esChat=null;}
+  fbDelete('/rooms/'+roomCode+'/inbox/'+myId);
+  // Delay room deletion so opponent can read any final messages
+  if(isHost&&roomCode){var rc=roomCode;setTimeout(function(){fbDelete('/rooms/'+rc);},2000);}
 }
 
 function genCode(){return Math.random().toString(36).substring(2,8).toUpperCase();}
@@ -4204,8 +4220,13 @@ document.getElementById('ov-menu').addEventListener('click',function(){
   var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
   if(gameMode==='pvp'&&enemyIdPvp){
     pushAction('opponent_left',{});
+    // Also write to a direct leave signal path as backup
+    fbSet('/leave_signals/'+enemyIdPvp,{from:myId,ts:Date.now()});
+    gameState=null;
+    setTimeout(function(){fbDelete('/leave_signals/'+enemyIdPvp);cleanupFB();showScreen('title-screen');},800);
+  } else {
+    gameState=null;cleanupFB();showScreen('title-screen');
   }
-  gameState=null;cleanupFB();showScreen('title-screen');
 });
 
 // Chat
@@ -5175,17 +5196,22 @@ document.getElementById('btn-leave-game').addEventListener('click',function(){
     div.style.display='none';
     saveUserProfile();
     if(!gameState){cleanupFB();showScreen('title-screen');return;}
-    // Only notify opponent if we're in an active PvP game
     if(gameMode==='pvp'&&enemyIdPvp){
-      pushAction('opponent_left',{}); // always notify, opponent handles phase check
+      pushAction('opponent_left',{});
+      fbSet('/leave_signals/'+enemyIdPvp,{from:myId,ts:Date.now()});
+      var meL=gameState.players.find(function(p){return p.isMe;});
+      if(meL) awardMatchXP(meL.cls,false,true);
+      gameState=null;
+      var pt3=document.getElementById('pregame-timer');if(pt3)pt3.style.opacity='0';
+      hideOverlay();
+      setTimeout(function(){fbDelete('/leave_signals/'+enemyIdPvp);cleanupFB();showScreen('title-screen');},800);
+    } else {
+      var meL=gameState.players.find(function(p){return p.isMe;});
+      if(meL) awardMatchXP(meL.cls,false,false);
+      gameState=null;cleanupFB();
+      var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
+      hideOverlay();showScreen('title-screen');
     }
-    // Award XP for leaving (loss)
-    var meL=gameState.players.find(function(p){return p.isMe;});
-    if(meL) awardMatchXP(meL.cls,false,gameMode==='pvp');
-    gameState=null;cleanupFB();
-    var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
-    hideOverlay();
-    showScreen('title-screen');
   });
 })();
 
