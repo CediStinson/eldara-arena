@@ -200,14 +200,14 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div id="title-spell-panel"></div>
     <div class="menu-list">
       <button class="menu-btn primary" id="btn-pvp">&#9876; Online PvP</button>
-      <button class="menu-btn" id="btn-train">&#128481; Training</button>
+      <button class="menu-btn" id="btn-train" style="color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.25)">&#128481; Training</button>
     </div>
   </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);letter-spacing:2px;white-space:nowrap">by Benjamin Siedler 2026</div>
 
-  <button id="btn-achievements" style="position:absolute;top:50%;left:16px;transform:translateY(-50%);background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:3px" title="Achievements">ACHIEVEMENTS</button>
-  <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
-  <button id="btn-settings" style="position:absolute;top:46px;right:16px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Settings">SETTINGS</button>
+  <button id="btn-achievements" style="position:absolute;top:50%;left:16px;transform:translateY(-50%);background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:3px" title="Achievements">ACHIEVEMENTS</button>
+  <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
+  <button id="btn-settings" style="position:absolute;top:46px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Settings">SETTINGS</button>
   <!-- Achievements overlay -->
   <div id="ach-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:85;flex-direction:column;font-family:Courier New,monospace">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border)">
@@ -302,7 +302,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <div style="font-size:10px;color:var(--dim);letter-spacing:1px;min-height:14px" id="queue-status"></div>
   <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:1px" id="online-count"></div>
-  <button class="menu-btn" id="setup-back" style="width:260px;font-size:13px">&#8592; BACK</button>
+  <button class="menu-btn" id="setup-back" style="width:260px;font-size:13px;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.25)">&#8592; BACK</button>
 </div>
 
 <!-- LOBBY -->
@@ -385,7 +385,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <div id="conn-bar">OFFLINE</div>
   <div id="profile-badge"></div>
-  <button id="btn-leave-game" style="position:absolute;top:8px;right:12px;background:rgba(10,8,20,0.85);border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:5px 10px;cursor:pointer;text-transform:uppercase;z-index:60">LEAVE</button>
+  <button id="btn-leave-game" style="position:absolute;top:8px;right:12px;background:rgba(10,8,20,0.85);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:5px 10px;cursor:pointer;text-transform:uppercase;z-index:60">LEAVE</button>
 
 
 <div id="debug-panel" style="display:none">DEBUG</div>
@@ -5534,7 +5534,7 @@ document.getElementById('btn-achievements').addEventListener('click',function(){
   ACHIEVEMENTS.forEach(function(ach){if(ach.req())seen[ach.id]=true;});
   saveSeenAchs(seen);
   var btn=document.getElementById('btn-achievements');
-  if(btn){btn.style.borderColor='';btn.style.color='';btn.style.boxShadow='';btn.style.animation='';}
+  if(btn){btn.style.borderColor='rgba(255,255,255,0.25)';btn.style.color='rgba(255,255,255,0.7)';btn.style.boxShadow='';btn.style.animation='';}
   var ov=document.getElementById('ach-overlay');
   ov.style.display='flex';
   renderAchievements('all');
