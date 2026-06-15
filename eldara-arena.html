@@ -495,15 +495,17 @@ function loadUserProfile() {
   }).then(function(data) {
     ['warrior','mage','ranger'].forEach(function(cls) {
       var fbData = data && data[cls];
-      var localRaw = localStorage.getItem('eldara_cls_' + cls);
+      // Always use UID-keyed localStorage to avoid cross-account contamination
+      var localRaw = localStorage.getItem('eldara_cls_'+authUid+'_'+cls) || localStorage.getItem('eldara_cls_' + cls);
       var localData = localRaw ? JSON.parse(localRaw) : null;
       if (fbData && (!localData || (fbData.level||0) >= (localData.level||0))) {
-        // Firebase has same or better data — use it
-        try { localStorage.setItem('eldara_cls_' + cls, JSON.stringify(fbData)); } catch(e) {}
-      } else if (localData && localData.level > 1) {
-        // Local has progress Firebase doesn't — push it up
-        fbSetAuth('/users/' + authUid + '/classes/' + cls, localData).catch(function(){});
+        // Firebase has same or better data — use it and store under UID key
+        try { localStorage.setItem('eldara_cls_'+authUid+'_'+cls, JSON.stringify(fbData)); } catch(e) {}
+      } else if (fbData) {
+        // Firebase has data, use it
+        try { localStorage.setItem('eldara_cls_'+authUid+'_'+cls, JSON.stringify(fbData)); } catch(e) {}
       }
+      // Never push local data to a fresh account — only sync if Firebase already has something
     });
     showScreen('title-screen');
     updateProfileBadge();
@@ -537,7 +539,7 @@ function saveUserProfile() {
   if (!authUid || isGuest) return;
   var classes = {};
   ['warrior','mage','ranger'].forEach(function(cls) {
-    try { classes[cls] = JSON.parse(localStorage.getItem('eldara_cls_'+cls)||'{}'); } catch(e) {}
+    try { var lk=authUid?'eldara_cls_'+authUid+'_'+cls:'eldara_cls_'+cls; classes[cls] = JSON.parse(localStorage.getItem(lk)||localStorage.getItem('eldara_cls_'+cls)||'{}'); } catch(e) {}
   });
   fbPatchAuth('/users/' + authUid + '/profile', {
     displayName: displayName,
@@ -4957,7 +4959,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
 // ══ XP & TIER SYSTEM ══
 
 function getClassData(cls) {
-  try { return JSON.parse(localStorage.getItem('eldara_cls_'+cls)||'{}'); }
+  try { var k=authUid?'eldara_cls_'+authUid+'_'+cls:'eldara_cls_'+cls; return JSON.parse(localStorage.getItem(k)||localStorage.getItem('eldara_cls_'+cls)||'{}'); }
   catch(e){return {};}
 }
 function getGamesPlayed(cls){var d=getClassData(cls);return d.games||0;}
@@ -5019,7 +5021,7 @@ function isRedEyesUnlocked(cls){
   return getPvPKills(cls)>=100;
 }
 function saveClassData(cls, data) {
-  try { localStorage.setItem('eldara_cls_'+cls, JSON.stringify(data)); } catch(e){}
+  try { var k=authUid?'eldara_cls_'+authUid+'_'+cls:'eldara_cls_'+cls; localStorage.setItem(k, JSON.stringify(data)); } catch(e){}
   // Also sync to Firebase if logged in
   if (authUid && !isGuest) {
     fbSetAuth('/users/'+authUid+'/classes/'+cls, data).catch(function(){});
