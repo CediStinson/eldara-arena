@@ -296,7 +296,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div id="name-input-wrap" style="display:none"><input id="x-compat"></div>
   <div id="class-info-panel" style="display:none"></div>
   <div id="char-cards" style="display:none"></div>
-  <button class="menu-btn primary" id="setup-confirm" style="width:260px;margin-top:4px;font-size:15px">ENTER ARENA</button>
+  <button class="menu-btn primary" id="setup-confirm" style="width:260px;margin-top:4px;font-size:15px">FIGHT A FRIEND</button>
   <div style="display:flex;align-items:center;gap:10px;width:260px">
     <button class="menu-btn" id="btn-joinqueue" style="flex:1;font-size:12px;letter-spacing:2px;border-color:rgba(232,184,75,0.4)">&#9654; JOIN QUEUE</button>
   </div>
@@ -2645,7 +2645,7 @@ function draw(gs) {
       gctx.save();
       gctx.translate(p.x,p.y);
       if(p.dir!==2)gctx.scale(-1,1);
-      var CS=2,crow=-18; // sprite-relative — sits on top of head
+      var CS=1,crow=-22; // sprite-relative — sits on top of head, half width
       // Crown base band
       gctx.fillStyle='#c8781a';gctx.fillRect(-8*CS,crow,16*CS,3*CS);
       gctx.fillStyle='#d4883a';gctx.fillRect(-8*CS,crow,16*CS,CS);
@@ -5515,8 +5515,8 @@ function checkNewAchievements(){
     btn.style.boxShadow='0 0 12px rgba(232,184,75,0.8), 0 0 24px rgba(232,184,75,0.4)';
     btn.style.animation='achPulse 1.2s ease-in-out infinite';
   } else {
-    btn.style.borderColor='';
-    btn.style.color='';
+    btn.style.borderColor='rgba(255,255,255,0.25)';
+    btn.style.color='rgba(255,255,255,0.7)';
     btn.style.boxShadow='';
     btn.style.animation='';
   }
