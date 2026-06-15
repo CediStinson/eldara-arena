@@ -3289,23 +3289,12 @@ function processAction(msg,gs,me,en) {
     },1200);
   } else if(msg.type==='opponent_left'){
     var meW=gs.players.find(function(p){return p.isMe;});
-    if(gs.phase==='gameOver'){
-      // Opponent left from end screen — just go to menu
-      hideOverlay();gameState=null;cleanupFB();showScreen('title-screen');
-      return;
-    } else {
-      gs.phase='gameOver';
-      if(meW)awardMatchXP(meW.cls,true,true);
-      showBanner('Opponent left!');
-      setTimeout(function(){
-        document.getElementById('ov-rematch').style.display='none';
-        showOverlay('VICTORY','Opponent disconnected.');
-      },1200);
-    } if(false){
-      document.getElementById('ov-rematch').style.display='none';
-      var st=document.getElementById('ov-rematch-status');
-      if(st){st.style.display='block';st.textContent='Opponent left.';}
-    }
+    // Always go to title — no point staying in game alone
+    if(gs.phase!=='gameOver'&&meW) awardMatchXP(meW.cls,true,true);
+    pvpRematchReady=false;opponentRematchReady=false;
+    hideOverlay();gameState=null;cleanupFB();
+    var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
+    showScreen('title-screen');
   }
 }
 
@@ -4211,14 +4200,12 @@ document.querySelectorAll('.ov-cls-btn').forEach(function(b){
 document.getElementById('ov-menu').addEventListener('click',function(){
   saveUserProfile();
   pvpRematchReady=false;opponentRematchReady=false;
-  gameState=null;hideOverlay();
+  hideOverlay();
   var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
   if(gameMode==='pvp'&&enemyIdPvp){
     pushAction('opponent_left',{});
-    setTimeout(function(){cleanupFB();showScreen('title-screen');},300);
-  } else {
-    cleanupFB();showScreen('title-screen');
   }
+  gameState=null;cleanupFB();showScreen('title-screen');
 });
 
 // Chat
@@ -5416,7 +5403,7 @@ showScreen = function(id) {
 };
 
 document.getElementById('lob-back').addEventListener('click',function(){clearUrlCode();_lobbyShown=false;});
-document.getElementById('ov-menu').addEventListener('click',function(){clearUrlCode();_lobbyShown=false;});
+// ov-menu handled above
 
 // On load: check for ?join=CODE in URL and auto-fill join form
 (function(){
