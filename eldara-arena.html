@@ -1966,7 +1966,8 @@ function doMoveAbility(gs,user,target) {
     user.rollInv=true;setTimeout(function(){user.rollInv=false;},200);
     spawnEfx(gs,'blink',user.x,user.y);
     // Spawn doppelganger at blink destination
-    if(gs.dopps){
+    // Only spawn dopp for local player — remote dopp comes via 'dopp' action
+    if(gs.dopps&&user.isMe){
       var dAngle=Math.random()*Math.PI*2;
       gs.dopps.push({
         x:user.x,y:user.y,
@@ -1975,9 +1976,9 @@ function doMoveAbility(gs,user,target) {
         vx:Math.cos(dAngle)*1.2,vy:Math.sin(dAngle)*1.2,
         dir:user.dir,anim:0,
         life:3000,maxLife:3000,
-        isMe:user.isMe
+        isMe:true
       });
-      if(user.isMe&&gameMode==='pvp')pushAction('dopp',{x:Math.round(user.x),y:Math.round(user.y),dir:user.dir,level:user.level||1});
+      if(gameMode==='pvp')pushAction('dopp',{x:Math.round(user.x),y:Math.round(user.y),dir:user.dir,level:user.level||1});
     }
     // Mage arcane shield on blink
 
@@ -2672,7 +2673,7 @@ function draw(gs) {
       }
     }
     // Fireball charge bar (mage only, while charging)
-    if(p.isMe&&p.cls==='mage'&&p.fireballCharging&&p.fireballCharge>0){
+    if(p.cls==='mage'&&p.fireballCharging&&p.fireballCharge>0){
       gctx.globalAlpha=1;
       var chargeRatio=p.fireballCharge/1500;
       var barW=48,barX=p.x-24,barY=p.y-72;
@@ -3188,7 +3189,7 @@ function processAction(msg,gs,me,en) {
         type:en.cls==='mage'?'fireball':'arrow',
         x:enPos1.x,y:enPos1.y,
         vx:Math.cos(a2)*sk1r.speed,vy:Math.sin(a2)*sk1r.speed,
-        dmg:sk1r.dmg,dot:sk1r.dot||0,dotDur:sk1r.dotDur||0,
+        dmg:sp1.chargedDmg||sk1r.dmg,dot:sk1r.dot||0,dotDur:sk1r.dotDur||0,
         range:sk1r.range,traveled:0,alive:true,anim:0});
     } else if(sk1r.stun&&sdist1<sk1r.range+20){
       var dmg1=sk1r.dmg;
