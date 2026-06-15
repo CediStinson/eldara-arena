@@ -4075,13 +4075,10 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   iAmHost=(myId===hostId)||isHost;
   if(!iAmHost&&hostId){enemyIdPvp=hostId;}
   var meClass=myClass||'warrior';
-  // Randomize spawn sides — host picks randomly, guest gets the other
-  var hostGetsP1=Math.random()<0.5;
+  // Use pvpSpawnFlip (shared between host/guest via matchmade data)
+  var hostGetsP1=pvpSpawnFlip;
   var mySpawn=iAmHost?(hostGetsP1?arena.sp1:arena.sp2):(hostGetsP1?arena.sp2:arena.sp1);
   var enSpawn=iAmHost?(hostGetsP1?arena.sp2:arena.sp1):(hostGetsP1?arena.sp1:arena.sp2);
-  // Spawn side: use timestamp-based seed that host sends to guest via matchStart
-  // For initial game: use random, store in Firebase matchStart
-  var hostGetsP1Shared=pvpSpawnFlip;
   var me=mkPlayer(myId,meClass,myName||'Player',mySpawn,true);
   me.redEyes=hasRedEyes(meClass);
   var enId=iAmHost?enemyIdPvp:hostId;
@@ -4190,15 +4187,15 @@ document.querySelectorAll('.ov-cls-btn').forEach(function(b){
 
 document.getElementById('ov-menu').addEventListener('click',function(){
   saveUserProfile();
+  pvpRematchReady=false;opponentRematchReady=false;
+  gameState=null;hideOverlay();
   var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
   if(gameMode==='pvp'&&enemyIdPvp){
-    // Tell opponent we left so they go back to lobby
     pushAction('opponent_left_lobby',{roomCode:roomCode});
-    setTimeout(function(){cleanupFB();showScreen('title-screen');},400);
+    setTimeout(function(){cleanupFB();showScreen('title-screen');},300);
   } else {
     cleanupFB();showScreen('title-screen');
   }
-  gameState=null;hideOverlay();
 });
 
 // Chat
