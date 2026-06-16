@@ -204,6 +204,14 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     </div>
   </div>
   <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);letter-spacing:2px;white-space:nowrap">by Benjamin Siedler 2026</div>
+  <!-- Daily Quests Panel -->
+  <div style="position:absolute;bottom:20px;left:20px;width:220px;background:rgba(6,4,14,0.88);border:1px solid rgba(80,60,120,0.35);padding:12px 14px;font-family:'Courier New',monospace;z-index:20">
+    <div style="font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between">
+      <span>DAILY QUESTS</span>
+      <span id="quest-reset-time" style="font-size:8px;color:rgba(255,255,255,0.2)"></span>
+    </div>
+    <div id="daily-quests"></div>
+  </div>
 
   <button id="btn-achievements" style="position:absolute;top:50%;left:16px;transform:translateY(-50%);background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:3px" title="Achievements">ACHIEVEMENTS</button>
   <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
@@ -511,6 +519,7 @@ function loadUserProfile() {
     updateProfileBadge();
     registerOnline();
     loadPvpPlayed();
+    loadQuests();
     setTimeout(function(){
       // On very first login, seed all current achievements as seen (no false glow)
       var seen=loadSeenAchs();
@@ -533,6 +542,8 @@ function loadPvpPlayed(){
   fbGet('/users/'+authUid+'/pvpPlayed').then(function(n){
     if(n)_pvpPlayedFirebase=parseInt(n)||0;
   }).catch(function(){});
+  fbGet('/users/'+authUid+'/pvpStreak').then(function(n){if(n)pvpWinStreak=parseInt(n)||0;}).catch(function(){});
+  fbGet('/users/'+authUid+'/bestStreak').then(function(n){if(n)pvpBestStreak=parseInt(n)||0;}).catch(function(){});
 }
 
 function saveUserProfile() {
@@ -1666,14 +1677,7 @@ var _redEyesActive=false;
 // ═══════════════════════════════════════════
 var TILE=48, AW=16, AH=12;
 var ARENAS = {
-  crypt:{name:'The Crypt',sp1:{x:2,y:5},sp2:{x:13,y:5},tiles:[
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,3,0,0,0,0,0,0,3,0,0,0,1],[1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],
-    [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],[1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],
-    [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],[1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
-    [1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1],[1,0,0,0,3,0,0,0,0,0,0,3,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  volcano:{name:'Volcanic Rift',sp1:{x:1,y:6},sp2:{x:13,y:4},tiles:[
+  volcano:{name:'Volcanic Rift',sp1:{x:1,y:5},sp2:{x:14,y:3},tiles:[
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,2,0,0,0,0,1,1,0,0,0,0,0,1],
     [1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
@@ -1686,48 +1690,325 @@ var ARENAS = {
     [1,0,0,1,0,0,0,1,2,2,2,2,0,0,0,1],
     [1,0,0,0,0,0,1,1,2,2,2,2,2,2,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  maze:{name:'Runic Maze',sp1:{x:1,y:5},sp2:{x:14,y:5},tiles:[
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
-    [1,0,1,1,0,0,1,0,0,1,0,0,1,1,0,1],[1,0,1,0,0,3,0,0,0,0,3,0,0,1,0,1],
-    [1,0,1,0,1,1,0,0,0,0,1,1,0,1,0,1],[1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],[1,0,1,0,1,1,0,0,0,0,1,1,0,1,0,1],
-    [1,0,1,0,0,3,0,0,0,0,3,0,0,1,0,1],[1,0,1,1,0,0,1,0,0,1,0,0,1,1,0,1],
-    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  desert:{name:'Desert Colosseum',sp1:{x:2,y:5},sp2:{x:13,y:5},tiles:[
+
+  desert:{name:'Desert Colosseum',sp1:{x:1,y:5},sp2:{x:14,y:5},tiles:[
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
+    [1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1],
+    [1,1,0,0,7,0,0,0,0,0,0,7,0,0,1,1],
+    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
+    [1,0,7,0,0,0,0,0,0,0,0,0,0,7,0,1],
     [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
-    [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
-    [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],
-    [1,0,0,0,0,0,4,0,0,4,0,0,0,0,0,1],
-    [1,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1],
     [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
-    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,7,0,0,0,0,0,0,0,0,0,0,7,0,1],
+    [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
+    [1,1,0,0,7,0,0,0,0,0,0,7,0,0,1,1],
+    [1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  temple:{name:'Shadow Temple',sp1:{x:1,y:1},sp2:{x:14,y:10},tiles:[
+  temple:{name:'Shadow Temple',sp1:{x:1,y:0},sp2:{x:14,y:9},tiles:[
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
     [1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],
-    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
     [1,0,1,1,1,1,0,0,0,0,1,1,1,1,0,1],
     [1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,4,4,0,0,0,0,0,0,1],
     [1,0,1,1,1,1,0,0,0,0,1,1,1,1,0,1],
-    [1,0,1,0,0,0,0,3,3,0,0,0,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
     [1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],
     [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]}
 };
-var ARENA_KEYS = ['crypt','volcano','maze','desert','temple'];
+var ARENA_KEYS = ['volcano','desert','temple'];
 
-function drawArena(ctx, arena, tick) {
+
+// ═══════════════════════════════════════════
+// DAILY QUEST SYSTEM
+// ═══════════════════════════════════════════
+
+var QUEST_POOL = {
+  warrior: [
+    {id:'w_wins',name:'Iron Will',desc:'Win 3 matches as Warrior',xp:60,
+     check:function(d){return(d.wins||0)>=3;},
+     track:function(d,evt,val){if(evt==='win'&&val==='warrior')d.wins=(d.wins||0)+1;}},
+    {id:'w_kills',name:'Blood & Iron',desc:'Kill 3 opponents as Warrior',xp:60,
+     check:function(d){return(d.kills||0)>=3;},
+     track:function(d,evt,val){if(evt==='kill'&&val==='warrior')d.kills=(d.kills||0)+1;}},
+    {id:'w_warcry',name:'Battle Cry',desc:'Use War Cry 8 times',xp:45,
+     check:function(d){return(d.uses||0)>=8;},
+     track:function(d,evt,val){if(evt==='skill_j'&&val==='warrior')d.uses=(d.uses||0)+1;}},
+    {id:'w_charge',name:'Rampage',desc:'Perform 5 War Charges',xp:45,
+     check:function(d){return(d.uses||0)>=5;},
+     track:function(d,evt,val){if(evt==='skill_space'&&val==='warrior')d.uses=(d.uses||0)+1;}},
+    {id:'w_stun',name:'Stunlock',desc:'Kill an opponent while they are stunned',xp:80,
+     check:function(d){return(d.done||0)>=1;},
+     track:function(d,evt,val){if(evt==='kill_stunned'&&val==='warrior')d.done=1;}},
+    {id:'w_shield',name:'Shield Wall',desc:'Block 3 hits with Shield Bash in a single match',xp:55,
+     check:function(d){return(d.done||0)>=1;},
+     track:function(d,evt,val){if(evt==='shield_triple'&&val==='warrior')d.done=1;}},
+    {id:'w_pvp',name:'Arena Champion',desc:'Win 2 PvP matches as Warrior',xp:90,
+     check:function(d){return(d.wins||0)>=2;},
+     track:function(d,evt,val){if(evt==='pvp_win'&&val==='warrior')d.wins=(d.wins||0)+1;}},
+  ],
+  mage: [
+    {id:'m_wins',name:'Arcane Scholar',desc:'Win 3 matches as Mage',xp:60,
+     check:function(d){return(d.wins||0)>=3;},
+     track:function(d,evt,val){if(evt==='win'&&val==='mage')d.wins=(d.wins||0)+1;}},
+    {id:'m_fireball',name:'Full Charge',desc:'Hit an opponent with a fully charged Fireball 3 times',xp:75,
+     check:function(d){return(d.hits||0)>=3;},
+     track:function(d,evt,val){if(evt==='full_fireball'&&val==='mage')d.hits=(d.hits||0)+1;}},
+    {id:'m_blink',name:'Phase Walk',desc:'Blink 10 times',xp:40,
+     check:function(d){return(d.uses||0)>=10;},
+     track:function(d,evt,val){if(evt==='blink'&&val==='mage')d.uses=(d.uses||0)+1;}},
+    {id:'m_frost',name:'Frozen Solid',desc:'Freeze 5 opponents with Frost Shield reflection',xp:65,
+     check:function(d){return(d.hits||0)>=5;},
+     track:function(d,evt,val){if(evt==='frost_reflect'&&val==='mage')d.hits=(d.hits||0)+1;}},
+    {id:'m_pvp',name:'Spellblade',desc:'Win 2 PvP matches as Mage',xp:90,
+     check:function(d){return(d.wins||0)>=2;},
+     track:function(d,evt,val){if(evt==='pvp_win'&&val==='mage')d.wins=(d.wins||0)+1;}},
+    {id:'m_iceshard',name:'Frost Barrage',desc:'Hit with 20 Ice Shards',xp:45,
+     check:function(d){return(d.hits||0)>=20;},
+     track:function(d,evt,val){if(evt==='proj_hit'&&val==='mage')d.hits=(d.hits||0)+1;}},
+    {id:'m_kill',name:'Arcane Execution',desc:'Kill 3 opponents as Mage',xp:60,
+     check:function(d){return(d.kills||0)>=3;},
+     track:function(d,evt,val){if(evt==='kill'&&val==='mage')d.kills=(d.kills||0)+1;}},
+  ],
+  ranger: [
+    {id:'r_wins',name:'Shadow Kin',desc:'Win 3 matches as Rogue',xp:60,
+     check:function(d){return(d.wins||0)>=3;},
+     track:function(d,evt,val){if(evt==='win'&&val==='ranger')d.wins=(d.wins||0)+1;}},
+    {id:'r_stealth',name:'Phantom Strike',desc:'Use Shadow Step out of Stealth 5 times',xp:70,
+     check:function(d){return(d.uses||0)>=5;},
+     track:function(d,evt,val){if(evt==='shadow_step_stealth'&&val==='ranger')d.uses=(d.uses||0)+1;}},
+    {id:'r_sneak',name:'Backstabber',desc:'Land 5 Stealth first-hit attacks',xp:65,
+     check:function(d){return(d.hits||0)>=5;},
+     track:function(d,evt,val){if(evt==='sneak_hit'&&val==='ranger')d.hits=(d.hits||0)+1;}},
+    {id:'r_pvp',name:'Death From Shadows',desc:'Win 2 PvP matches as Rogue',xp:90,
+     check:function(d){return(d.wins||0)>=2;},
+     track:function(d,evt,val){if(evt==='pvp_win'&&val==='ranger')d.wins=(d.wins||0)+1;}},
+    {id:'r_headbutt',name:'Hard Head',desc:'Stun opponents with Headbutt 6 times',xp:50,
+     check:function(d){return(d.uses||0)>=6;},
+     track:function(d,evt,val){if(evt==='headbutt_stun'&&val==='ranger')d.uses=(d.uses||0)+1;}},
+    {id:'r_kill',name:'Contract Fulfilled',desc:'Kill 3 opponents as Rogue',xp:60,
+     check:function(d){return(d.kills||0)>=3;},
+     track:function(d,evt,val){if(evt==='kill'&&val==='ranger')d.kills=(d.kills||0)+1;}},
+    {id:'r_invis',name:'Ghost',desc:'Spend 30 seconds total in Stealth',xp:55,
+     check:function(d){return(d.secs||0)>=30;},
+     track:function(d,evt,val){if(evt==='stealth_sec'&&val==='ranger')d.secs=(d.secs||0)+1;}},
+  ]
+};
+
+// Get today's quest date key (resets at 04:00 CEST = 02:00 UTC)
+function getQuestDateKey(){
+  var now=new Date();
+  var utc=now.getTime()+now.getTimezoneOffset()*60000;
+  var cest=new Date(utc+2*3600000); // CEST = UTC+2
+  if(cest.getHours()<4){cest.setDate(cest.getDate()-1);} // before 04:00 = yesterday's quests
+  return cest.getFullYear()+'-'+(cest.getMonth()+1)+'-'+cest.getDate();
+}
+
+// Pick today's 3 quests (1 per class) deterministically from date
+function getTodaysQuests(){
+  var key=getQuestDateKey();
+  var seed=0;for(var i=0;i<key.length;i++)seed=(seed*31+key.charCodeAt(i))&0xffffffff;
+  function pick(arr,s){return arr[Math.abs(s)%arr.length];}
+  return {
+    warrior:pick(QUEST_POOL.warrior,seed),
+    mage:pick(QUEST_POOL.mage,seed>>4),
+    ranger:pick(QUEST_POOL.ranger,seed>>8)
+  };
+}
+
+var _todaysQuests=null;
+var _questProgress={};
+var _questDateKey='';
+
+function loadQuests(){
+  _todaysQuests=getTodaysQuests();
+  _questDateKey=getQuestDateKey();
+  // Load progress from localStorage
+  try{
+    var saved=JSON.parse(localStorage.getItem('eldara_quest_'+_questDateKey)||'{}');
+    _questProgress=saved;
+  }catch(e){_questProgress={};}
+  // Clear old quest data
+  try{
+    var keys=Object.keys(localStorage);
+    keys.forEach(function(k){if(k.startsWith('eldara_quest_')&&k!=='eldara_quest_'+_questDateKey)localStorage.removeItem(k);});
+  }catch(e){}
+}
+
+function saveQuestProgress(){
+  try{localStorage.setItem('eldara_quest_'+_questDateKey,JSON.stringify(_questProgress));}catch(e){}
+}
+
+function trackQuestEvent(evt,cls){
+  if(!_todaysQuests)return;
+  ['warrior','mage','ranger'].forEach(function(c){
+    var q=_todaysQuests[c];
+    if(!q)return;
+    var d=_questProgress[c]=_questProgress[c]||{};
+    if(d._done)return; // already completed
+    q.track(d,evt,cls||myClass);
+    if(q.check(d)&&!d._done){
+      d._done=true;
+      saveQuestProgress();
+      // Award bonus XP
+      var xpCls=c; // award to the class the quest was for
+      addXP(xpCls,q.xp);
+      showBanner('QUEST COMPLETE! +'+q.xp+' XP');
+      setTimeout(function(){renderDailyQuests();},100);
+      checkNewAchievements();
+    }
+  });
+  saveQuestProgress();
+  renderDailyQuests();
+}
+
+function getQuestProgressText(cls){
+  if(!_todaysQuests)return '';
+  var q=_todaysQuests[cls];
+  var d=_questProgress[cls]||{};
+  if(d._done)return 'DONE ✓';
+  var val=d.wins||d.kills||d.uses||d.hits||d.secs||0;
+  var target=q.desc.match(/\d+/);
+  if(target)return val+'/'+target[0]; // always show, even 0/3
+  return '';
+}
+
+function renderDailyQuests(){
+  var el=document.getElementById('daily-quests');
+  if(!el||!_todaysQuests)return;
+  var clses=['warrior','mage','ranger'];
+  var colors={warrior:'#8a6a20',mage:'#6040c0',ranger:'#8a4a10'};
+  var icons={warrior:'⚔',mage:'🔮',ranger:'🗡'};
+  el.innerHTML=clses.map(function(cls){
+    var q=_todaysQuests[cls];
+    var d=_questProgress[cls]||{};
+    var done=d._done;
+    var prog=getQuestProgressText(cls);
+    var col=done?'rgba(40,160,60,0.8)':colors[cls];
+    return '<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);opacity:'+(done?0.6:1)+'">'
+      +'<div style="font-size:10px;margin-top:1px">'+(done?'✓':'○')+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:9px;color:'+col+';letter-spacing:1px;font-weight:bold">'+q.name+'</div>'
+      +'<div style="font-size:8px;color:rgba(255,255,255,0.55);line-height:1.4">'+q.desc+'</div>'
+      +'</div>'
+      +'<div style="text-align:right;white-space:nowrap">'
+      +(prog?'<div style="font-size:8px;color:rgba(255,255,255,0.4)">'+prog+'</div>':'')
+      +'<div style="font-size:8px;color:rgba(232,184,75,0.7)">+'+q.xp+'xp</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+  function drawFloorSkull(ctx,sx,sy,alpha,variant){
+    // Dirt/age layer drawn first, under skull
+    ctx.fillStyle='rgba(60,40,20,0.18)';
+    ctx.beginPath();ctx.ellipse(sx,sy+6,12,4,0.2,0,Math.PI*2);ctx.fill(); // ground shadow
+    ctx.fillStyle='rgba(80,55,25,0.12)';
+    ctx.beginPath();ctx.ellipse(sx-2,sy+2,10,8,0,0,Math.PI*2);ctx.fill(); // dirt stain
+    var a=alpha||0.55;
+    // Aged, dirty skull — yellowed, grime-stained
+    var c1='rgba(195,180,140,'+a+')', c2='rgba(155,138,100,'+(a*0.75)+')', c3='rgba(100,85,60,'+(a*0.5)+')';
+    // Skulls sized to match player head ~8-10px wide (S=3, head ~3 units)
+    if(variant===0){
+      // Front-facing skull — cranium r=9, jaw below
+      ctx.fillStyle=c1;ctx.beginPath();ctx.arc(sx,sy-4,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=c3;ctx.beginPath();ctx.arc(sx+3,sy-6,4,0,Math.PI*2);ctx.fill(); // highlight
+      ctx.fillStyle=c2;ctx.fillRect(sx-6,sy+4,13,7); // jaw
+      ctx.fillStyle=c3;ctx.fillRect(sx-6,sy+9,13,2); // jaw bottom shadow
+      ctx.fillStyle='rgba(15,10,8,'+(a*0.92)+')'; // eye sockets
+      ctx.beginPath();ctx.arc(sx-4,sy-4,3,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(sx+4,sy-4,3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(40,30,20,'+(a*0.5)+')'; // nose cavity
+      ctx.beginPath();ctx.arc(sx,sy+1,1.5,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(15,10,8,'+(a*0.7)+')'; // teeth
+      for(var ti=-3;ti<=3;ti+=2){ctx.fillRect(sx+ti*1.5-0.5,sy+5,1.5,3);}
+    } else if(variant===1){
+      // 3/4 view skull
+      ctx.fillStyle=c1;ctx.beginPath();ctx.arc(sx-1,sy-4,9,Math.PI*0.1,Math.PI*1.9);ctx.fill();
+      ctx.fillStyle=c3;ctx.beginPath();ctx.arc(sx+2,sy-7,3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=c2;ctx.fillRect(sx-5,sy+4,11,6);
+      ctx.fillStyle='rgba(15,10,8,'+(a*0.92)+')';
+      ctx.beginPath();ctx.arc(sx-2,sy-5,3,0,Math.PI*2);ctx.fill(); // main eye
+      ctx.beginPath();ctx.arc(sx+4,sy-4,2,0,Math.PI*2);ctx.fill(); // far eye smaller
+      ctx.fillStyle='rgba(15,10,8,'+(a*0.7)+')';
+      ctx.fillRect(sx-4,sy+5,2,3);ctx.fillRect(sx-1,sy+5,2,3);ctx.fillRect(sx+2,sy+5,2,3);
+      ctx.fillStyle=c3;ctx.fillRect(sx-9,sy-6,3,10); // dark back
+    } else if(variant===2){
+      // Tilted skull
+      ctx.save();ctx.translate(sx,sy);ctx.rotate(0.35);
+      ctx.fillStyle=c1;ctx.beginPath();ctx.arc(0,-4,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=c3;ctx.beginPath();ctx.arc(3,-7,3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=c2;ctx.fillRect(-6,4,13,6);
+      ctx.fillStyle='rgba(15,10,8,'+(a*0.92)+')';
+      ctx.beginPath();ctx.arc(-4,-4,3,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(4,-4,3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(15,10,8,'+(a*0.7)+')';
+      ctx.fillRect(-3,5,2,3);ctx.fillRect(0,5,2,3);ctx.fillRect(3,5,2,3);
+      ctx.restore();
+      // Crack on floor
+      ctx.strokeStyle=c3;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(sx-4,sy+10);ctx.lineTo(sx+2,sy+16);ctx.stroke();
+    } else {
+      // Cracked broken skull
+      ctx.fillStyle=c1;ctx.beginPath();ctx.arc(sx,sy-5,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=c3;ctx.beginPath();ctx.arc(sx+3,sy-8,3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=c2;ctx.fillRect(sx-5,sy+3,8,5); // partial jaw fallen off
+      ctx.fillStyle='rgba(15,10,8,'+(a*0.92)+')';
+      ctx.beginPath();ctx.arc(sx-4,sy-5,3,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(sx+4,sy-5,3,0,Math.PI*2);ctx.fill();
+      // Cracks radiating from impact
+      ctx.strokeStyle=c3;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(sx,sy-14);ctx.lineTo(sx+2,sy-6);ctx.lineTo(sx-2,sy+2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(sx-9,sy-2);ctx.lineTo(sx-3,sy-4);ctx.stroke();
+      ctx.fillStyle=c2;ctx.fillRect(sx+5,sy+4,3,2); // loose jaw fragment
+    }
+    // Grime/dirt overlay on all variants
+    ctx.fillStyle='rgba(40,28,12,'+(a*0.25)+')';
+    ctx.beginPath();ctx.ellipse(sx+2,sy+1,6,4,0.3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(20,14,5,'+(a*0.18)+')';
+    ctx.beginPath();ctx.ellipse(sx-3,sy-2,3,2,0.8,0,Math.PI*2);ctx.fill();
+    // Moss/mold patch
+    ctx.fillStyle='rgba(40,55,20,'+(a*0.22)+')';
+    ctx.beginPath();ctx.ellipse(sx+1,sy-6,4,2,0.2,0,Math.PI*2);ctx.fill();
+  }
+
+  function drawFloorBone(ctx,x1,y1,x2,y2,alpha){
+    var a=alpha||0.32;
+    var bc='rgba(200,185,160,'+a+')';
+    // Bone shaft
+    ctx.strokeStyle=bc;ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    ctx.lineWidth=1;
+    // Knuckle ends — two bumps each side
+    ctx.fillStyle=bc;
+    ctx.beginPath();ctx.arc(x1,y1,4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x1+Math.cos(Math.atan2(y2-y1,x2-x1)+0.5)*3,y1+Math.sin(Math.atan2(y2-y1,x2-x1)+0.5)*3,2.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x2,y2,4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x2+Math.cos(Math.atan2(y1-y2,x1-x2)+0.5)*3,y2+Math.sin(Math.atan2(y1-y2,x1-x2)+0.5)*3,2.5,0,Math.PI*2);ctx.fill();
+  }
+
+  function drawBloodStain(ctx,bx,by,alpha,seed){
+    var a=alpha||0.14;
+    var r=seed%3===0?'rgba(70,8,6,'+a+')':seed%3===1?'rgba(55,12,5,'+a+')':'rgba(80,15,8,'+a+')';
+    ctx.fillStyle=r;
+    // Organic blob — multiple overlapping ellipses at different angles
+    ctx.beginPath();ctx.ellipse(bx,by,14,8,seed*0.4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(bx+5,by+3,10,6,(seed+1)*0.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(bx-4,by+5,8,5,(seed+2)*0.3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=r.replace(','+a+')',',' +(a*0.6)+')');
+    ctx.beginPath();ctx.ellipse(bx+8,by-2,5,3,(seed+3)*0.6,0,Math.PI*2);ctx.fill(); // drip
+    ctx.beginPath();ctx.ellipse(bx-6,by+8,4,2,(seed+4)*0.7,0,Math.PI*2);ctx.fill(); // drip
+  }
+
+
+function drawArena(ctx, arena, tick, noSlabs) {
   var tiles=arena.tiles;
   for(var ty=0;ty<AH;ty++) {
     for(var tx=0;tx<AW;tx++) {
       var t=tiles[ty][tx], px2=tx*TILE, py2=ty*TILE;
-      var isDesert=arena.name&&arena.name.indexOf('Desert')>=0;
+      var isDesert=arena.name&&(arena.name.indexOf('Desert')>=0||arena.name.indexOf('Sand')>=0);
       var isTemple=arena.name&&arena.name.indexOf('Shadow')>=0;
       var isVolcano=arena.name&&arena.name.indexOf('Volcanic')>=0;
       if(t===1){
@@ -1763,31 +2044,236 @@ function drawArena(ctx, arena, tick) {
           // Sand grain dots
           if((tx*3+ty*7)%5===0){ctx.fillStyle='rgba(200,170,80,0.3)';ctx.fillRect(px2+8,py2+8,3,2);}
           if((tx*5+ty*3)%7===0){ctx.fillStyle='rgba(180,140,60,0.2)';ctx.fillRect(px2+20,py2+18,2,2);}
+          // Skulls on edges of tiles — various positions and types
+          if((tx*7+ty*11)%53===0){drawFloorSkull(ctx,px2+6,py2+8,0.5,(tx+ty)%4);}
+          if((tx*13+ty*7)%79===0){drawFloorSkull(ctx,px2+TILE-10,py2+TILE-10,0.45,(tx*ty)%4);}
+          // Scattered pebbles
+          if((tx*11+ty*5)%9===0){ctx.fillStyle='rgba(140,100,30,0.18)';ctx.fillRect(px2+30,py2+10,3,3);ctx.fillRect(px2+12,py2+28,2,2);}
+          // Bones — sized to player scale (~35px long)
+          if((tx*9+ty*13)%19===0){drawFloorBone(ctx,px2+8,py2+36,px2+40,py2+24,0.3);}
+          if((tx*17+ty*5)%27===0){drawFloorBone(ctx,px2+30,py2+38,px2+42,py2+18,0.28);}
+          // Organic blood stain
+          if((tx*13+ty*9)%21===0){drawBloodStain(ctx,px2+22,py2+26,0.13,tx+ty);}
         } else if(isTemple){
           ctx.fillStyle=(tx+ty)%2===0?'#14101a':'#100c16';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.strokeStyle='#1a1020';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
+          // Broken tile crack lines
+          if((tx*5+ty*9)%11===0){
+            ctx.strokeStyle='rgba(40,30,60,0.45)';ctx.lineWidth=1;
+            ctx.beginPath();ctx.moveTo(px2+8,py2+6);ctx.lineTo(px2+22,py2+18);ctx.lineTo(px2+18,py2+30);ctx.stroke();
+          }
+          // Spider webs in corners
+          if((tx*7+ty*13)%17===0){
+            var wcx=((tx+ty)%2===0)?px2:px2+TILE, wcy=((tx*ty)%2===0)?py2:py2+TILE;
+            var ws='rgba(160,155,175,0.2)';ctx.strokeStyle=ws;ctx.lineWidth=0.8;
+            // Radial strands from corner
+            var wdx=wcx===px2?1:-1, wdy=wcy===py2?1:-1;
+            for(var wi=0;wi<6;wi++){
+              var wa=wi/5*(Math.PI*0.5)+(wcx===px2?0:Math.PI*0.5)+(wcy===py2?0:Math.PI);
+              ctx.beginPath();ctx.moveTo(wcx,wcy);ctx.lineTo(wcx+Math.cos(wa)*18,wcy+Math.sin(wa)*18);ctx.stroke();
+            }
+            // Concentric arcs
+            for(var wr=5;wr<=16;wr+=5){
+              ctx.beginPath();
+              ctx.arc(wcx,wcy,wr,(wcx===px2?0:Math.PI*0.5)+(wcy===py2?0:Math.PI),(wcx===px2?0:Math.PI*0.5)+(wcy===py2?0:Math.PI)+Math.PI*0.5);
+              ctx.stroke();
+            }
+          }
+          // Skulls near tile edges
+          if((tx*13+ty*7)%61===0){drawFloorSkull(ctx,px2+5,py2+TILE-12,0.5,(tx+ty*2)%4);}
+          if((tx*11+ty*17)%83===0){drawFloorSkull(ctx,px2+TILE-8,py2+7,0.48,(tx*2+ty)%4);}
+          // Spider webs — only in the 4 true map corners (top-left, top-right, bottom-left, bottom-right)
+          var isCorner=(tx<=2&&ty<=2)||(tx>=AW-3&&ty<=2)||(tx<=2&&ty>=AH-3)||(tx>=AW-3&&ty>=AH-3);
+          var isNearCorner=(tx<=3&&ty<=3)||(tx>=AW-4&&ty<=3)||(tx<=3&&ty>=AH-4)||(tx>=AW-4&&ty>=AH-4);
+          if(isCorner&&(tx*7+ty*5)%3===0){
+            // Anchor point is always the nearest actual corner of the map
+            var wx=px2+(tx<=AW/2?TILE:0),wy=py2+(ty<=AH/2?TILE:0);
+            var wsweep=Math.PI*0.65;
+            var wbase=(tx<=AW/2?Math.PI:0)+(ty<=AH/2?Math.PI*0.5:0)-wsweep*0.5;
+            ctx.strokeStyle='rgba(195,188,175,0.22)';ctx.lineWidth=0.7;
+            var wthreads=7;
+            // Radial threads
+            for(var wi=0;wi<wthreads;wi++){
+              var wa=wbase+wi/(wthreads-1)*wsweep;
+              ctx.beginPath();ctx.moveTo(wx,wy);ctx.lineTo(wx+Math.cos(wa)*26,wy+Math.sin(wa)*26);ctx.stroke();
+            }
+            // Concentric zigzag silk rings
+            for(var wc=1;wc<=4;wc++){
+              var wd=wc*5.5;
+              ctx.beginPath();
+              for(var wi3=0;wi3<=wthreads-1;wi3++){
+                var wa3=wbase+wi3/(wthreads-1)*wsweep;
+                var jitter=(wi3%2===0?1:-1)*0.8;
+                var wsx=wx+Math.cos(wa3)*(wd+jitter),wsy=wy+Math.sin(wa3)*(wd+jitter);
+                wi3===0?ctx.moveTo(wsx,wsy):ctx.lineTo(wsx,wsy);
+              }
+              ctx.stroke();
+            }
+            // Sitting spider on web
+            if((tx+ty)%4===0){
+              var spx=wx+Math.cos(wbase+wsweep*0.5)*14,spy=wy+Math.sin(wbase+wsweep*0.5)*14;
+              ctx.fillStyle='rgba(20,15,10,0.5)';
+              ctx.beginPath();ctx.arc(spx,spy,2.5,0,Math.PI*2);ctx.fill();
+              ctx.beginPath();ctx.arc(spx,spy+3.5,1.5,0,Math.PI*2);ctx.fill();
+              ctx.strokeStyle='rgba(20,15,10,0.38)';ctx.lineWidth=0.6;
+              for(var wl=0;wl<4;wl++){var la=wl*0.55-0.8;ctx.beginPath();ctx.moveTo(spx,spy);ctx.lineTo(spx+Math.cos(la)*6,spy+Math.sin(la)*4);ctx.stroke();}
+              for(var wl2=0;wl2<4;wl2++){var la2=wl2*0.55-0.8;ctx.beginPath();ctx.moveTo(spx,spy);ctx.lineTo(spx-Math.cos(la2)*6,spy+Math.sin(la2)*4);ctx.stroke();}
+            }
+          }
+          // Moving spiders — spread across all floor tiles, denser near corners
+          var spiderChance=isNearCorner?2:7; // appear more near corners
+          if((tx*11+ty*7)%spiderChance===0){
+            // Each spider has unique path based on tile seed
+            var spSeed=tx*53+ty*37;
+            var spSpeed=0.008+spSeed%7*0.001;
+            var spPhase=spSeed*0.4;
+            var spRadius=8+spSeed%12;
+            var spCx=px2+12+spSeed%24,spCy=py2+12+spSeed%20;
+            var spAngle=tick*spSpeed+spPhase;
+            var spx2=spCx+Math.cos(spAngle)*spRadius;
+            var spy2=spCy+Math.sin(spAngle*0.7)*spRadius*0.6; // elliptical path
+            // Draw spider
+            ctx.fillStyle='rgba(18,12,8,0.48)';
+            ctx.beginPath();ctx.arc(spx2,spy2,2,0,Math.PI*2);ctx.fill();   // abdomen
+            ctx.beginPath();ctx.arc(spx2,spy2-2.5,1.4,0,Math.PI*2);ctx.fill(); // head
+            // Animated legs — pairs splay based on movement direction
+            var spDir=spAngle;
+            ctx.strokeStyle='rgba(18,12,8,0.35)';ctx.lineWidth=0.6;
+            for(var sl=0;sl<4;sl++){
+              var la3=spDir+sl*0.5-0.75;
+              var legWiggle=Math.sin(tick*0.15+sl*1.2)*1.5;
+              ctx.beginPath();ctx.moveTo(spx2,spy2);
+              ctx.lineTo(spx2+Math.cos(la3)*5,spy2+Math.sin(la3)*3+legWiggle);ctx.stroke();
+              ctx.beginPath();ctx.moveTo(spx2,spy2);
+              ctx.lineTo(spx2-Math.cos(la3)*5,spy2+Math.sin(la3)*3-legWiggle);ctx.stroke();
+            }
+            // Silk trail behind spider
+            if(spSeed%3===0){
+              ctx.strokeStyle='rgba(190,182,168,0.15)';ctx.lineWidth=0.5;
+              ctx.beginPath();
+              ctx.moveTo(spx2,spy2);
+              ctx.lineTo(spCx+Math.cos(spAngle-0.3)*spRadius,spCy+Math.sin((spAngle-0.3)*0.7)*spRadius*0.6);
+              ctx.stroke();
+            }
+          }
+          // Faded rune marks
+          if((tx*3+ty*11)%15===0){
+            ctx.strokeStyle='rgba(70,40,90,0.2)';ctx.lineWidth=1;
+            ctx.beginPath();ctx.moveTo(px2+14,py2+8);ctx.lineTo(px2+14,py2+28);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(px2+8,py2+18);ctx.lineTo(px2+22,py2+18);ctx.stroke();
+          }
+          // Bones
+          if((tx*7+ty*11)%21===0){drawFloorBone(ctx,px2+6,py2+38,px2+38,py2+20,0.3);}
+          if((tx*15+ty*9)%31===0){drawFloorBone(ctx,px2+32,py2+40,px2+44,py2+16,0.27);}
+          // Organic blood stain
+          if((tx*11+ty*7)%23===0){drawBloodStain(ctx,px2+20,py2+28,0.15,tx*2+ty);}
         } else if(isVolcano){
-          // Dark volcanic ground — black stone with faint warm undertone
           ctx.fillStyle=(tx+ty)%2===0?'#100c08':'#0c0a06';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.strokeStyle='rgba(70,20,0,0.25)';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
-          // Subtle heat shimmer crack in ground
-          if((tx*7+ty*5)%9===0){ctx.fillStyle='rgba(80,20,0,0.15)';ctx.fillRect(px2+12,py2+12,8,2);}
+          // Glowing lava cracks — thin, branching network
+          if((tx*7+ty*5)%9===0){
+            var lc1=Math.sin(tick*0.04+tx*0.7+ty*1.3)*0.3+0.7;
+            function lavaCrack(x1,y1,x2,y2,depth,lca){
+              if(depth<=0)return;
+              // Outer glow
+              ctx.strokeStyle='rgba(140,40,0,'+(lca*0.2)+')';ctx.lineWidth=depth*1.2;
+              ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+              // Hot center
+              ctx.strokeStyle='rgba(255,160,20,'+(lca*0.22)+')';ctx.lineWidth=depth*0.4;
+              ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+              if(depth>1){
+                // Branch off ~60% along crack
+                var bx=x1+(x2-x1)*0.55,by=y1+(y2-y1)*0.55;
+                var ang=Math.atan2(y2-y1,x2-x1);
+                var blen=Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))*0.55;
+                lavaCrack(bx,by,bx+Math.cos(ang+0.7)*blen*0.7,by+Math.sin(ang+0.7)*blen*0.7,depth-1,lca*0.8);
+                if(depth>2)lavaCrack(bx,by,bx+Math.cos(ang-0.5)*blen*0.5,by+Math.sin(ang-0.5)*blen*0.5,depth-2,lca*0.6);
+              }
+            }
+            lavaCrack(px2+6,py2+10,px2+22,py2+28,3,lc1);
+          }
+          if((tx*5+ty*8)%13===0){
+            var lc2=Math.sin(tick*0.05+tx*1.1+ty*0.8)*0.3+0.7;
+            function lavaCrack2(x1,y1,x2,y2,depth,lca){
+              if(depth<=0)return;
+              ctx.strokeStyle='rgba(120,35,0,'+(lca*0.18)+')';ctx.lineWidth=depth*1.2;
+              ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+              ctx.strokeStyle='rgba(255,140,10,'+(lca*0.2)+')';ctx.lineWidth=depth*0.4;
+              ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+              if(depth>1){
+                var bx=x1+(x2-x1)*0.45,by=y1+(y2-y1)*0.45;
+                var ang=Math.atan2(y2-y1,x2-x1);
+                var blen=Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))*0.5;
+                lavaCrack2(bx,by,bx+Math.cos(ang-0.8)*blen*0.7,by+Math.sin(ang-0.8)*blen*0.7,depth-1,lca*0.75);
+                if(depth>2)lavaCrack2(x1,y1,x1+Math.cos(ang+0.4)*blen*0.4,y1+Math.sin(ang+0.4)*blen*0.4,depth-2,lca*0.5);
+              }
+            }
+            lavaCrack2(px2+38,py2+8,px2+24,py2+34,3,lc2);
+          }
+          // Scattered ash/bone fragments
+          if((tx*9+ty*3)%11===0){ctx.fillStyle='rgba(60,50,45,0.25)';ctx.fillRect(px2+16,py2+8,4,2);ctx.fillRect(px2+10,py2+24,2,4);}
+          // Bones
+          if((tx*5+ty*11)%17===0){drawFloorBone(ctx,px2+5,py2+35,px2+36,py2+22,0.28);}
+          if((tx*17+ty*3)%29===0){drawFloorBone(ctx,px2+28,py2+40,px2+42,py2+18,0.26);}
+          // Organic blood/burn stain
+          if((tx*13+ty*7)%19===0){drawBloodStain(ctx,px2+26,py2+22,0.14,tx+ty*3);}
+          // Skulls of fallen warriors, near edges
+          if((tx*11+ty*13)%67===0){drawFloorSkull(ctx,px2+7,py2+6,0.52,(tx+ty*3)%4);}
+          if((tx*7+ty*19)%89===0){drawFloorSkull(ctx,px2+TILE-9,py2+TILE-9,0.48,(tx*3+ty)%4);}
         } else {
           ctx.fillStyle=(tx+ty)%2===0?'#1a1a2e':'#161628';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.strokeStyle='#1c1c30';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
         }
       } else if(t===2){
-        // Dark volcanic lava — black stone with deep red/brown magma
-        var lf=Math.sin(tick*0.06+tx*0.9+ty*1.1)*0.3+0.7;
-        ctx.fillStyle='#0e0804';ctx.fillRect(px2,py2,TILE,TILE);
-        // Dark cracked stone border
-        ctx.fillStyle='#1a1008';ctx.fillRect(px2+1,py2+1,TILE-2,TILE-2);
-        // Deep magma glow
-        ctx.fillStyle='rgba(100,20,0,'+lf*0.9+')';ctx.fillRect(px2+4,py2+4,TILE-8,TILE-8);
-        ctx.fillStyle='rgba(160,40,0,'+lf*0.6+')';ctx.fillRect(px2+8,py2+8,TILE-16,TILE-16);
-        ctx.fillStyle='rgba(200,80,10,'+lf*0.4+')';ctx.fillRect(px2+13,py2+13,TILE-26,TILE-26);
-        // Occasional bright spot
-        if((tx*3+ty*7+Math.floor(tick/20))%5===0){ctx.fillStyle='rgba(255,140,20,'+lf*0.3+')';ctx.fillRect(px2+16,py2+16,TILE-32,TILE-32);}
+        // Pure molten lava — bright glowing with corrugated edges
+        var lf=Math.sin(tick*0.05+tx*0.8+ty*1.2)*0.35+0.65;
+        var lf2=Math.sin(tick*0.07+tx*1.3+ty*0.6+1.5)*0.3+0.7;
+        var lf3=Math.sin(tick*0.03+tx*0.5+ty*1.8+3.0)*0.25+0.75;
+        var lseed=tx*31+ty*17;
+        // Corrugated edge clip — wavy polygon around tile
+        ctx.save();
+        ctx.beginPath();
+        var lsteps=10;
+        for(var li=0;li<=lsteps;li++){ctx.lineTo(px2+li/lsteps*TILE,py2+Math.sin(lseed*0.3+li*2.2)*3+Math.sin(lseed*0.9+li*3.7)*1.5);}
+        for(var li=0;li<=lsteps;li++){ctx.lineTo(px2+TILE+Math.sin(lseed*0.5+li*2.5)*3+Math.sin(lseed*0.7+li*3.1)*1.5,py2+li/lsteps*TILE);}
+        for(var li=lsteps;li>=0;li--){ctx.lineTo(px2+li/lsteps*TILE,py2+TILE+Math.sin(lseed*0.4+li*2.8)*3+Math.sin(lseed*0.6+li*3.3)*1.5);}
+        for(var li=lsteps;li>=0;li--){ctx.lineTo(px2+Math.sin(lseed*0.8+li*2.0)*3+Math.sin(lseed*0.2+li*3.9)*1.5,py2+li/lsteps*TILE);}
+        ctx.closePath();ctx.clip();
+        // Deep glowing base — full tile bright lava
+        var lb=ctx.createRadialGradient(px2+TILE*0.45,py2+TILE*0.4,2,px2+TILE/2,py2+TILE/2,TILE*0.72);
+        lb.addColorStop(0,'rgba(255,180,30,1)');
+        lb.addColorStop(0.25,'rgba(255,100,10,1)');
+        lb.addColorStop(0.6,'rgba(200,40,0,1)');
+        lb.addColorStop(1,'rgba(130,10,0,1)');
+        ctx.fillStyle=lb;ctx.fillRect(px2-4,py2-4,TILE+8,TILE+8);
+        // Pulsing brightness centre
+        var ll=ctx.createRadialGradient(px2+TILE*0.5,py2+TILE*0.45,0,px2+TILE*0.5,py2+TILE*0.45,TILE*0.5);
+        ll.addColorStop(0,'rgba(255,220,80,'+(lf*0.55)+')');
+        ll.addColorStop(0.5,'rgba(255,140,20,'+(lf*0.25)+')');
+        ll.addColorStop(1,'rgba(200,60,0,0)');
+        ctx.fillStyle=ll;ctx.fillRect(px2-4,py2-4,TILE+8,TILE+8);
+        // Offset secondary hot pocket
+        var ll2=ctx.createRadialGradient(px2+TILE*0.72,py2+TILE*0.28,0,px2+TILE*0.72,py2+TILE*0.28,TILE*0.3);
+        ll2.addColorStop(0,'rgba(255,200,60,'+(lf2*0.4)+')');
+        ll2.addColorStop(1,'rgba(200,80,0,0)');
+        ctx.fillStyle=ll2;ctx.fillRect(px2-4,py2-4,TILE+8,TILE+8);
+        // Tiny floating crust slivers
+        ctx.fillStyle='rgba(20,8,2,0.7)';
+        ctx.beginPath();ctx.ellipse(px2+9,py2+7,5,2.5,0.4,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.ellipse(px2+37,py2+35,6,2.5,1.1,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.ellipse(px2+30,py2+11,3.5,2,0.8,0,Math.PI*2);ctx.fill();
+        // Flow ripple
+        ctx.strokeStyle='rgba(255,170,30,'+(lf3*0.3)+')';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(px2+5,py2+24);ctx.quadraticCurveTo(px2+22,py2+16,px2+38,py2+26);ctx.stroke();
+        // Occasional bright bubble surge
+        if((tx*3+ty*5+Math.floor(tick/12))%4===0){
+          ctx.fillStyle='rgba(255,230,100,'+(lf*0.5)+')';
+          ctx.beginPath();ctx.arc(px2+TILE*0.42,py2+TILE*0.38,3,0,Math.PI*2);ctx.fill();
+          var bg2=ctx.createRadialGradient(px2+TILE*0.42,py2+TILE*0.38,0,px2+TILE*0.42,py2+TILE*0.38,11);
+          bg2.addColorStop(0,'rgba(255,220,80,'+(lf*0.28)+')');bg2.addColorStop(1,'rgba(255,100,0,0)');
+          ctx.fillStyle=bg2;ctx.fillRect(px2+6,py2+6,TILE-12,TILE-12);
+        }
+        ctx.restore();
       } else if(t===6){
         // Stone bridge over lava — dark rock slabs
         var lf2=Math.sin(tick*0.06+tx*0.9+ty*1.1)*0.3+0.7;
@@ -1829,9 +2315,206 @@ function drawArena(ctx, arena, tick) {
         ctx.fillStyle=active?'#8b8b9a':'#3a3a4a';
         for(var si=0;si<4;si++){var sx=px2+7+si*10;ctx.beginPath();ctx.moveTo(sx,py2+TILE);ctx.lineTo(sx+4,py2+TILE-sh);ctx.lineTo(sx+8,py2+TILE);ctx.fill();}
         if(active){ctx.fillStyle='rgba(180,0,0,0.22)';ctx.fillRect(px2,py2,TILE,TILE);}
+      } else if(t===7){
+        // Brazier on stone wall block
+        var pcx7=px2+TILE/2, pcy7=py2+TILE/2;
+        // Stone wall block base — full tile, same as wall
+        var wc7=arena.name&&arena.name.indexOf('Desert')>=0?'#5a3e18':'#2a2838';
+        var wch7=arena.name&&arena.name.indexOf('Desert')>=0?'#6a4e28':'#38344a';
+        var wcs7=arena.name&&arena.name.indexOf('Desert')>=0?'#3a2808':'#1a1628';
+        ctx.fillStyle=wc7;ctx.fillRect(px2,py2,TILE,TILE);
+        ctx.fillStyle=wch7;ctx.fillRect(px2,py2,TILE,8); // top face highlight
+        ctx.fillStyle=wcs7;ctx.fillRect(px2,py2+TILE-6,TILE,6); // bottom shadow
+        ctx.fillStyle=wcs7;ctx.fillRect(px2+TILE-5,py2,5,TILE); // right shadow
+        // Mortar line
+        ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
+        // Brazier sits lower on the wall block — shifted down by 8px
+        var by=py2+10; // base y for brazier, lower on the wall
+        // Legs
+        ctx.fillStyle='#252525';
+        ctx.fillRect(pcx7-10,by,3,12); // left leg
+        ctx.fillRect(pcx7+7,by,3,12);  // right leg
+        // Cross brace
+        ctx.fillRect(pcx7-10,by+8,20,3);
+        // Bowl — bigger
+        ctx.fillStyle='#1a1a1a';ctx.fillRect(pcx7-11,by-6,22,10); // bowl body
+        ctx.fillStyle='#2a2a2a';ctx.fillRect(pcx7-10,by-6,20,4);  // top rim
+        ctx.fillStyle='#141414';ctx.fillRect(pcx7-8,by+2,16,5);   // bowl taper
+        ctx.fillStyle='#404040';ctx.fillRect(pcx7-11,by-7,22,2);  // rim highlight
+        // Glowing embers
+        ctx.fillStyle='rgba(200,70,0,0.7)';ctx.fillRect(pcx7-8,by-4,16,5);
+        ctx.fillStyle='rgba(240,140,0,0.5)';ctx.fillRect(pcx7-5,by-5,10,4);
+        // Animated flames — bigger, more fire
+        var fl7=Math.sin(tick*0.15+tx*1.7)*2.5;
+        var fl7b=Math.sin(tick*0.12+tx*2.1+1)*1.5;
+        var glg7=ctx.createRadialGradient(pcx7,by-10,0,pcx7,by-4,18);
+        glg7.addColorStop(0,'rgba(255,200,60,0.65)');glg7.addColorStop(1,'rgba(255,80,0,0)');
+        ctx.fillStyle=glg7;ctx.fillRect(pcx7-18,by-28,36,28);
+        // Multiple flame layers
+        ctx.fillStyle='#e8b84b';ctx.fillRect(pcx7-5,by-20+fl7,10,12);
+        ctx.fillStyle='#f06020';ctx.fillRect(pcx7-4,by-16+fl7,8,10);
+        ctx.fillStyle='#e83010';ctx.fillRect(pcx7-2,by-18+fl7b,5,12);
+        ctx.fillStyle='#f09020';ctx.fillRect(pcx7-6,by-14+fl7b,5,8);
+        ctx.fillStyle='#fffce0';ctx.fillRect(pcx7-2,by-12+fl7,4,6);
+        ctx.fillStyle='#ffffff';ctx.fillRect(pcx7-1,by-10+fl7,2,4);
       }
     }
   }
+
+  // ══ POST-TILE OVERLAY EFFECTS ══
+  var t2=tick; // alias
+
+  if(isVolcano){
+    // Ember/ash particles rising from lava tiles
+    for(var ei2=0;ei2<60;ei2++){
+      var eseed=ei2*37+131;
+      var etx=Math.floor((eseed*17)%AW), ety=Math.floor((eseed*11)%AH);
+      if(arena.tiles[ety]&&arena.tiles[ety][etx]===2){
+        var espeed=0.4+(eseed%5)*0.12;
+        var ephase=eseed*0.8;
+        var eage=(t2*espeed+ephase)%80;
+        var ealpha=(eage<8?eage/8:eage>64?(80-eage)/16:1)*0.55;
+        var ex5=etx*TILE+TILE/2+(Math.sin(t2*0.03+ephase)*6)+(eseed%TILE);
+        var ey5=ety*TILE+TILE-eage*0.7;
+        var er=eseed%3===0?1.5:1;
+        if(ealpha>0.05){
+          // Ember glow
+          ctx.fillStyle='rgba(255,'+(100+eseed%100)+',20,'+ealpha+')';
+          ctx.beginPath();ctx.arc(ex5,ey5,er,0,Math.PI*2);ctx.fill();
+          if(eseed%4===0){ // occasional ash flake
+            ctx.fillStyle='rgba(80,70,65,'+(ealpha*0.6)+')';
+            ctx.fillRect(ex5-1,ey5-1,2,2);
+          }
+        }
+      }
+    }
+    // Air dust particles drifting
+    for(var di=0;di<20;di++){
+      var dseed=di*53+79;
+      var dspeed=0.015+(dseed%8)*0.005;
+      var dphase=dseed*1.2;
+      var dx2=(dseed*23%( AW*TILE))+(Math.sin(t2*dspeed+dphase)*30);
+      var dy2=(dseed*17%(AH*TILE))+(Math.cos(t2*dspeed*0.7+dphase)*20);
+      var dalpha=0.12+Math.sin(t2*dspeed*2+dphase)*0.06;
+      ctx.fillStyle='rgba(160,100,60,'+dalpha+')';
+      ctx.beginPath();ctx.arc(dx2%( AW*TILE),dy2%(AH*TILE),0.8,0,Math.PI*2);ctx.fill();
+    }
+    // Heat shimmer near lava — wavy distortion strip along lava tile edges
+    for(var ty2=0;ty2<AH;ty2++){
+      for(var tx2=0;tx2<AW;tx2++){
+        if(arena.tiles[ty2]&&arena.tiles[ty2][tx2]===2){
+          // Check if adjacent floor tile above
+          if(ty2>0&&arena.tiles[ty2-1][tx2]===0){
+            var hx=tx2*TILE,hy=ty2*TILE;
+            var hs=Math.sin(t2*0.08+tx2*1.3)*3;
+            var hg=ctx.createLinearGradient(hx,hy-12,hx,hy);
+            hg.addColorStop(0,'rgba(255,140,20,0)');
+            hg.addColorStop(0.5,'rgba(255,160,40,0.06)');
+            hg.addColorStop(1,'rgba(255,180,60,0.12)');
+            ctx.fillStyle=hg;
+            ctx.fillRect(hx+hs,hy-12,TILE,12);
+          }
+        }
+      }
+    }
+  }
+
+  if(isTemple){
+    // Floating dust motes
+    for(var mi=0;mi<35;mi++){
+      var mseed=mi*41+97;
+      var mspeed=0.008+(mseed%6)*0.003;
+      var mphase=mseed*0.9;
+      var mx2=(mseed*29%(AW*TILE))+(Math.sin(t2*mspeed+mphase)*18);
+      var my2=(mseed*13%(AH*TILE))+(Math.cos(t2*mspeed*0.8+mphase+1)*14);
+      var malpha=0.08+Math.sin(t2*mspeed*3+mphase)*0.05;
+      ctx.fillStyle='rgba(180,160,200,'+malpha+')';
+      ctx.beginPath();ctx.arc(mx2%(AW*TILE),my2%(AH*TILE),0.7,0,Math.PI*2);ctx.fill();
+    }
+    // Floor candles — on floor tiles adjacent to walls, randomly clustered
+    for(var cy2=1;cy2<AH-1;cy2++){
+      for(var cx2=1;cx2<AW-1;cx2++){
+        if(arena.tiles[cy2]&&arena.tiles[cy2][cx2]===0){
+          var adjWall=(arena.tiles[cy2-1][cx2]===1)||(arena.tiles[cy2+1][cx2]===1)||
+                      (arena.tiles[cy2][cx2-1]===1)||(arena.tiles[cy2][cx2+1]===1);
+          if(adjWall&&(cx2*13+cy2*17)%11===0){
+            var cpx=cx2*TILE, cpy=cy2*TILE;
+            var ccount=(cx2+cy2)%3===0?3:(cx2*cy2)%2===0?2:1;
+            var cseedBase=cx2*37+cy2*19;
+            for(var cc=0;cc<ccount;cc++){
+              // Random position within tile using seed — not in a row
+              var crx=cpx+5+(cseedBase*cc*13+7)%34;
+              var cry=cpy+TILE-14+(cseedBase*cc*7+3)%10;
+              var cfl=Math.sin(t2*0.12+cx2*1.7+cy2*2.3+cc*1.1)*1.5;
+              var cfl2=Math.sin(t2*0.09+cx2*2.1+cy2*1.4+cc*0.8)*1;
+              var cheight=6+cc*2+(cseedBase*cc)%4; // varied heights
+              var cwidth=2+(cc%2); // alternating thin/fat
+              // Wax drip trails
+              ctx.fillStyle='rgba(190,180,155,0.35)';
+              ctx.fillRect(crx,cry+cheight-3,(cseedBase+cc)%2===0?-1:2,4);
+              // Wax body with slight taper
+              var wc=('rgba(200,188,160,0.75)');
+              ctx.fillStyle=wc;ctx.fillRect(crx-cwidth/2,cry,cwidth,cheight);
+              // Lighter left side
+              ctx.fillStyle='rgba(230,220,195,0.5)';ctx.fillRect(crx-cwidth/2,cry,1,cheight);
+              // Darker right
+              ctx.fillStyle='rgba(160,150,125,0.4)';ctx.fillRect(crx+cwidth/2-1,cry,1,cheight);
+              // Wax pool at base
+              ctx.fillStyle='rgba(210,200,170,0.4)';
+              ctx.beginPath();ctx.ellipse(crx,cry+cheight,cwidth+1,1.5,0,0,Math.PI*2);ctx.fill();
+              // Wick
+              ctx.fillStyle='rgba(30,20,10,0.8)';ctx.fillRect(crx-0.5,cry-2,1,3);
+              // Flame — two layered
+              ctx.fillStyle='rgba(255,210,70,0.8)';
+              ctx.beginPath();ctx.arc(crx,cry-3+cfl*0.4,1.8,0,Math.PI*2);ctx.fill();
+              ctx.fillStyle='rgba(255,140,20,0.65)';
+              ctx.beginPath();ctx.arc(crx+cfl2*0.3,cry-5+cfl*0.3,1.2,0,Math.PI*2);ctx.fill();
+              ctx.fillStyle='rgba(255,255,180,0.7)';
+              ctx.beginPath();ctx.arc(crx,cry-2+cfl*0.2,0.6,0,Math.PI*2);ctx.fill();
+              // Glow
+              var cg3=ctx.createRadialGradient(crx,cry-3,0,crx,cry-3,cc===0?14:10);
+              cg3.addColorStop(0,'rgba(255,180,40,0.14)');cg3.addColorStop(1,'rgba(255,100,0,0)');
+              ctx.fillStyle=cg3;ctx.fillRect(crx-15,cry-18,30,28);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if(isDesert){
+    // Sand dust particles blowing left to right
+    for(var si2=0;si2<40;si2++){
+      var sseed=si2*47+83;
+      var sspeed=0.06+(sseed%8)*0.015;
+      var sphase=sseed*0.7;
+      var sy2=TILE+(sseed%(AH*TILE-TILE*2));
+      var sx2=((t2*sspeed*20+sseed*73)%(AW*TILE+40))-20;
+      var salpha=0.12+Math.sin(t2*0.05+sphase)*0.05;
+      var ssize=0.5+(sseed%3)*0.4;
+      ctx.fillStyle='rgba(210,180,100,'+salpha+')';
+      ctx.beginPath();ctx.arc(sx2,sy2,ssize,0,Math.PI*2);ctx.fill();
+    }
+    // Air dust drifting
+    for(var di2=0;di2<15;di2++){
+      var dseed2=di2*61+113;
+      var dspeed2=0.01+(dseed2%5)*0.004;
+      var dphase2=dseed2*1.5;
+      var dx3=((t2*dspeed2*10+dseed2*89)%(AW*TILE+60))-30;
+      var dy3=TILE*2+(dseed2%(AH*TILE-TILE*3));
+      var dalpha2=0.08+Math.sin(t2*dspeed2*4+dphase2)*0.04;
+      ctx.fillStyle='rgba(200,170,90,'+dalpha2+')';
+      ctx.beginPath();ctx.arc(dx3,dy3,0.9,0,Math.PI*2);ctx.fill();
+    }
+    // Heat shimmer above floor (wavy glow layer)
+    var hsg=ctx.createLinearGradient(0,TILE*2,0,TILE*4);
+    hsg.addColorStop(0,'rgba(255,200,80,0)');
+    hsg.addColorStop(0.5,'rgba(255,180,60,'+(Math.sin(t2*0.04)*0.02+0.025)+')');
+    hsg.addColorStop(1,'rgba(255,160,40,0)');
+    ctx.fillStyle=hsg;ctx.fillRect(0,TILE*2,AW*TILE,TILE*2);
+    // Crowd removed
+  }
+
 }
 
 // ═══════════════════════════════════════════
@@ -1868,6 +2551,77 @@ var keys={}, lastTs=0;
 var remoteState=null;
 var enemyNamePvp='Opponent', enemyClsPvp='warrior', enemyIdPvp='';
 var esEnemy=null, esActions=null, esGuest=null, esMatchStart=null, esChat=null;
+
+// ── HIT NUMBERS ──
+// Hit numbers — stored per-player, drawn above health bar
+var hitNumbers=[];
+function spawnHitNumber(playerId,dmg){
+  // Remove old number for same player if still showing
+  hitNumbers=hitNumbers.filter(function(h){return h.id!==playerId;});
+  hitNumbers.push({id:playerId,dmg:dmg,offset:0,life:1400,maxLife:1400});
+}
+function updateHitNumbers(dt){
+  hitNumbers=hitNumbers.filter(function(h){h.life-=dt;h.offset-=0.5;return h.life>0;});
+}
+function drawHitNumberForPlayer(ctx,px,py,id){
+  // Find hit number for this player
+  for(var hi=0;hi<hitNumbers.length;hi++){
+    var h=hitNumbers[hi];
+    if(h.id!==id)continue;
+    var ratio=h.life/h.maxLife;
+    var a=Math.min(1,ratio*2); // stay full alpha for first half, then fade
+    var yoff=py-68+h.offset; // above health bar, floats up
+    ctx.save();ctx.globalAlpha=a;
+    ctx.font='bold 10px Courier New';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.strokeStyle='rgba(0,0,0,0.8)';ctx.lineWidth=2;
+    ctx.fillStyle='#e87060';
+    var txt='-'+h.dmg;
+    ctx.strokeText(txt,px,yoff);
+    ctx.fillText(txt,px,yoff);
+    ctx.restore();
+  }
+}
+
+// ── PVP WIN STREAK ──
+var pvpWinStreak=0;
+try{pvpWinStreak=parseInt(localStorage.getItem('eldara_pvp_streak')||'0');}catch(e){}
+var pvpBestStreak=0;
+try{pvpBestStreak=parseInt(localStorage.getItem('eldara_pvp_best_streak')||'0');}catch(e){}
+
+// ── MATCH HISTORY ──
+var matchHistory=[];
+try{matchHistory=JSON.parse(localStorage.getItem('eldara_match_history')||'[]');}catch(e){}
+function saveMatchHistory(entry){
+  matchHistory.unshift(entry);
+  if(matchHistory.length>10)matchHistory=matchHistory.slice(0,10);
+  try{localStorage.setItem('eldara_match_history',JSON.stringify(matchHistory));}catch(e){}
+}
+
+// ── FOOTSTEPS (desert only, sparse imprints) ──
+var footDust=[];
+var _footStepCounter=0;
+var _footSide=1;
+function spawnFootDust(x,y){
+  _footSide*=-1; // alternate left/right
+  footDust.push({x:x+_footSide*5,y:y+(Math.random()-0.5)*3,life:6000,maxLife:6000,r:2.5,side:_footSide});
+}
+function updateFootDust(dt){
+  footDust=footDust.filter(function(d){d.life-=dt;return d.life>0;});
+}
+function drawFootDust(ctx,ox,oy){
+  footDust.forEach(function(d){
+    var ratio=d.life/d.maxLife;
+    var a=ratio*0.55; // linear fade, visible from start
+    ctx.fillStyle='rgba(155,125,65,'+a+')';
+    ctx.beginPath();ctx.ellipse(ox+d.x,oy+d.y,4,2.5,d.side*0.3,0,Math.PI*2);ctx.fill();
+    // Toe dots
+    ctx.fillStyle='rgba(135,105,50,'+a+')';
+    ctx.beginPath();ctx.arc(ox+d.x+d.side*2,oy+d.y-3,1.2,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(ox+d.x+d.side*3.5,oy+d.y-2,0.9,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(ox+d.x+d.side*4.5,oy+d.y-0.5,0.8,0,Math.PI*2);ctx.fill();
+  });
+}
 var pushThrottle=0;
 
 function mkPlayer(id,cls,name,spawn,isMe) {
@@ -1925,6 +2679,8 @@ function dealDmg(gs,target,dmg,type) {
     return;
   }
   var finalDmg=Math.round(dmg*(target.warCharging&&target.dmgReduce?(1-target.dmgReduce):1));
+  // Spawn hit number
+  spawnHitNumber(target.id||target.name||'me', finalDmg);
   if(target.shieldHp>0){
     var absorbed=Math.min(target.shieldHp,finalDmg);
     target.shieldHp-=absorbed;
@@ -2015,6 +2771,7 @@ function doMoveAbility(gs,user,target) {
       user.x=Math.max(TILE+COLL_R,Math.min((AW-1)*TILE-COLL_R,stepTarget.x+Math.cos(ang)*45));
       user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,stepTarget.y+Math.sin(ang)*45));
       spawnEfx(gs,'shadow_step',user.x,user.y);
+      if(user.isMe&&user.stealthed)trackQuestEvent('shadow_step_stealth','ranger');
       if(user.stealthed){user.stealthed=false;user.stealthTimer=0;user.rollInv=false;user.stealthFirstHit=false;}
       if(wasStealthed&&!stepTarget.rollInv){
         stepTarget.stunned=1400;
@@ -2038,6 +2795,7 @@ function doAttack(gs,attacker,target) {
   var C=CLS[attacker.cls];
   // Break stealth when attacking
   var hadStealthFirstHit=attacker.stealthed&&attacker.stealthFirstHit;
+  if(hadStealthFirstHit&&attacker.isMe)trackQuestEvent('sneak_hit','ranger');
   if(attacker.stealthed){attacker.stealthed=false;attacker.stealthTimer=0;attacker.rollInv=false;attacker.stealthFirstHit=false;}
   attacker.attacking=14;attacker.atkTimer=C.atkMs;
   if(C.atkType==='proj') {
@@ -2136,6 +2894,7 @@ function doSkill(gs,user,target,num) {
     user.warCryBuff=3000; // 3s damage buff
     user.warCryShake=600; // 0.6s shake
     spawnEfx(gs,'warcry',user.x,user.y);
+    if(user.isMe)trackQuestEvent('skill_j','warrior');
     sidelog('!!',user.name+' WAR CRY!');
     if(user.isMe&&gameMode==='pvp')pushState(user);
   }
@@ -2151,7 +2910,7 @@ function startRoll(p) {
 }
 
 function spawnEfx(gs,type,x,y){var life=type==='shadow_step'?650:400;gs.effects.push({type:type,x:x,y:y,life:life,max:life,anim:0});}
-function isWall(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return true;return a.tiles[ty][tx]===1;}
+function isWall(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return true;var tt=a.tiles[ty][tx];return tt===1||tt===7;}
 function isPit(a,wx,wy){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return false;var t=a.tiles[ty][tx];return t===2;}
 function isTrap(a,wx,wy,tick){var tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(tx<0||ty<0||tx>=AW||ty>=AH)return false;return a.tiles[ty][tx]===5&&Math.floor(tick/40)%3===0;}
 // Collision offset: how far above p.y (feet) the collision center sits
@@ -2268,13 +3027,20 @@ function update(gs,dt) {
     return;
   }
   if(gs.phase==='countdown'){gs.countdown-=dt;if(gs.countdown<=0)resetRound(gs);return;}
+  updateHitNumbers(dt);updateFootDust(dt);
   gs.roundMs+=dt;
   if(gs.roundMs>=1000){gs.roundMs-=1000;gs.roundTimer=Math.max(0,gs.roundTimer-1);}
   if(gs.roundTimer<=0){var p0=gs.players[0],p1=gs.players[1],w=p0.hp>=p1.hp?p0:p1;w.wins++;showBanner('TIME UP \u2014 '+w.name);endRound(gs);return;}
   var me=gs.players.find(function(p){return p.isMe;});
   var en=gs.players.find(function(p){return !p.isMe;});
   if(!me||!en){if(me)updateLocal(gs,me,dt);return;}
+  var _meOldX=me?me.x:0,_meOldY=me?me.y:0;
   updateLocal(gs,me,dt);
+  var _dist2=Math.hypot(me.x-_meOldX,me.y-_meOldY);
+  if(me.moving&&gameState&&gameState.arenaKey==='desert'&&_dist2>0.5){
+    _footStepCounter+=_dist2;
+    if(_footStepCounter>=20){_footStepCounter=0;spawnFootDust(me.x,me.y+TILE*0.9);}
+  }
   if(gameMode==='training')updateAI(gs,en,me,dt);
   else lerpRemote(en);
   var both=[me,en].filter(function(p){return p;});
@@ -2477,6 +3243,9 @@ function draw(gs) {
   var ox=Math.floor((CW-AW*TILE)/2),oy=Math.floor((CH-AH*TILE)/2);
   gctx.save();gctx.translate(ox,oy);
   drawArena(gctx,gs.arena,gs.tick);
+
+  // ── FOOTPRINTS (behind everything) ──
+  drawFootDust(gctx,0,0); // coords already in arena space
 
   // ── DOPPELGANGERS ──
   if(gs.dopps){
@@ -2854,6 +3623,8 @@ function draw(gs) {
     if(p.stealthed&&p.isMe){gctx.globalAlpha=0.25;}
     if(!p.stealthed||p.isMe){
     gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-30,p.y-56,60,14);
+    // Hit number for this player
+    drawHitNumberForPlayer(gctx,p.x,p.y,p.id||p.name||'me');
     gctx.font='bold 9px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
     // Render name with <GM> tag in white, rest in player color
     (function(){
@@ -3013,12 +3784,40 @@ function draw(gs) {
     gctx.restore();
   }
   if(gs.phase==='fighting'){
+    // Timer
     gctx.fillStyle='rgba(0,0,0,0.6)';gctx.fillRect(AW*TILE/2-22,4,44,20);
     gctx.fillStyle=gs.roundTimer<=10?'#c0392b':'#e8b84b';
     gctx.font='bold 14px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
     gctx.fillText(gs.roundTimer,AW*TILE/2,14);
+    // Arena name — left of timer, stone slab background
+    if(gs.arena&&gs.arena.name){
+      var aname=gs.arena.name;
+      gctx.font='bold 8px Courier New';
+      var aw2=gctx.measureText(aname).width;
+      var ax=AW*TILE/2-32-aw2-6;
+      // Stone slab
+      gctx.fillStyle='rgba(20,18,28,0.82)';gctx.fillRect(ax-4,4,aw2+10,20);
+      gctx.strokeStyle='rgba(60,55,80,0.7)';gctx.lineWidth=1;gctx.strokeRect(ax-4,4,aw2+10,20);
+      // Inner highlight
+      gctx.strokeStyle='rgba(80,75,100,0.3)';gctx.strokeRect(ax-3,5,aw2+8,18);
+      gctx.fillStyle='rgba(180,165,140,0.75)';gctx.textAlign='left';gctx.textBaseline='middle';
+      gctx.fillText(aname,ax,14);
+    }
   }
   gctx.restore();
+
+  // ── Hit numbers (screen coords) ──
+  var ox2=Math.floor((CW-AW*TILE)/2),oy2=Math.floor((CH-AH*TILE)/2);
+
+  // ── HP vignette — pulses red when low ──
+  var me2=gs&&gs.players?gs.players.find(function(p){return p.isMe;}):null;
+  if(me2&&me2.hp/me2.maxHp<0.35&&gs.phase==='fighting'){
+    var vigPulse=0.4+Math.sin(Date.now()*0.005)*0.25;
+    var vig=gctx.createRadialGradient(CW/2,CH/2,CH*0.2,CW/2,CH/2,CH*0.8);
+    vig.addColorStop(0,'rgba(0,0,0,0)');
+    vig.addColorStop(1,'rgba(180,0,0,'+vigPulse+')');
+    gctx.fillStyle=vig;gctx.fillRect(0,0,CW,CH);
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -3029,16 +3828,45 @@ function endRound(gs) {
   var dead=gs.players.find(function(p){return p.dead;});
   var alive=gs.players.find(function(p){return !p.dead;});
   var wonRound=alive&&alive.isMe;
+  if(wonRound&&dead&&dead.stunned>0)trackQuestEvent('kill_stunned',myClass);
   if(alive){showBanner(alive.isMe?'YOU WIN!':alive.name+' WINS!');}
   else{showBanner('DRAW!');}
   // Award XP
   var meR=gs.players.find(function(p){return p.isMe;});
   if(meR){
     awardMatchXP(meR.cls, wonRound, gameMode==='pvp');
+    if(wonRound){
+      trackQuestEvent('win',meR.cls);
+      if(gameMode==='pvp')trackQuestEvent('pvp_win',meR.cls);
+    }
     incrementGamesPlayed(meR.cls);
     if(wonRound)incrementGamesWon(meR.cls);
+    // Win streak (PvP only)
+    if(gameMode==='pvp'){
+      if(wonRound){
+        pvpWinStreak++;
+        if(pvpWinStreak>pvpBestStreak){pvpBestStreak=pvpWinStreak;try{localStorage.setItem('eldara_pvp_best_streak',pvpBestStreak);}catch(e){}}
+        try{localStorage.setItem('eldara_pvp_streak',pvpWinStreak);}catch(e){}
+        if(pvpWinStreak>=2){
+          setTimeout(function(){showBanner(pvpWinStreak+' WINS IN A ROW! 🔥');},1400);
+          checkNewAchievements();
+        }
+      } else {
+        pvpWinStreak=0;
+        if(authUid&&!isGuest)fbSet('/users/'+authUid+'/pvpStreak',0);
+      }
+    }
+    // Match history
+    var enP2=gs.players.find(function(p){return !p.isMe;});
+    saveMatchHistory({
+      date:Date.now(),won:wonRound,mode:gameMode,
+      arena:gs.arenaKey||'?',
+      myCls:meR.cls,myLvl:meR.level||1,
+      enName:enP2?enP2.name:'AI',enCls:enP2?enP2.cls:'',enLvl:enP2?enP2.level||1:1
+    });
     if(gameMode==='pvp'&&wonRound&&dead&&!dead.isMe){
       var kills=incrementPvPKills(meR.cls);
+      trackQuestEvent('kill',meR.cls);
       if(kills===100){showBanner('RED EYES UNLOCKED!');setRedEyes(meR.cls,true);}
       // GM kill easter egg
       if(dead.name&&dead.name.indexOf('<GM>')>=0&&!hasKilledGM()){
@@ -3472,6 +4300,7 @@ function startListeningLobbyChat() {
 }
 
 function cleanupFB() {
+  footDust=[];hitNumbers=[];_footStepCounter=0;
   if(actionPollInterval){clearInterval(actionPollInterval);actionPollInterval=null;}
   if(esEnemy){try{esEnemy();}catch(e){}esEnemy=null;}
   if(esActions){try{esActions();}catch(e){}esActions=null;}
@@ -3611,7 +4440,22 @@ function showScreen(id){
   // Always hide setup-screen overlay when navigating anywhere
   document.getElementById('setup-screen').style.display='none';
   if(id==='title-screen'){
+    footDust=[];hitNumbers=[];_footStepCounter=0;
     registerOnline(); // refresh online presence
+    if(!_todaysQuests)loadQuests();
+    renderDailyQuests();
+    // Show time until reset
+    (function(){
+      var el=document.getElementById('quest-reset-time');
+      if(!el)return;
+      var now=new Date();
+      var utc=now.getTime()+now.getTimezoneOffset()*60000;
+      var cest=new Date(utc+2*3600000);
+      var resetH=4,resetM=0;
+      var mins=( (resetH-cest.getHours()-1)*60+(60-cest.getMinutes()));
+      if(mins<0)mins+=24*60;
+      el.textContent='resets in '+Math.floor(mins/60)+'h '+( mins%60)+'m';
+    })();
     // House banner click handler
     var tc2=document.getElementById('title-screen');
     if(tc2&&!tc2._houseClickBound){
@@ -3905,13 +4749,13 @@ function drawArenaPreview(canvas, ak){
   ctx.clearRect(0,0,cw,ch);
   // Color maps matching drawArena
   var floorColors={
-    crypt:'#18141e', volcano:'#1a0e08', maze:'#12141a', desert:'#2a2010', temple:'#0c0a14'
+    volcano:'#1a0e08', desert:'#2a1c08', temple:'#0c0a14'
   };
   var wallColors={
-    crypt:'#2e283a', volcano:'#3a1a08', maze:'#202030', desert:'#4a3818', temple:'#1a1428'
+    volcano:'#3a1a08', desert:'#4a3010', temple:'#1a1428'
   };
   var accentColors={
-    crypt:'#3a2050', volcano:'#8a2800', maze:'#2a2848', desert:'#6a5020', temple:'#2a1048'
+    volcano:'#8a2800', desert:'#7a5018', temple:'#2a1048'
   };
   var fl=floorColors[ak]||'#181820';
   var wl=wallColors[ak]||'#2a2838';
@@ -3920,7 +4764,8 @@ function drawArenaPreview(canvas, ak){
     for(var c=0;c<arena.tiles[r].length;c++){
       var t=arena.tiles[r][c];
       if(t===1){ctx.fillStyle=wl;}
-      else if(t===3||t===4){ctx.fillStyle=ac;} // rune/special
+      else if(t===3||t===4){ctx.fillStyle=ac;}
+      else if(t===7){ctx.fillStyle='#6a4820';} // torch stand
       else if(t===2){ctx.fillStyle='rgba(140,30,0,0.9)';} // dark magma
       else if(t===6){ctx.fillStyle='#4a3018';} // bridge
       else if(t===5){ctx.fillStyle='#8a0000';} // trap
@@ -3934,11 +4779,11 @@ function drawArenaPreview(canvas, ak){
       }
     }
   }
-  // Spawn points
-  ctx.fillStyle='rgba(100,200,100,0.6)';
-  ctx.beginPath();ctx.arc(arena.sp1.x*ts+ts/2,arena.sp1.y*ts+ts/2,ts*0.6,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='rgba(200,100,100,0.6)';
-  ctx.beginPath();ctx.arc(arena.sp2.x*ts+ts/2,arena.sp2.y*ts+ts/2,ts*0.6,0,Math.PI*2);ctx.fill();
+  // Spawn point circles — shifted 1 tile down to match actual in-game feet position
+  ctx.fillStyle='rgba(100,200,100,0.55)';
+  ctx.beginPath();ctx.arc(arena.sp1.x*ts+ts/2,(arena.sp1.y+1)*ts+ts/2,ts*0.55,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(200,100,100,0.55)';
+  ctx.beginPath();ctx.arc(arena.sp2.x*ts+ts/2,(arena.sp2.y+1)*ts+ts/2,ts*0.55,0,Math.PI*2);ctx.fill();
 }
 
 document.getElementById('btn-choose-arena').addEventListener('click',function(){
@@ -3948,7 +4793,7 @@ document.getElementById('btn-choose-arena').addEventListener('click',function(){
   if(document.getElementById('train-random-arena').checked)return;
   var list=document.getElementById('arena-picker-list');
   list.innerHTML='';
-  var arenaNames={crypt:'The Crypt',volcano:'Volcanic Rift',maze:'Runic Maze',desert:'Desert Colosseum',temple:'Shadow Temple'};
+  var arenaNames={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple'};
   ARENA_KEYS.forEach(function(ak){
     var card=document.createElement('div');
     var isSelected=lockedArena===ak;
@@ -5267,6 +6112,30 @@ document.getElementById('btn-settings').addEventListener('click',function(){
     document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
   });
 });
+// ── MATCH HISTORY PANEL ──
+function buildMatchHistory(){
+  var el=document.getElementById('match-history-list');
+  if(!el)return;
+  if(matchHistory.length===0){el.innerHTML='<div style="color:var(--dim);font-size:10px;padding:8px 0">No matches played yet.</div>';return;}
+  el.innerHTML=matchHistory.slice(0,10).map(function(m){
+    var d=new Date(m.date);
+    var ds=d.getDate()+'.'+(d.getMonth()+1)+'. '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+    var arenaNames2={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple',crypt:'The Crypt',maze:'Runic Maze'};
+    var aname=arenaNames2[m.arena]||m.arena||'?';
+    var modeStr=m.mode==='pvp'?'PvP':'Training';
+    var clsName=m.myCls?m.myCls.charAt(0).toUpperCase()+m.myCls.slice(1):'?';
+    var enClsName=m.enCls?m.enCls.charAt(0).toUpperCase()+m.enCls.slice(1):'?';
+    return '<div style="border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:11px;color:'+(m.won?'#27ae60':'#c0392b')+'">'+( m.won?'W':'L')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:9px;color:var(--gold);letter-spacing:1px">'+modeStr+' · '+aname+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,0.6)">'+clsName+' Lv.'+m.myLvl+' vs '+(m.enName||'?')+' ('+enClsName+' Lv.'+m.enLvl+')</div>'
+      +'</div>'
+      +'<span style="font-size:9px;color:var(--dim);white-space:nowrap">'+ds+'</span>'
+      +'</div>';
+  }).join('');
+}
+
 document.getElementById('settings-close').addEventListener('click',function(){
   document.getElementById('settings-overlay').style.display='none';
 });
@@ -5412,6 +6281,9 @@ var ACHIEVEMENTS = [
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
   {id:'g_gm_kill',cls:'general',tier:0,name:'I Killed a GM!',desc:'There is no way I will get banned now, right?',icon:'\uD83D\uDC51',hidden:true,
     req:function(){return hasKilledGM();},levelReq:0,isCrown:true},
+  {id:'g_streak2',cls:'general',tier:0,name:'Heated',desc:'Win 2 PvP matches in a row',icon:'\uD83D\uDD25',req:function(){return pvpBestStreak>=2;},levelReq:0},
+  {id:'g_streak5',cls:'general',tier:0,name:'On a Roll',desc:'Win 5 PvP matches in a row',icon:'\u26A1',req:function(){return pvpBestStreak>=5;},levelReq:0},
+  {id:'g_streak10',cls:'general',tier:0,name:'Warlord Streak',desc:'Win 10 PvP matches in a row',icon:'\uD83D\uDC51',req:function(){return pvpBestStreak>=10;},levelReq:0},
   {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return (s&&parseInt(s)>0)||(_pvpPlayedFirebase>0);},levelReq:0},
   {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.30 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=30||getLevel('mage')>=30||getLevel('ranger')>=30;},levelReq:0},
   {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.30 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=30&&getLevel('mage')>=30&&getLevel('ranger')>=30;},levelReq:0},
