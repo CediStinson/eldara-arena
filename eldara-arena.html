@@ -422,6 +422,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <div id="conn-bar">OFFLINE</div>
   <div id="profile-badge"></div>
+  <div id="debug-log" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(180,0,0,0.92);color:#fff;font-family:'Courier New',monospace;font-size:11px;padding:8px 14px;z-index:9999;max-width:90vw;word-break:break-all;border-radius:3px;text-align:center"></div>
   <!-- Mobile touch controls -->
   <div id="mobile-controls" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;pointer-events:none;user-select:none">
     <!-- Joystick left -->
@@ -4601,7 +4602,16 @@ function genCode(){return Math.random().toString(36).substring(2,8).toUpperCase(
 // ═══════════════════════════════════════════
 function mainLoop(ts) {
   var dt=Math.min(ts-lastTs,50);lastTs=ts;
-  if(gameState){update(gameState,dt);draw(gameState);}
+  if(gameState){
+    try{update(gameState,dt);}catch(e){
+      var dbg=document.getElementById('debug-log');
+      if(dbg){dbg.style.display='block';dbg.textContent='UPDATE ERR: '+e.message;}
+    }
+    try{draw(gameState);}catch(e){
+      var dbg2=document.getElementById('debug-log');
+      if(dbg2){dbg2.style.display='block';dbg2.textContent='DRAW ERR: '+e.message;}
+    }
+  }
   requestAnimationFrame(mainLoop);
 }
 
