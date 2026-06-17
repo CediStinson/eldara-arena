@@ -690,7 +690,7 @@ function fbListen(path, cb) {
       else {
         // Nested put
         if(!_state) _state = {};
-        var parts = d.path.replace(/^\//,'').split('/');
+        var parts = d.path.replace(/^[/]/,'').split('/');
         var obj = _state;
         for(var i=0;i<parts.length-1;i++){
           if(!obj[parts[i]])obj[parts[i]]={};
@@ -706,7 +706,7 @@ function fbListen(path, cb) {
       var d = JSON.parse(e.data);
       if(!_state) _state = {};
       // Merge patch into state
-      var parts = d.path ? d.path.replace(/^\//,'').split('/').filter(Boolean) : [];
+      var parts = d.path ? d.path.replace(/^[/]/,'').split('/').filter(Boolean) : [];
       var obj = _state;
       for(var i=0;i<parts.length;i++){
         if(!obj[parts[i]])obj[parts[i]]={};
@@ -3953,6 +3953,7 @@ function draw(gs) {
         gctx.strokeStyle='rgba(100,200,255,'+(frostPulse*0.5)+')';gctx.lineWidth=2;
         gctx.strokeRect(p.x-23,p.y-33,46,80);
       }
+    }
     }
     // Warrior charge - red flash overlay
     if(p.warCharging&&!p.dead){
