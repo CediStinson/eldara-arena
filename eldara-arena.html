@@ -3646,7 +3646,10 @@ function draw(gs) {
     else if(ef.type==='lava'||ef.type==='spike'||ef.type==='poison'){gctx.fillStyle=ef.type==='poison'?'rgba(40,180,40,0.5)':'rgba(220,60,0,0.5)';gctx.beginPath();gctx.arc(ef.x,ef.y,20*(1-a+0.05),0,Math.PI*2);gctx.fill();}
     gctx.globalAlpha=1;
   }
-  for(var pl=0;pl<gs.players.length;pl++) {
+  // Draw opponent first, local player on top
+  var drawOrder=gs.players.slice().sort(function(a,b){return (b.isMe?0:1)-(a.isMe?0:1);});
+  for(var pl=0;pl<drawOrder.length;pl++) {
+    var p=drawOrder[pl];
     var p=gs.players[pl];
     if(p.dead){gctx.globalAlpha=0.3;DRAW[p.cls](gctx,p.x,p.y,p.dir,0,false,p.level||1);gctx.globalAlpha=1;continue;}
     // Stealth: enemy = skip entirely, self = very faded
@@ -4527,9 +4530,6 @@ function processAction(msg,gs,me,en) {
     if(en&&msg.data&&msg.data.hostCls){en.cls=msg.data.hostCls;}
     var meR4=gs.players.find(function(p){return p.isMe;});
     if(meR4)meR4.cls=myClass;
-    // Draw opponent first, then local player (local always on top)
-  var drawOrder=gs.players.slice().sort(function(a,b){return (b.isMe?0:1)-(a.isMe?0:1);});
-  drawOrder.forEach(function(p){p.wins=0;});
     pvpRematchReady=false;opponentRematchReady=false;
     hideOverlay();resetRound(gs);
   } else if(msg.type==='opponent_left_lobby'){
