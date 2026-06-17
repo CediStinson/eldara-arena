@@ -169,14 +169,13 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <img src="eldara-arena_logo.webp" alt="Eldara Arena" style="width:320px;max-width:80vw;object-fit:contain;filter:drop-shadow(0 0 40px rgba(232,184,75,0.5))">
   <div style="margin-top:32px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:4px;color:rgba(232,184,75,0.5);animation:ldpulse 1.4s ease-in-out infinite">LOADING</div>
   <style>@keyframes ldpulse{0%,100%{opacity:0.3}50%{opacity:1}}</style>
-  <script>
-    // Fallback: hide after 5s if Firebase never responds
-    setTimeout(function(){
-      var ld=document.getElementById('loading-screen');
-      if(ld&&ld.style.display!=='none'){ld.style.opacity='0';document.body.classList.remove('loading');setTimeout(function(){ld.style.display='none';},650);}
-    },5000);
-  </script>
 </div>
+<script>
+  setTimeout(function(){
+    var ld=document.getElementById('loading-screen');
+    if(ld&&ld.style.display!=='none'){ld.style.opacity='0';document.body.classList.remove('loading');setTimeout(function(){ld.style.display='none';},650);}
+  },5000);
+</script>
 
 <!-- AUTH -->
 <div class="screen active" id="auth-screen">
@@ -460,9 +459,9 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 (function(){
 'use strict';
 
-// ═══════════════════════════════════════════
-// FIREBASE REST API — no SDK needed
-// ═══════════════════════════════════════════
+// ===========================================
+// FIREBASE REST API - no SDK needed
+// ===========================================
 var FB_BASE = 'https://eldara-arena-default-rtdb.europe-west1.firebasedatabase.app';
 var FB_AUTH = 'https://identitytoolkit.googleapis.com/v1';
 var FB_KEY = 'AIzaSyAq1J5dOJE94SGZ982fHJrxc5f_5xe6Wjc';
@@ -487,7 +486,7 @@ function refreshAuthToken() {
   // Refresh every 50 minutes (token expires after 60)
   fbAuthPost('/accounts:lookup',{idToken:authToken}).then(function(r){
     if(r.error&&r.error.message==='INVALID_ID_TOKEN'){
-      // Token expired — try re-auth via stored refresh token
+      // Token expired - try re-auth via stored refresh token
       // For now just clear session so user logs in again
       console.warn('Auth token expired');
     }
@@ -527,7 +526,7 @@ function onAuthSuccess(result, uname) {
   authUid = result.localId;
   authEmail = result.email;
   isGuest = false;
-  // uname is only set on registration — for login, load from Firebase profile
+  // uname is only set on registration - for login, load from Firebase profile
   if(uname) { displayName = uname; myName = uname; }
   // Also try uid-keyed localStorage for persistence across sessions
   try { var lsName=localStorage.getItem('eldara_name_'+authUid); if(lsName){displayName=lsName;myName=lsName;} else if(!uname){displayName='';myName='';} } catch(e) { if(!uname){displayName='';myName='';} } // will be set by loadUserProfile
@@ -564,13 +563,13 @@ function loadUserProfile() {
       var localRaw = localStorage.getItem('eldara_cls_'+authUid+'_'+cls) || localStorage.getItem('eldara_cls_' + cls);
       var localData = localRaw ? JSON.parse(localRaw) : null;
       if (fbData && (!localData || (fbData.level||0) >= (localData.level||0))) {
-        // Firebase has same or better data — use it and store under UID key
+        // Firebase has same or better data - use it and store under UID key
         try { localStorage.setItem('eldara_cls_'+authUid+'_'+cls, JSON.stringify(fbData)); } catch(e) {}
       } else if (fbData) {
         // Firebase has data, use it
         try { localStorage.setItem('eldara_cls_'+authUid+'_'+cls, JSON.stringify(fbData)); } catch(e) {}
       }
-      // Never push local data to a fresh account — only sync if Firebase already has something
+      // Never push local data to a fresh account - only sync if Firebase already has something
     });
     showScreen('title-screen');
     updateProfileBadge();registerOnline();
@@ -580,7 +579,7 @@ function loadUserProfile() {
     loadPvpPlayed();
     loadQuests();loadRating();loadLeaderboard();
     try{_ghostKills=parseInt(localStorage.getItem('eldara_ghost_kills')||'0');}catch(e){}
-    // Purge stale rooms — only if abandoned (both players gone for 10+ min)
+    // Purge stale rooms - only if abandoned (both players gone for 10+ min)
     fbGet('/rooms').then(function(rooms){
       if(!rooms)return;
       var cutoff=Date.now()-10*60*1000;
@@ -588,7 +587,7 @@ function loadUserProfile() {
         var r=rooms[code];
         var createdAt=r.createdAt||0;
         if(createdAt<cutoff){
-          // Check last activity — host/guest ts fields
+          // Check last activity - host/guest ts fields
           var hostTs=r.host&&r.host.ts||0;
           var guestTs=r.guest&&r.guest.ts||0;
           var lastActivity=Math.max(createdAt,hostTs,guestTs);
@@ -721,9 +720,9 @@ function fbListen(path, cb) {
   return function(){es.close();}; // return close function
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // PIXEL SPRITE SCALE
-// ═══════════════════════════════════════════
+// ===========================================
 var S = 3;
 function px(ctx, gx, gy, color, w, h) {
   if(!color) return;
@@ -748,7 +747,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-5,6+bob,'#380404',2,6);
     px(ctx,3,6+bob,'#380404',2,5);
   } else if(wT>=3){
-    // Warlord — massive dark war-cloak
+    // Warlord - massive dark war-cloak
     px(ctx,-6,1+bob,'#2a0202',12,16); // wide base
     px(ctx,-5,1+bob,'#3a0303',10,14); // inner
     px(ctx,-4,2+bob,'#4a0404',8,12);  // core
@@ -762,7 +761,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
 
   // ── BODY ──
   if(wT===0){
-    // Bare chest — skin with two crossed leather straps
+    // Bare chest - skin with two crossed leather straps
     px(ctx,-3,0+bob,'#c09050',6,9);   // bare chest skin
     px(ctx,-2,0+bob,'#d4a76a',4,8);   // chest highlight
     px(ctx,-1,2+bob,'#dab878',2,5);   // center shine
@@ -783,7 +782,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,1+bob,'#6a4a28',1,2);
     px(ctx,2,1+bob,'#6a4a28',1,2);
   } else if(wT===1){
-    // Grey chainmail — left-facing with gorget
+    // Grey chainmail - left-facing with gorget
     px(ctx,-3,0+bob,'#585c64',6,9);
     px(ctx,-2,0+bob,'#686c74',4,8);
     px(ctx,-2,1+bob,'#787c84',2,5);  // chest highlight (left-center)
@@ -796,12 +795,12 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     // Belt + buckle (offset left like facing left)
     px(ctx,-3,8+bob,'#2a2010',6,1);
     px(ctx,-2,8+bob,'#909090',2,1);  // buckle left-of-center
-    // Gorget — left-biased
+    // Gorget - left-biased
     px(ctx,-3,-1+bob,'#505868',5,2);
     px(ctx,-2,-1+bob,'#606878',3,1);
     px(ctx,-3,-1+bob,'#404858',1,2); // gorget left shadow
   } else if(wT===2){
-    // Dark plate — detailed
+    // Dark plate - detailed
     px(ctx,-3,0+bob,'#2a2e36',6,9);
     px(ctx,-2,0+bob,'#3a4050',4,8);
     px(ctx,-1,1+bob,'#50606e',2,5);  // chest shine
@@ -817,7 +816,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-5,-2+bob,'#4a5060',1,2);px(ctx,4,-2+bob,'#4a5060',1,2);
     px(ctx,-5,-2+bob,'#1e2228',2,1); // pauldron shadow top
   } else {
-    // Warlord — brutal near-black plate, spiked pauldrons, blood-red details
+    // Warlord - brutal near-black plate, spiked pauldrons, blood-red details
     px(ctx,-3,0+bob,'#18181e',6,9);   // near-black plate
     px(ctx,-2,0+bob,'#22222a',4,8);
     px(ctx,-1,1+bob,'#2e3038',2,5);   // subtle chest shine
@@ -895,7 +894,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
 
   // ── HELM ──
   if(wT===0){
-    // No helmet — bare head with short hair + red headband
+    // No helmet - bare head with short hair + red headband
     // Hair
     px(ctx,-2,-9+bob,'#261a08',5,3);  // hair top
     px(ctx,-3,-8+bob,'#261a08',1,3);  // hair left
@@ -912,7 +911,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-2,-6+bob,'#d4a76a',4,4);  // face
     px(ctx,-2,-6+bob,'#c09050',1,3);  // face left shadow
     px(ctx,1,-6+bob,'#c09050',1,3);   // face right shadow
-    // Eyes — clearly separated with skin pixel between them
+    // Eyes - clearly separated with skin pixel between them
     px(ctx,-2,-5+bob,'#101010',1,1);  // left eye
     px(ctx,-1,-5+bob,'#d4a76a',1,1);  // skin bridge (gap between eyes)
     px(ctx,0,-5+bob,'#101010',1,1);   // right eye
@@ -934,7 +933,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-2,-9+bob,'#909498',1,1); // highlight
     px(ctx,1,-9+bob,'#585c60',1,2);  // cap shadow
   } else if(wT===2){
-    // Full plate helm — detailed
+    // Full plate helm - detailed
     px(ctx,-3,-7+bob,'#2a2e36',6,6);px(ctx,-2,-6+bob,'#3a4050',4,5);
     px(ctx,-3,-7+bob,'#1e2228',1,5); // helm shadow
     px(ctx,1,-6+bob,'#50606e',1,4);  // helm highlight
@@ -944,12 +943,12 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-1,-10+bob,'#cc3030',1,3); // plume highlight
     px(ctx,-3,-7+bob,'#484c54',6,1); // helm brow
   } else {
-    // Warlord helm — near-black, twin horn spikes, burning red eyes
+    // Warlord helm - near-black, twin horn spikes, burning red eyes
     px(ctx,-3,-7+bob,'#18181e',6,6); // helm
     px(ctx,-2,-6+bob,'#22222a',4,5);
     px(ctx,-3,-7+bob,'#0e0e12',1,5); // shadow
     px(ctx,1,-6+bob,'#2e3038',1,4);  // subtle shine
-    px(ctx,-2,-4+bob,'#050508',4,2); // visor — almost pitch black
+    px(ctx,-2,-4+bob,'#050508',4,2); // visor - almost pitch black
     // Twin horn spikes on top
     px(ctx,-2,-10+bob,'#18181e',2,5); // left horn base
     px(ctx,-2,-13+bob,'#10101a',1,4); // left horn tip
@@ -970,20 +969,20 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   var wpT=getWeaponTier('warrior');
   var gx=4;
   if(wpT===0){
-    // Short rusty sword — pommel bottom, blade UP
+    // Short rusty sword - pommel bottom, blade UP
     px(ctx,gx,9+bob,'#706860',2,2);   // pommel at bottom
     px(ctx,gx,8+bob,'#504840',2,1);   // pommel-grip join
     px(ctx,gx,4+bob,'#4a3828',2,5);   // grip
     px(ctx,gx,5+bob,'#3a2818',1,3);   // grip shadow
     px(ctx,gx-1,3+bob,'#706860',3,1); // guard
-    // Blade going UP from guard — 7px short
+    // Blade going UP from guard - 7px short
     px(ctx,gx,-4+bob,'#909888',2,8);  // blade
     px(ctx,gx,-4+bob,'#a0a898',1,7);  // edge
     px(ctx,gx,-1+bob,'#887860',1,1);  // rust spot
     px(ctx,gx,-3+bob,'#887860',1,1);  // rust spot
     px(ctx,gx,-4+bob,'#807870',1,1);  // pointy tip
   } else if(wpT===1){
-    // Iron sword — medium 12px blade UP
+    // Iron sword - medium 12px blade UP
     px(ctx,gx,9+bob,'#9098a0',2,2);   // pommel
     px(ctx,gx,9+bob,'#b0b8c0',1,1);   // shine
     px(ctx,gx,4+bob,'#3a2810',2,6);   // grip
@@ -995,7 +994,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,gx,-9+bob,'#b0b8c0',2,1);  // taper near tip
     px(ctx,gx,-10+bob,'#c0c8d0',1,1); // tip point
   } else if(wpT===2){
-    // Steel greatsword — long 15px blade UP
+    // Steel greatsword - long 15px blade UP
     px(ctx,gx,9+bob,'#b8c0b8',2,2);   // pommel
     px(ctx,gx,9+bob,'#d8e0d8',1,1);
     px(ctx,gx,4+bob,'#2a1e10',2,6);   // grip
@@ -1008,7 +1007,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,gx,-12+bob,'#d8e0e0',2,1); // taper
     px(ctx,gx,-13+bob,'#e8f0f0',1,1); // tip point
   } else {
-    // Legendary — 17px blade UP, gold guard, runic glow
+    // Legendary - 17px blade UP, gold guard, runic glow
     px(ctx,gx,9+bob,'#c0c8c0',2,2);
     px(ctx,gx,9+bob,'#f0f0e8',1,1);
     px(ctx,gx,4+bob,'#2a1e10',2,6);
@@ -1048,7 +1047,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-7,4+bob,'#909090',2,1);   // iron boss
     px(ctx,-8,4+bob,'#484848',1,1);
   } else if(wpT===2){
-    // Steel kite shield — proper
+    // Steel kite shield - proper
     px(ctx,-8,0+bob,'#2a2e36',3,9);
     px(ctx,-8,0+bob,'#3a4050',2,8);
     px(ctx,-8,0+bob,'#1e2228',1,8);
@@ -1060,7 +1059,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-8,3+bob,'#404858',3,1);   // horizontal line
     px(ctx,-8,6+bob,'#404858',3,1);
   } else {
-    // Warlord shield — gold-trimmed
+    // Warlord shield - gold-trimmed
     px(ctx,-8,0+bob,'#2a2e36',3,9);
     px(ctx,-8,0+bob,'#3a4050',2,8);
     px(ctx,-8,0+bob,'#c8a030',1,9);   // full gold left edge
@@ -1100,9 +1099,9 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   var shCol   =mT===0?'#100e18':mT===1?'#0e0a20':mT===2?'#0a0618':'#080412';
 
   // ── FLOWING ROBE BODY ──
-  // Back layer (slightly wider, darker — gives depth)
+  // Back layer (slightly wider, darker - gives depth)
   px(ctx,-4,-1+bob,shCol,8,15);
-  // Main robe body — slim torso, flares at hem
+  // Main robe body - slim torso, flares at hem
   px(ctx,-3,0+bob,robeBase,6,12);
   px(ctx,-2,0+bob,robeMid,4,11);
   px(ctx,-1,1+bob,robeHi,2,7);
@@ -1133,7 +1132,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,9+bob,trimCol,6,2);   // wider arcane sash
     px(ctx,-1,9+bob,'rgba(160,60,220,0.4)',2,1); // glow
   }
-  // Robe hem — elegantly flared, longer in back
+  // Robe hem - elegantly flared, longer in back
   px(ctx,-4,11+bob+rv,robeBase,8,5);
   px(ctx,-5,13+bob+rv,robeBase,2,3);px(ctx,3,13+bob+rv,robeBase,2,3);
   px(ctx,-5,14+bob+rv,shCol,2,2);px(ctx,3,14+bob+rv,shCol,2,2);
@@ -1149,7 +1148,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,3,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
   }
 
-  // ── SLEEVES — wide and flowing ──
+  // ── SLEEVES - wide and flowing ──
   px(ctx,-5,0+bob,robeBase,2,11);px(ctx,3,0+bob,robeBase,2,11);
   px(ctx,-6,2+bob,shCol,1,9);px(ctx,4,2+bob,shCol,1,9); // outer sleeve shadow
   px(ctx,-5,0+bob,shCol,1,10);
@@ -1159,11 +1158,11 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-6,9+bob,trimCol,2,2);px(ctx,4,9+bob,trimCol,2,2);
     px(ctx,-6,9+bob,robeHi,1,1);
   }
-  // Hands — pale elven skin
+  // Hands - pale elven skin
   px(ctx,-6,10+bob,'#d0c8b8',2,2);px(ctx,4,10+bob,'#d0c8b8',2,2);
   px(ctx,-6,11+bob,'#b8b0a0',2,1);px(ctx,4,11+bob,'#b8b0a0',2,1);
 
-  // ── SHOES — dark elegant pointed ──
+  // ── SHOES - dark elegant pointed ──
   px(ctx,-3,15+bob,'#18141e',3,3);px(ctx,0,15+bob,'#18141e',3,3);
   px(ctx,-2,17+bob,'#0e0c14',2,1);px(ctx,1,17+bob,'#0e0c14',2,1);
   // Pointed toe
@@ -1172,14 +1171,14 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-4,15+bob,trimCol,1,1);px(ctx,3,15+bob,trimCol,1,1);
   }
 
-  // ── FACE — pale elven ──
+  // ── FACE - pale elven ──
   var skinCol='#d8cfc0'; // pale elven skin all tiers
   var eyeCol=mT===0?'rgba(100,160,220,0.9)':mT===1?'rgba(120,80,220,0.9)':mT===2?'rgba(160,60,240,0.95)':'rgba(200,80,255,1.0)';
   // Grey hair behind face
   px(ctx,2,-5+bob,'#a8a8a0',1,10); // hair flow right
   px(ctx,3,-4+bob,'#989890',1,9);
   px(ctx,-4,-4+bob,'#b0b0a8',1,8); // hair flow left
-  // Face — slightly narrow and angular (elven)
+  // Face - slightly narrow and angular (elven)
   px(ctx,-2,-7+bob,skinCol,4,6);
   px(ctx,-2,-7+bob,'#c0b8a8',1,5); // left face shadow
   px(ctx,1,-7+bob,'#c8c0b0',1,5);  // right face shadow
@@ -1188,7 +1187,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   px(ctx,3,-5+bob,skinCol,1,1);    // ear tip
   px(ctx,-3,-6+bob,skinCol,1,2);   // left ear
   px(ctx,-4,-5+bob,skinCol,1,1);   // left ear tip
-  // Eyes — colour shifts per tier
+  // Eyes - colour shifts per tier
   px(ctx,-2,-5+bob,'#080408',1,1);px(ctx,0,-5+bob,'#080408',1,1); // eye shadow
   px(ctx,-2,-5+bob,eyeCol,1,1);px(ctx,0,-5+bob,eyeCol,1,1);
   // Glowing eye effect (T3)
@@ -1196,10 +1195,10 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     ctx.fillStyle='rgba(200,60,255,0.25)';
     ctx.fillRect(-3*S,-6*S,5*S,2*S);
   }
-  // Grey eyebrows — sharp elven
+  // Grey eyebrows - sharp elven
   px(ctx,-3,-6+bob,'#909088',3,1);px(ctx,0,-6+bob,'#909088',2,1);
   px(ctx,-1,-3+bob,'#c0b8a8',1,1); // nose
-  // No visible lips — thin-lipped elf
+  // No visible lips - thin-lipped elf
   // Grey hair on head
   px(ctx,-2,-9+bob,'#a8a8a0',4,3);  // hair top
   px(ctx,-3,-8+bob,'#b0b0a8',1,3);  // left flow
@@ -1228,7 +1227,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     // Small side gems
     px(ctx,-3,-8+bob,'#4a1880',1,1);px(ctx,2,-8+bob,'#4a1880',1,1);
   } else {
-    // Gold headband with multiple arcane gems — grand archmage
+    // Gold headband with multiple arcane gems - grand archmage
     px(ctx,-3,-8+bob,'#c8a030',6,1);  // gold band
     px(ctx,-3,-8+bob,'#e0b840',1,1);  // left gleam
     px(ctx,2,-8+bob,'#a88020',1,1);   // right shadow
@@ -1244,12 +1243,12 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,-9+bob,'#8030c0',1,1);px(ctx,2,-9+bob,'#8030c0',1,1);
   }
 
-  // ── BEARD — silver-grey, all tiers but grows ──
+  // ── BEARD - silver-grey, all tiers but grows ──
   if(mT===0){
     // Short stubble / young elf
     px(ctx,-1,-2+bob,'#888080',2,1);
   } else if(mT===1){
-    // Chin beard — neat
+    // Chin beard - neat
     px(ctx,-1,-1+bob,'#a0a098',2,2);
     px(ctx,0,1+bob,'#909088',1,1);
   } else if(mT===2){
@@ -1269,7 +1268,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
 
   // ── STAFF (thin long shaft, orb scales with weapon tier) ──
   var mwpT=getWeaponTier('mage');
-  // Thin single-pixel shaft — long and elegant
+  // Thin single-pixel shaft - long and elegant
   ctx.strokeStyle=mwpT===0?'#3a2408':'#4a3010';
   ctx.lineWidth=S;
   ctx.beginPath();ctx.moveTo(4.5*S,12*S+bob*S);ctx.lineTo(4.5*S,-4*S+bob*S);ctx.stroke();
@@ -1283,7 +1282,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     ctx.beginPath();ctx.moveTo(3.5*S,4*S+bob*S);ctx.lineTo(6*S,4*S+bob*S);ctx.stroke();
   }
   if(mwpT===0){
-    // Tier 0: tiny purple gem on tip — not floating
+    // Tier 0: tiny purple gem on tip - not floating
     px(ctx,4,-3+bob,'#6040a0',1,2);  // gem body
     px(ctx,4,-3+bob,'#9060d0',1,1);  // gem top facet
     px(ctx,5,-3+bob,'#4a3080',1,1);  // gem shadow
@@ -1294,7 +1293,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,4,-3+bob,'#4a3080',1,2);  // right shadow
     px(ctx,3,-5+bob,'#9060d0',1,1);  // tip sparkle
   } else if(mwpT===2){
-    // Tier 2: crystal orb — medium
+    // Tier 2: crystal orb - medium
     ctx.fillStyle='rgba(120,60,220,0.22)';
     ctx.beginPath();ctx.arc(4.5*S,(-7+bob+oy)*S,6*S,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='rgba(160,80,255,0.45)';ctx.lineWidth=1.5;
@@ -1331,7 +1330,7 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
   var sw=Math.sin(anim*0.25)*1.5;
 
   // === CLOAK (tier 3 only, drawn first behind body) ===
-  // No full cloak — just shoulder drapes for T3
+  // No full cloak - just shoulder drapes for T3
 
   // === HAIR behind ===
   px(ctx,2,-4+bob,'#d45010',1,14);
@@ -1361,22 +1360,22 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-1,-4+bob,'#c88060',1,1);  // nose
     px(ctx,-2,-3+bob,'#d09060',4,1);  // chin/bridge row touching scarf top
   } else {
-    // Face in hood shadow — darker skin, subtle green eye glow
-    px(ctx,-2,-7+bob,'#c08058',4,5);  // face — darkened by hood shadow
+    // Face in hood shadow - darker skin, subtle green eye glow
+    px(ctx,-2,-7+bob,'#c08058',4,5);  // face - darkened by hood shadow
     px(ctx,-2,-6+bob,'#a06040',1,4);  // left shadow deep
     px(ctx,1,-6+bob,'#906030',1,4);   // right shadow deeper
     px(ctx,-2,-7+bob,'#a06840',1,3);  // far left shadow
-    // Green glowing eyes — main visual focal point
+    // Green glowing eyes - main visual focal point
     ctx.fillStyle='rgba(40,220,40,0.45)';
     ctx.fillRect(-3*S,-6*S,5*S,3*S); // stronger glow behind eyes
     px(ctx,-3,-5+bob,'rgba(40,200,40,0.3)',1,1); // outer left glow
     px(ctx,1,-5+bob,'rgba(40,200,40,0.3)',1,1);  // outer right glow
-    px(ctx,-2,-5+bob,'rgba(80,255,60,1.0)',1,1); // left eye — vivid
-    px(ctx,0,-5+bob,'rgba(80,255,60,1.0)',1,1);  // right eye — vivid
+    px(ctx,-2,-5+bob,'rgba(80,255,60,1.0)',1,1); // left eye - vivid
+    px(ctx,0,-5+bob,'rgba(80,255,60,1.0)',1,1);  // right eye - vivid
     px(ctx,-2,-6+bob,'#0a0400',1,1);  // brow
     px(ctx,0,-6+bob,'#0a0400',1,1);
     px(ctx,-1,-4+bob,'#906030',1,1);  // nose
-    px(ctx,-2,-3+bob,'#a06040',4,1);  // chin strip — flush with scarf top
+    px(ctx,-2,-3+bob,'#a06040',4,1);  // chin strip - flush with scarf top
   }
 
   // === HAIR on head (hidden by hood on tier 2-3) ===
@@ -1387,19 +1386,19 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-1,-9+bob,'#e06018',2,1);
     if(rT>=1){px(ctx,-2,-8+bob,'#e06018',1,2);}
   } else if(rT===2){
-    // Partial hood — hair still visible at sides
+    // Partial hood - hair still visible at sides
     px(ctx,-3,-7+bob,'#b83a08',1,4);  // auburn side hair left
     px(ctx,2,-7+bob,'#b83a08',1,3);   // auburn side hair right
     px(ctx,3,-5+bob,'#d45010',1,5);   // long strand escaping hood
   } else {
-    // Full hood — just side strands escaping
+    // Full hood - just side strands escaping
     px(ctx,-3,-6+bob,'#d45010',1,3);
     px(ctx,3,-5+bob,'#b83a08',1,6);   // long strand
   }
 
   // === BODY ===
   if(rT===0){
-    // Simple dark shirt — plain, worn
+    // Simple dark shirt - plain, worn
     px(ctx,-2,0+bob,'#1e1c24',4,7);
     px(ctx,-1,0+bob,'#2a2834',2,6);
     px(ctx,-2,0+bob,'#141218',1,7);px(ctx,1,0+bob,'#141218',1,7);
@@ -1408,14 +1407,14 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,7+bob,'#2a1c10',5,1);
     px(ctx,0,7+bob,'#706040',1,1); // buckle
   } else if(rT===1){
-    // Leather corset top — tight fit, visible boning, V neck deep
+    // Leather corset top - tight fit, visible boning, V neck deep
     px(ctx,-2,0+bob,'#221408',4,7);  // dark leather base
     px(ctx,-1,0+bob,'#2e1c10',2,6);  // center panel lighter
     px(ctx,-2,0+bob,'#180e04',1,7);px(ctx,1,0+bob,'#180e04',1,7); // side shadow
     // Corset boning lines
     px(ctx,-1,1+bob,'#221608',1,5);  // left bone
     px(ctx,0,1+bob,'#3a2410',1,5);   // right bone
-    // V neck — deep
+    // V neck - deep
     px(ctx,-1,0+bob,'#e8a878',1,3);
     px(ctx,0,0+bob,'#d09060',1,2);
     // 3 brass buckles on side
@@ -1426,13 +1425,13 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-1,6+bob,'#e8a878',3,1);px(ctx,-2,6+bob,'#d09060',1,1);
     // Belt
     px(ctx,-3,7+bob,'#1c1208',5,1);px(ctx,0,7+bob,'#9a7030',1,1);
-    // Mouth scarf — dark cloth covering lower face
+    // Mouth scarf - dark cloth covering lower face
     px(ctx,-2,-2+bob,'#181420',4,2);  // scarf body
     px(ctx,-3,-2+bob,'#201828',1,2);  // left edge
     px(ctx,1,-2+bob,'#100e18',1,2);   // right edge
     px(ctx,-2,-2+bob,'#282030',4,1);  // scarf top edge
   } else if(rT===2){
-    // Structured dark corset — laced, midriff bare, shoulderless
+    // Structured dark corset - laced, midriff bare, shoulderless
     px(ctx,-2,0+bob,'#1c1008',4,6);   // corset base
     px(ctx,-1,0+bob,'#281606',2,5);   // center lighter
     px(ctx,-2,0+bob,'#100804',1,6);px(ctx,1,0+bob,'#100804',1,6); // edges
@@ -1446,63 +1445,63 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,1,0+bob,'#7a5820',1,1);px(ctx,1,2+bob,'#7a5820',1,1);
     px(ctx,1,4+bob,'#7a5820',1,1);px(ctx,-2,2+bob,'#7a5820',1,1);
     // Midriff skin strip below corset
-    // No midriff gap — corset extends to panty
+    // No midriff gap - corset extends to panty
     px(ctx,-2,6+bob,'#1c1008',4,2);px(ctx,-1,6+bob,'#281606',2,1);
     // Thin strap belt only
     px(ctx,-3,7+bob,'#2a1808',5,1);px(ctx,0,7+bob,'#7a5820',1,1);
-    // Half hood — smooth rounded shape over hair
+    // Half hood - smooth rounded shape over hair
     px(ctx,-3,-9+bob,'#181420',5,2);  // hood top curve
     px(ctx,-4,-8+bob,'#181420',6,3);  // hood wide body
     px(ctx,-3,-8+bob,'#201828',4,2);  // hood inner lighter
     px(ctx,-4,-6+bob,'#181420',6,1);  // hood brim over forehead
     px(ctx,-4,-8+bob,'#141018',1,3);  // left shadow
     px(ctx,2,-8+bob,'#0e0c14',1,3);   // right shadow
-    // Scarf — sits flush against face (no gap)
+    // Scarf - sits flush against face (no gap)
     px(ctx,-2,-3+bob,'#201828',4,3);  // scarf multi-layer (moved up 1px)
     px(ctx,-3,-3+bob,'#181420',1,2);  // left wrap
     px(ctx,1,-3+bob,'#181420',1,2);   // right wrap
     px(ctx,-2,-3+bob,'#282030',4,1);  // scarf top fold
     // Eyes still visible through hood gap
   } else {
-    // Phantom — sleek black corset with black sleeves, toned down details
+    // Phantom - sleek black corset with black sleeves, toned down details
     // Black sleeves (drawn as part of body)
     px(ctx,-4,0+bob,'#0e0c12',2,8);   // left sleeve
     px(ctx,2,0+bob,'#0e0c12',2,8);    // right sleeve
     px(ctx,-4,0+bob,'#141018',1,7);   // left sleeve highlight
     px(ctx,3,0+bob,'#0a0810',1,7);    // right sleeve shadow
-    // Spiked shoulder pieces — dark metal with clear edge highlight
+    // Spiked shoulder pieces - dark metal with clear edge highlight
     px(ctx,-5,-1+bob,'#282830',3,5);  // left pauldron base (grey-dark)
     px(ctx,2,-1+bob,'#282830',3,5);   // right pauldron base
     px(ctx,-5,-1+bob,'#383840',1,4);  // left highlight edge
     px(ctx,4,-1+bob,'#181820',1,4);   // right shadow edge
     px(ctx,-4,-2+bob,'#303038',2,3);  // left plate face
     px(ctx,2,-2+bob,'#303038',2,3);   // right plate face
-    // Spikes — bright tip so they read clearly
+    // Spikes - bright tip so they read clearly
     px(ctx,-5,-5+bob,'#303038',1,5);  // left spike body
-    px(ctx,-5,-8+bob,'#484850',1,3);  // left spike tip — brighter
+    px(ctx,-5,-8+bob,'#484850',1,3);  // left spike tip - brighter
     px(ctx,4,-5+bob,'#303038',1,5);   // right spike body
-    px(ctx,4,-8+bob,'#484850',1,3);   // right spike tip — brighter
+    px(ctx,4,-8+bob,'#484850',1,3);   // right spike tip - brighter
     // Red accent line on pauldron
     px(ctx,-5,-1+bob,'#8b1010',3,1);  // left red top
     px(ctx,2,-1+bob,'#8b1010',3,1);   // right red top
-    // Corset body — dark, simple lacing (toned down)
+    // Corset body - dark, simple lacing (toned down)
     px(ctx,-2,0+bob,'#0e0804',4,7);
     px(ctx,-1,0+bob,'#181008',2,6);
     px(ctx,-2,0+bob,'#080402',1,7);px(ctx,1,0+bob,'#080402',1,7);
-    // Subtle dark lacing — not gold
+    // Subtle dark lacing - not gold
     px(ctx,-1,1+bob,'#2a1808',1,5);
     px(ctx,0,1+bob,'#2a1808',1,5);
     px(ctx,-1,2+bob,'#3a2410',1,1);px(ctx,-1,4+bob,'#3a2410',1,1);
-    // High neck — no skin showing on chest
+    // High neck - no skin showing on chest
     px(ctx,-1,-1+bob,'#0e0c12',2,2); // black collar covering neck
     // 2 small iron buckles only (not gold)
     px(ctx,1,1+bob,'#484848',1,1);px(ctx,1,4+bob,'#484848',1,1);
-    // Corset extended to cover belly — no midriff
+    // Corset extended to cover belly - no midriff
     px(ctx,-2,5+bob,'#0e0804',4,3);   // lower corset extension
     px(ctx,-1,5+bob,'#181008',2,3);   // center lighter
     px(ctx,-1,6+bob,'#2a1808',1,3);   // subtle lacing lower
     px(ctx,0,6+bob,'#2a1808',1,3);
-    // Hood — wider and deeper, covers all hair, drapes to shoulders
+    // Hood - wider and deeper, covers all hair, drapes to shoulders
     px(ctx,-4,-10+bob,'#0e0c18',6,3);  // hood top wide
     px(ctx,-5,-9+bob,'#0a0810',1,4);   // far left edge
     px(ctx,4,-9+bob,'#060408',1,3);    // far right edge
@@ -1512,10 +1511,10 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-5,-6+bob,'#0e0c18',7,1);   // second brim row
     px(ctx,-5,-8+bob,'#080610',1,4);   // left deep shadow
     px(ctx,3,-8+bob,'#060408',1,3);    // right deep shadow
-    // Hood shoulder drapes — cover where hair would show
+    // Hood shoulder drapes - cover where hair would show
     px(ctx,-5,-4+bob,'#0a0810',2,6);   // left drape over shoulder
     px(ctx,3,-4+bob,'#080610',2,5);    // right drape over shoulder
-    // Scarf — flush against face bottom (y=-3)
+    // Scarf - flush against face bottom (y=-3)
     px(ctx,-2,-3+bob,'#181420',4,2);
     px(ctx,-3,-3+bob,'#141018',1,2);px(ctx,2,-3+bob,'#141018',1,2);
     px(ctx,-2,-3+bob,'#8b1010',4,1); // red top edge on scarf
@@ -1538,7 +1537,7 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-4,3+bob,'#e8a878',2,5); // bare arms T2
     px(ctx,2,3+bob,'#e8a878',2,5);
   } else {
-    // T3: black sleeves full length — hands only at bottom
+    // T3: black sleeves full length - hands only at bottom
     px(ctx,-4,1+bob,'#0e0c12',2,8);  // left sleeve
     px(ctx,2,1+bob,'#0e0c12',2,8);   // right sleeve
     px(ctx,-4,1+bob,'#141018',1,6);  // highlight
@@ -1557,13 +1556,13 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-2,11+bob+leg,'#f0b888',1,4);
     px(ctx,2,11+bob-leg,'#f0b888',1,4);
   } else {
-    // Dark mesh tights — skin underneath with dark net pattern
+    // Dark mesh tights - skin underneath with dark net pattern
     // Base skin tone showing through
-    px(ctx,-3,10+bob+leg,'#c07848',3,7);  // left thigh — muted skin through mesh
+    px(ctx,-3,10+bob+leg,'#c07848',3,7);  // left thigh - muted skin through mesh
     px(ctx,1,10+bob-leg,'#c07848',3,7);   // right thigh
     px(ctx,-3,10+bob+leg,'#a05830',1,6);  // left shadow
     px(ctx,3,10+bob-leg,'#a05830',1,5);   // right shadow
-    // Mesh pattern — dark diagonal dots/crosses
+    // Mesh pattern - dark diagonal dots/crosses
     var ml=Math.round(bob+leg);
     var mr=Math.round(bob-leg);
     // Left leg mesh
@@ -1586,12 +1585,12 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
 
   // === LEATHER BOTTOM (tier-based tiny leather piece) ===
   if(rT===0){
-    // Plain dark cloth bottoms — basic but still short
+    // Plain dark cloth bottoms - basic but still short
     px(ctx,-3,8+bob,'#181420',5,3);   // shorts waistband
     px(ctx,-2,9+bob,'#201828',3,2);
     px(ctx,-3,8+bob,'#2a1c10',5,1);   // top edge belt
   } else if(rT===1){
-    // Leather shorts — small, belted, shows upper thigh
+    // Leather shorts - small, belted, shows upper thigh
     px(ctx,-3,8+bob,'#2a1c0e',5,3);   // leather shorts
     px(ctx,-2,8+bob,'#3a2814',3,2);   // lighter center
     px(ctx,-3,8+bob,'#4a3018',5,1);   // top highlight
@@ -1600,14 +1599,14 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,8+bob,'#6a4a18',1,1);   // left rivet
     px(ctx,2,8+bob,'#6a4a18',1,1);    // right rivet
   } else if(rT===2){
-    // Small triangle leather panty — fits snugly, no belt
+    // Small triangle leather panty - fits snugly, no belt
     px(ctx,-2,8+bob,'#1c1008',4,2);   // top band
     px(ctx,-1,9+bob,'#281806',2,2);   // triangle narrowing
     px(ctx,0,10+bob,'#1c1008',1,1);   // triangle tip
     px(ctx,-2,8+bob,'#362210',4,1);   // top highlight
     px(ctx,-1,9+bob,'#3a2410',2,1);   // mid highlight
   } else {
-    // Phantom — tiny black triangle with gold trim
+    // Phantom - tiny black triangle with gold trim
     px(ctx,-2,8+bob,'#0e0808',4,2);   // top band
     px(ctx,-1,9+bob,'#181010',2,2);   // triangle
     px(ctx,0,10+bob,'#0e0808',1,1);   // tip
@@ -1617,7 +1616,7 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
 
   // === LOWER LEGS / BOOTS ===
   if(rT===0){
-    // Ankle boots — very short
+    // Ankle boots - very short
     px(ctx,-3,14+bob+leg,'#e8a878',3,4); // lower leg bare skin
     px(ctx,1,14+bob-leg,'#e8a878',3,4);
     px(ctx,-4,17+bob+leg,'#1e1008',4,2); // ankle boot
@@ -1643,7 +1642,7 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-4,18+bob+leg,'#0e0600',4,1); // sole
     px(ctx,1,18+bob-leg,'#0e0600',4,1);
   } else if(rT===2){
-    // Thigh-high boots — start at y=10 right after the leather panty
+    // Thigh-high boots - start at y=10 right after the leather panty
     px(ctx,-4,11+bob+leg,'#1a0e06',4,8); // boot body full length
     px(ctx,1,11+bob-leg,'#1a0e06',4,8);
     px(ctx,-3,11+bob+leg,'#261408',2,7); // boot highlight
@@ -1659,7 +1658,7 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-4,18+bob+leg,'#0e0600',4,1);
     px(ctx,1,18+bob-leg,'#0e0600',4,1);
   } else {
-    // Thigh-high boots — start at y=12, tights visible y=10-11
+    // Thigh-high boots - start at y=12, tights visible y=10-11
     px(ctx,-4,12+bob+leg,'#0e0804',4,7);  // boot body
     px(ctx,1,12+bob-leg,'#0e0804',4,7);
     px(ctx,-3,12+bob+leg,'#1a1008',2,6);  // highlight
@@ -1748,9 +1747,9 @@ function drawWithOpts(cls,ctx,x,y,dir,anim,flash,level){
 }
 var _redEyesActive=false;
 
-// ═══════════════════════════════════════════
+// ===========================================
 // ARENAS
-// ═══════════════════════════════════════════
+// ===========================================
 var TILE=48, AW=16, AH=12;
 var ARENAS = {
   volcano:{name:'Volcanic Rift',sp1:{x:1,y:5},sp2:{x:14,y:3},tiles:[
@@ -1797,9 +1796,9 @@ var ARENAS = {
 var ARENA_KEYS = ['volcano','desert','temple'];
 
 
-// ═══════════════════════════════════════════
+// ===========================================
 // DAILY QUEST SYSTEM
-// ═══════════════════════════════════════════
+// ===========================================
 
 var QUEST_POOL = {
   warrior: [
@@ -1948,7 +1947,7 @@ function loadQuestProgress(){
       // Sync to localStorage cache
       try{localStorage.setItem('eldara_quest_'+_questDateKey,JSON.stringify(_questProgress));}catch(e){}
     } else {
-      // Nothing in Firebase yet — check localStorage cache
+      // Nothing in Firebase yet - check localStorage cache
       try{
         var saved=JSON.parse(localStorage.getItem('eldara_quest_'+_questDateKey)||'{}');
         _questProgress=saved;
@@ -2002,7 +2001,7 @@ function renderDailyQuests(){
   if(!el||!_todaysQuests)return;
   var clses=['warrior','mage','ranger'];
   var colors={warrior:'#8a6a20',mage:'#6040c0',ranger:'#8a4a10'};
-  var icons={warrior:'⚔',mage:'🔮',ranger:'🗡'};
+  var icons={warrior:'\u2694',mage:'🔮',ranger:'🗡'};
   el.innerHTML=clses.map(function(cls){
     var q=_todaysQuests[cls];
     var d=_questProgress[cls]||{};
@@ -2010,7 +2009,7 @@ function renderDailyQuests(){
     var prog=getQuestProgressText(cls);
     var col=done?'rgba(40,160,60,0.8)':colors[cls];
     return '<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);opacity:'+(done?0.6:1)+'">'
-      +'<div style="font-size:10px;margin-top:1px">'+(done?'✓':'○')+'</div>'
+      +'<div style="font-size:10px;margin-top:1px">'+(done?'✓':'\u25CB')+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:9px;color:'+col+';letter-spacing:1px;font-weight:bold">'+q.name+'</div>'
       +'<div style="font-size:8px;color:rgba(255,255,255,0.55);line-height:1.4">'+q.desc+'</div>'
@@ -2030,11 +2029,11 @@ function renderDailyQuests(){
     ctx.fillStyle='rgba(80,55,25,0.12)';
     ctx.beginPath();ctx.ellipse(sx-2,sy+2,10,8,0,0,Math.PI*2);ctx.fill(); // dirt stain
     var a=alpha||0.55;
-    // Aged, dirty skull — yellowed, grime-stained
+    // Aged, dirty skull - yellowed, grime-stained
     var c1='rgba(195,180,140,'+a+')', c2='rgba(155,138,100,'+(a*0.75)+')', c3='rgba(100,85,60,'+(a*0.5)+')';
     // Skulls sized to match player head ~8-10px wide (S=3, head ~3 units)
     if(variant===0){
-      // Front-facing skull — cranium r=9, jaw below
+      // Front-facing skull - cranium r=9, jaw below
       ctx.fillStyle=c1;ctx.beginPath();ctx.arc(sx,sy-4,9,0,Math.PI*2);ctx.fill();
       ctx.fillStyle=c3;ctx.beginPath();ctx.arc(sx+3,sy-6,4,0,Math.PI*2);ctx.fill(); // highlight
       ctx.fillStyle=c2;ctx.fillRect(sx-6,sy+4,13,7); // jaw
@@ -2103,7 +2102,7 @@ function renderDailyQuests(){
     ctx.strokeStyle=bc;ctx.lineWidth=3;
     ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
     ctx.lineWidth=1;
-    // Knuckle ends — two bumps each side
+    // Knuckle ends - two bumps each side
     ctx.fillStyle=bc;
     ctx.beginPath();ctx.arc(x1,y1,4,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(x1+Math.cos(Math.atan2(y2-y1,x2-x1)+0.5)*3,y1+Math.sin(Math.atan2(y2-y1,x2-x1)+0.5)*3,2.5,0,Math.PI*2);ctx.fill();
@@ -2115,7 +2114,7 @@ function renderDailyQuests(){
     var a=alpha||0.14;
     var r=seed%3===0?'rgba(70,8,6,'+a+')':seed%3===1?'rgba(55,12,5,'+a+')':'rgba(80,15,8,'+a+')';
     ctx.fillStyle=r;
-    // Organic blob — multiple overlapping ellipses at different angles
+    // Organic blob - multiple overlapping ellipses at different angles
     ctx.beginPath();ctx.ellipse(bx,by,14,8,seed*0.4,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.ellipse(bx+5,by+3,10,6,(seed+1)*0.5,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.ellipse(bx-4,by+5,8,5,(seed+2)*0.3,0,Math.PI*2);ctx.fill();
@@ -2142,7 +2141,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
           if((tx+ty)%2===0){ctx.fillStyle='#302010';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
           ctx.strokeStyle='#251808';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
         } else if(isVolcano){
-          // Basalt rock — near-black with dark red-brown veins
+          // Basalt rock - near-black with dark red-brown veins
           ctx.fillStyle='#100806';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.fillStyle='#1c0e08';ctx.fillRect(px2,py2,TILE,6);
           ctx.fillStyle='#160a04';ctx.fillRect(px2,py2+6,TILE,TILE-12);
@@ -2166,12 +2165,12 @@ function drawArena(ctx, arena, tick, noSlabs) {
           // Sand grain dots
           if((tx*3+ty*7)%5===0){ctx.fillStyle='rgba(200,170,80,0.3)';ctx.fillRect(px2+8,py2+8,3,2);}
           if((tx*5+ty*3)%7===0){ctx.fillStyle='rgba(180,140,60,0.2)';ctx.fillRect(px2+20,py2+18,2,2);}
-          // Skulls on edges of tiles — various positions and types
+          // Skulls on edges of tiles - various positions and types
           if((tx*7+ty*11)%53===0){drawFloorSkull(ctx,px2+6,py2+8,0.5,(tx+ty)%4);}
           if((tx*13+ty*7)%79===0){drawFloorSkull(ctx,px2+TILE-10,py2+TILE-10,0.45,(tx*ty)%4);}
           // Scattered pebbles
           if((tx*11+ty*5)%9===0){ctx.fillStyle='rgba(140,100,30,0.18)';ctx.fillRect(px2+30,py2+10,3,3);ctx.fillRect(px2+12,py2+28,2,2);}
-          // Bones — sized to player scale (~35px long)
+          // Bones - sized to player scale (~35px long)
           if((tx*9+ty*13)%19===0){drawFloorBone(ctx,px2+8,py2+36,px2+40,py2+24,0.3);}
           if((tx*17+ty*5)%27===0){drawFloorBone(ctx,px2+30,py2+38,px2+42,py2+18,0.28);}
           // Organic blood stain
@@ -2204,7 +2203,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
           // Skulls near tile edges
           if((tx*13+ty*7)%61===0){drawFloorSkull(ctx,px2+5,py2+TILE-12,0.5,(tx+ty*2)%4);}
           if((tx*11+ty*17)%83===0){drawFloorSkull(ctx,px2+TILE-8,py2+7,0.48,(tx*2+ty)%4);}
-          // Spider webs — only in the 4 true map corners (top-left, top-right, bottom-left, bottom-right)
+          // Spider webs - only in the 4 true map corners (top-left, top-right, bottom-left, bottom-right)
           var isCorner=(tx<=2&&ty<=2)||(tx>=AW-3&&ty<=2)||(tx<=2&&ty>=AH-3)||(tx>=AW-3&&ty>=AH-3);
           var isNearCorner=(tx<=3&&ty<=3)||(tx>=AW-4&&ty<=3)||(tx<=3&&ty>=AH-4)||(tx>=AW-4&&ty>=AH-4);
           if(isCorner&&(tx*7+ty*5)%3===0){
@@ -2242,7 +2241,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
               for(var wl2=0;wl2<4;wl2++){var la2=wl2*0.55-0.8;ctx.beginPath();ctx.moveTo(spx,spy);ctx.lineTo(spx-Math.cos(la2)*6,spy+Math.sin(la2)*4);ctx.stroke();}
             }
           }
-          // Moving spiders — spread across all floor tiles, denser near corners
+          // Moving spiders - spread across all floor tiles, denser near corners
           var spiderChance=isNearCorner?2:7; // appear more near corners
           if((tx*11+ty*7)%spiderChance===0){
             // Each spider has unique path based on tile seed
@@ -2258,7 +2257,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
             ctx.fillStyle='rgba(18,12,8,0.48)';
             ctx.beginPath();ctx.arc(spx2,spy2,2,0,Math.PI*2);ctx.fill();   // abdomen
             ctx.beginPath();ctx.arc(spx2,spy2-2.5,1.4,0,Math.PI*2);ctx.fill(); // head
-            // Animated legs — pairs splay based on movement direction
+            // Animated legs - pairs splay based on movement direction
             var spDir=spAngle;
             ctx.strokeStyle='rgba(18,12,8,0.35)';ctx.lineWidth=0.6;
             for(var sl=0;sl<4;sl++){
@@ -2292,7 +2291,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
         } else if(isVolcano){
           ctx.fillStyle=(tx+ty)%2===0?'#100c08':'#0c0a06';ctx.fillRect(px2,py2,TILE,TILE);
           ctx.strokeStyle='rgba(70,20,0,0.25)';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
-          // Glowing lava cracks — thin, branching network
+          // Glowing lava cracks - thin, branching network
           if((tx*7+ty*5)%9===0){
             var lc1=Math.sin(tick*0.04+tx*0.7+ty*1.3)*0.3+0.7;
             function lavaCrack(x1,y1,x2,y2,depth,lca){
@@ -2347,12 +2346,12 @@ function drawArena(ctx, arena, tick, noSlabs) {
           ctx.strokeStyle='#1c1c30';ctx.lineWidth=0.5;ctx.strokeRect(px2,py2,TILE,TILE);
         }
       } else if(t===2){
-        // Pure molten lava — bright glowing with corrugated edges
+        // Pure molten lava - bright glowing with corrugated edges
         var lf=Math.sin(tick*0.05+tx*0.8+ty*1.2)*0.35+0.65;
         var lf2=Math.sin(tick*0.07+tx*1.3+ty*0.6+1.5)*0.3+0.7;
         var lf3=Math.sin(tick*0.03+tx*0.5+ty*1.8+3.0)*0.25+0.75;
         var lseed=tx*31+ty*17;
-        // Corrugated edge clip — wavy polygon around tile
+        // Corrugated edge clip - wavy polygon around tile
         ctx.save();
         ctx.beginPath();
         var lsteps=10;
@@ -2361,7 +2360,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
         for(var li=lsteps;li>=0;li--){ctx.lineTo(px2+li/lsteps*TILE,py2+TILE+Math.sin(lseed*0.4+li*2.8)*3+Math.sin(lseed*0.6+li*3.3)*1.5);}
         for(var li=lsteps;li>=0;li--){ctx.lineTo(px2+Math.sin(lseed*0.8+li*2.0)*3+Math.sin(lseed*0.2+li*3.9)*1.5,py2+li/lsteps*TILE);}
         ctx.closePath();ctx.clip();
-        // Deep glowing base — full tile bright lava
+        // Deep glowing base - full tile bright lava
         var lb=ctx.createRadialGradient(px2+TILE*0.45,py2+TILE*0.4,2,px2+TILE/2,py2+TILE/2,TILE*0.72);
         lb.addColorStop(0,'rgba(255,180,30,1)');
         lb.addColorStop(0.25,'rgba(255,100,10,1)');
@@ -2397,7 +2396,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
         }
         ctx.restore();
       } else if(t===6){
-        // Stone bridge over lava — dark rock slabs
+        // Stone bridge over lava - dark rock slabs
         var lf2=Math.sin(tick*0.06+tx*0.9+ty*1.1)*0.3+0.7;
         // Lava glow underneath
         ctx.fillStyle='rgba(80,15,0,'+lf2*0.8+')';ctx.fillRect(px2,py2,TILE,TILE);
@@ -2440,7 +2439,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
       } else if(t===7){
         // Brazier on stone wall block
         var pcx7=px2+TILE/2, pcy7=py2+TILE/2;
-        // Stone wall block base — full tile, same as wall
+        // Stone wall block base - full tile, same as wall
         var wc7=arena.name&&arena.name.indexOf('Desert')>=0?'#5a3e18':'#2a2838';
         var wch7=arena.name&&arena.name.indexOf('Desert')>=0?'#6a4e28':'#38344a';
         var wcs7=arena.name&&arena.name.indexOf('Desert')>=0?'#3a2808':'#1a1628';
@@ -2450,7 +2449,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
         ctx.fillStyle=wcs7;ctx.fillRect(px2+TILE-5,py2,5,TILE); // right shadow
         // Mortar line
         ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
-        // Brazier sits lower on the wall block — shifted down by 8px
+        // Brazier sits lower on the wall block - shifted down by 8px
         var by=py2+10; // base y for brazier, lower on the wall
         // Legs
         ctx.fillStyle='#252525';
@@ -2458,7 +2457,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
         ctx.fillRect(pcx7+7,by,3,12);  // right leg
         // Cross brace
         ctx.fillRect(pcx7-10,by+8,20,3);
-        // Bowl — bigger
+        // Bowl - bigger
         ctx.fillStyle='#1a1a1a';ctx.fillRect(pcx7-11,by-6,22,10); // bowl body
         ctx.fillStyle='#2a2a2a';ctx.fillRect(pcx7-10,by-6,20,4);  // top rim
         ctx.fillStyle='#141414';ctx.fillRect(pcx7-8,by+2,16,5);   // bowl taper
@@ -2466,7 +2465,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
         // Glowing embers
         ctx.fillStyle='rgba(200,70,0,0.7)';ctx.fillRect(pcx7-8,by-4,16,5);
         ctx.fillStyle='rgba(240,140,0,0.5)';ctx.fillRect(pcx7-5,by-5,10,4);
-        // Animated flames — bigger, more fire
+        // Animated flames - bigger, more fire
         var fl7=Math.sin(tick*0.15+tx*1.7)*2.5;
         var fl7b=Math.sin(tick*0.12+tx*2.1+1)*1.5;
         var glg7=ctx.createRadialGradient(pcx7,by-10,0,pcx7,by-4,18);
@@ -2483,7 +2482,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
     }
   }
 
-  // ══ POST-TILE OVERLAY EFFECTS ══
+  // == POST-TILE OVERLAY EFFECTS ==
   var t2=tick; // alias
 
   if(isVolcano){
@@ -2521,7 +2520,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
       ctx.fillStyle='rgba(160,100,60,'+dalpha+')';
       ctx.beginPath();ctx.arc(dx2%( AW*TILE),dy2%(AH*TILE),0.8,0,Math.PI*2);ctx.fill();
     }
-    // Heat shimmer near lava — wavy distortion strip along lava tile edges
+    // Heat shimmer near lava - wavy distortion strip along lava tile edges
     for(var ty2=0;ty2<AH;ty2++){
       for(var tx2=0;tx2<AW;tx2++){
         if(arena.tiles[ty2]&&arena.tiles[ty2][tx2]===2){
@@ -2553,7 +2552,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
       ctx.fillStyle='rgba(180,160,200,'+malpha+')';
       ctx.beginPath();ctx.arc(mx2%(AW*TILE),my2%(AH*TILE),0.7,0,Math.PI*2);ctx.fill();
     }
-    // Floor candles — on floor tiles adjacent to walls, randomly clustered
+    // Floor candles - on floor tiles adjacent to walls, randomly clustered
     for(var cy2=1;cy2<AH-1;cy2++){
       for(var cx2=1;cx2<AW-1;cx2++){
         if(arena.tiles[cy2]&&arena.tiles[cy2][cx2]===0){
@@ -2564,7 +2563,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
             var ccount=(cx2+cy2)%3===0?3:(cx2*cy2)%2===0?2:1;
             var cseedBase=cx2*37+cy2*19;
             for(var cc=0;cc<ccount;cc++){
-              // Random position within tile using seed — not in a row
+              // Random position within tile using seed - not in a row
               var crx=cpx+5+(cseedBase*cc*13+7)%34;
               var cry=cpy+TILE-14+(cseedBase*cc*7+3)%10;
               var cfl=Math.sin(t2*0.12+cx2*1.7+cy2*2.3+cc*1.1)*1.5;
@@ -2586,7 +2585,7 @@ function drawArena(ctx, arena, tick, noSlabs) {
               ctx.beginPath();ctx.ellipse(crx,cry+cheight,cwidth+1,1.5,0,0,Math.PI*2);ctx.fill();
               // Wick
               ctx.fillStyle='rgba(30,20,10,0.8)';ctx.fillRect(crx-0.5,cry-2,1,3);
-              // Flame — two layered
+              // Flame - two layered
               ctx.fillStyle='rgba(255,210,70,0.8)';
               ctx.beginPath();ctx.arc(crx,cry-3+cfl*0.4,1.8,0,Math.PI*2);ctx.fill();
               ctx.fillStyle='rgba(255,140,20,0.65)';
@@ -2639,9 +2638,9 @@ function drawArena(ctx, arena, tick, noSlabs) {
 
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // CLASSES
-// ═══════════════════════════════════════════
+// ===========================================
 var CLS = {
   warrior:{name:'Warrior',icon:'\u2694',atkIcon:'\u2694',atkLabel:'Slash',color:'#6a7a8a',
     hp:105,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
@@ -2660,9 +2659,9 @@ var CLS = {
     move:{name:'Shadow Step',icon:'\u27A1',cd:5000,shadowStep:true,stepRange:280,stepDmg:12}}
 };
 
-// ═══════════════════════════════════════════
+// ===========================================
 // GAME STATE
-// ═══════════════════════════════════════════
+// ===========================================
 var myId='p_'+Math.random().toString(36).slice(2,9);
 var myName='HERO', myClass='warrior';
 var setupMode='host', gameMode='training';
@@ -2676,7 +2675,7 @@ var enemyNamePvp='Opponent', enemyClsPvp='warrior', enemyIdPvp='';
 var esEnemy=null, esActions=null, esGuest=null, esMatchStart=null, esChat=null;
 
 // ── HIT NUMBERS ──
-// Hit numbers — stored per-player, drawn above health bar
+// Hit numbers - stored per-player, drawn above health bar
 var hitNumbers=[];
 function spawnHitNumber(playerId,dmg){
   // Remove old number for same player if still showing
@@ -2719,9 +2718,9 @@ try{pvpBestStreak=parseInt(localStorage.getItem('eldara_pvp_best_streak')||'0');
 var matchHistory=[];
 try{matchHistory=JSON.parse(localStorage.getItem('eldara_match_history')||'[]');}catch(e){}
 
-// ═══════════════════════════════════════════
+// ===========================================
 // ELO RATING SYSTEM
-// ═══════════════════════════════════════════
+// ===========================================
 // ── EQUIPPED TITLE (declared early so draw() can use it) ──
 var _equippedTitle='';
 try{_equippedTitle=localStorage.getItem('eldara_equipped_title')||'';}catch(e){}
@@ -2769,13 +2768,13 @@ function getRatingChange(myR,oppR,won){
 }
 
 function getRatingTier(r){
-  if(r>=2000)return{name:'Grandmaster',color:'#e8b84b',icon:'👑'};
-  if(r>=1600)return{name:'Master',color:'#e8b84b',icon:'⚔'};
-  if(r>=1400)return{name:'Diamond',color:'#60c8ff',icon:'💎'};
-  if(r>=1200)return{name:'Platinum',color:'#80e8c0',icon:'✦'};
-  if(r>=1000)return{name:'Gold',color:'#e8c860',icon:'◈'};
-  if(r>=800)return{name:'Silver',color:'#c0c0c0',icon:'◇'};
-  return{name:'Bronze',color:'#c87840',icon:'○'};
+  if(r>=2000)return{name:'Grandmaster',color:'#e8b84b',icon:'\uD83D\uDC51'};
+  if(r>=1600)return{name:'Master',color:'#e8b84b',icon:'\u2694'};
+  if(r>=1400)return{name:'Diamond',color:'#60c8ff',icon:'\uD83D\uDCAE'};
+  if(r>=1200)return{name:'Platinum',color:'#80e8c0',icon:'\u2726'};
+  if(r>=1000)return{name:'Gold',color:'#e8c860',icon:'\u25C8'};
+  if(r>=800)return{name:'Silver',color:'#c0c0c0',icon:'\u25C7'};
+  return{name:'Bronze',color:'#c87840',icon:'\u25CB'};
 }
 
 var leaderboardData=[];
@@ -2790,32 +2789,29 @@ function loadLeaderboard(){
 }
 
 function renderLeaderboard(){
-  var el=document.getElementById('leaderboard-list');
-  if(!el||leaderboardData.length===0)return;
+  if(leaderboardData.length===0)return;
   var myRank=-1;
   var html=leaderboardData.slice(0,20).map(function(p,i){
     var isMe=p.uid===authUid;
     if(isMe)myRank=i+1;
     var tier=getRatingTier(p.rating);
-    var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
-    return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);'+(isMe?'background:rgba(232,184,75,0.06);border-radius:3px;padding:4px 4px;margin:0 -4px;':'')+'">'
+    var medal=i===0?'\uD83E\uDD47':i===1?'\uD83E\uDD48':i===2?'\uD83E\uDD49':(i+1)+'.';
+    return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);'+(isMe?'background:rgba(232,184,75,0.06);border-radius:3px;padding:4px;margin:0 -4px;':'')+'">'
       +'<span style="font-size:10px;width:22px;text-align:center;flex-shrink:0">'+medal+'</span>'
       +'<span style="font-size:9px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+(isMe?'var(--gold)':'rgba(255,255,255,0.75)')+'">'+p.name+'</span>'
       +'<span style="font-size:9px;color:'+tier.color+';white-space:nowrap">'+tier.icon+' '+p.rating+'</span>'
       +'</div>';
   }).join('');
-  el.innerHTML=html;
-  // Also populate standalone leaderboard overlay
-  var lbListEl=document.getElementById('leaderboard-list-lb');
-  if(lbListEl)lbListEl.innerHTML=el?el.innerHTML:'';
-  var rankEl2=document.getElementById('my-rank-display-lb');
-  if(rankEl2&&rankEl){rankEl2.innerHTML=rankEl?'Your rating: '+rankEl.innerHTML:'';}
-  var rankEl=document.getElementById('my-rank-display');
-  var rankEl3=document.getElementById('my-rank-display'); // settings panel same id
-  if(rankEl){
-    var t=getRatingTier(myRating);
-    rankEl.innerHTML='<span style="color:'+t.color+'">'+t.icon+' '+t.name+'</span> &nbsp;'+myRating+' pts'+(myRank>0?' &nbsp;#'+myRank:'');
-  }
+  // Populate all leaderboard list elements
+  ['leaderboard-list','leaderboard-list-lb'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.innerHTML=html;
+  });
+  // Rank display
+  var t=getRatingTier(myRating);
+  var rankHtml='<span style="color:'+t.color+'">'+t.icon+' '+t.name+'</span> &nbsp;'+myRating+' pts'+(myRank>0?' &nbsp;<span style="color:var(--dim)">#'+myRank+'</span>':'');
+  ['my-rank-display','my-rank-display-lb'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.innerHTML=rankHtml;
+  });
 }
 
 function saveMatchHistory(entry){
@@ -2883,9 +2879,9 @@ function mkGS(arenaKey,me,en) {
     tick:0,phase:'pregame',countdown:5000,roundTimer:99,roundMs:0,round:1,dopps:[]};
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // COMBAT
-// ═══════════════════════════════════════════
+// ===========================================
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 
 function dealDmg(gs,target,dmg,type) {
@@ -2906,10 +2902,10 @@ function dealDmg(gs,target,dmg,type) {
     }
     // Reduce damage: melee 25%, ranged 50%
     dmg=Math.max(1,Math.floor(dmg*(isMeleeHit?0.25:0.5)));
-    // Don't return — apply reduced damage through
+    // Don't return - apply reduced damage through
   }
   if(gameMode==='pvp'&&!target.isMe) {
-    // Visual only — real damage handled on their side via inbox
+    // Visual only - real damage handled on their side via inbox
     target.hitFlash=80;
     spawnEfx(gs,type,target.x,target.y);
     return;
@@ -2940,7 +2936,7 @@ function applyFrost(gs, target) {
   target.frostTimer = 5000; // reset 5s timer on each hit
   sidelog('❄', target.name + ' frost x'+target.frost);
   if(target.frost >= 4) {
-    // Third hit — freeze! Turn blue, stun 1s, clear stacks
+    // Third hit - freeze! Turn blue, stun 1s, clear stacks
     target.frosted = true;
     target.frostedTimer = 1500;
     target.stunned = 1000;
@@ -2959,11 +2955,11 @@ function doMoveAbility(gs,user,target) {
   if(user.moveCd>0)return;
   user.moveCd=mv.cd;
   if(mv.charge) {
-    // Warrior charge — turn red, reduce damage taken, rush toward target
+    // Warrior charge - turn red, reduce damage taken, rush toward target
     user.warCharging=true;user.chargeTimer=mv.chargeDur;
     user.dmgReduce=mv.dmgReduce;
     spawnEfx(gs,'charge_start',user.x,user.y);
-    // Set velocity directly toward target — very fast
+    // Set velocity directly toward target - very fast
     var dx=target.x-user.x,dy=target.y-user.y,d=Math.hypot(dx,dy)||1;
     user.chargeVx=(dx/d)*C.spd*3.5;user.chargeVy=(dy/d)*C.spd*3.5;
   } else if(mv.blink) {
@@ -2982,7 +2978,7 @@ function doMoveAbility(gs,user,target) {
     user.rollInv=true;setTimeout(function(){user.rollInv=false;},200);
     spawnEfx(gs,'blink',user.x,user.y);
     // Spawn doppelganger at blink destination
-    // Only spawn dopp for local player — remote dopp comes via 'dopp' action
+    // Only spawn dopp for local player - remote dopp comes via 'dopp' action
     if(gs.dopps&&user.isMe){
       var dAngle=Math.random()*Math.PI*2;
       gs.dopps.push({
@@ -3019,7 +3015,7 @@ function doMoveAbility(gs,user,target) {
       sidelog('>>',user.name+' shadow steps!');
     } else {sidelog('>>','Too far! ('+Math.round(stepDist)+'px)');}
   } else if(mv.gale) {
-    // Ranger gale rush — white, fast
+    // Ranger gale rush - white, fast
     user.galing=true;user.galeTimer=mv.galeDur;
     user.rollInv=true;
     spawnEfx(gs,'gale_start',user.x,user.y);
@@ -3038,7 +3034,7 @@ function doAttack(gs,attacker,target) {
   if(attacker.stealthed){attacker.stealthed=false;attacker.stealthTimer=0;attacker.rollInv=false;attacker.stealthFirstHit=false;}
   attacker.attacking=14;attacker.atkTimer=C.atkMs;
   if(C.atkType==='proj') {
-    // Don't reveal stealthed target position — aim in attacker's facing direction instead
+    // Don't reveal stealthed target position - aim in attacker's facing direction instead
     var angle;
     if(target.stealthed){
       angle=attacker.dir===2?Math.PI:attacker.dir===3?0:attacker.dir===1?-Math.PI/2:Math.PI/2;
@@ -3111,7 +3107,7 @@ function doSkill(gs,user,target,num) {
     spawnEfx(gs,'blink',user.x,user.y);
     sidelog('**',user.name+' enters stealth!');
   } else if(sk.arcaneShield) {
-    // Frost Shield — same as blink shield but via J key
+    // Frost Shield - same as blink shield but via J key
     user.arcaneShield=sk.arcaneShieldDur;
     user.arcaneShieldHits=sk.arcaneShieldHits||3;
     spawnEfx(gs,'arcane_block',user.x,user.y);
@@ -3191,9 +3187,9 @@ function resolveY(a, p) {
   }
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // AI
-// ═══════════════════════════════════════════
+// ===========================================
 var aiPhase='approach',aiTick=0,aiRetDir={x:-1,y:0};
 function updateAI(gs,ai,target,dt) {
   if(ai.stunned>0||ai.dead)return;
@@ -3227,9 +3223,9 @@ function updateAI(gs,ai,target,dt) {
   if(ai.moving)ai.anim+=step2;else ai.anim=0;
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // UPDATE
-// ═══════════════════════════════════════════
+// ===========================================
 function update(gs,dt) {
   if(!gs||gs.phase==='gameOver')return;
   gs.tick++;
@@ -3316,7 +3312,7 @@ function update(gs,dt) {
     var tileUnderX=Math.floor(p.x/TILE),tileUnderY=Math.floor((p.y-COLL_OFFSET_Y)/TILE);
     var tileUnder=(tileUnderY>=0&&tileUnderX>=0&&tileUnderY<gs.arena.tiles.length&&tileUnderX<gs.arena.tiles[0].length)?gs.arena.tiles[tileUnderY][tileUnderX]:0;
     if(tileUnder===2){
-      // On lava — start/refresh burn
+      // On lava - start/refresh burn
       p.burning=true;
       p.burnTimer=Math.max(p.burnTimer,1500); // refresh to 2.5s whenever on lava
     }
@@ -3342,7 +3338,7 @@ function update(gs,dt) {
     if(pr.alive&&Math.hypot(pr.x-tgt.x,pr.y-tgt.y)<26) {
       if(pr.visualOnly){pr.alive=false;spawnEfx(gs,'impact',pr.x,pr.y);}
       else if(!tgt.rollInv){
-        // Check frost shield for ranged — reduce dmg, no slow
+        // Check frost shield for ranged - reduce dmg, no slow
         var projDmg=pr.dmg;
         if(tgt.arcaneShield>0&&tgt.arcaneShieldHits>0&&!pr.visualOnly){
           tgt.arcaneShieldHits--;
@@ -3383,7 +3379,7 @@ function update(gs,dt) {
       if(gameMode==='pvp'){
         pushAction('trap_trigger',{tid:trap.id,tx:trap.x,ty:trap.y});
       } else {
-        // Training — apply stun to AI directly
+        // Training - apply stun to AI directly
         trapTarget.stunned=1000;
       }
     }
@@ -3451,7 +3447,7 @@ function lerpRemote(en) {
   if(remoteState.equippedTitle!=null) en.equippedTitle=remoteState.equippedTitle;
   en._lastStateTs=Date.now();
   // Sync opponent projectiles for rendering only
-  // Only remove/replace visual-only projs — never touch real damage projs from processAction
+  // Only remove/replace visual-only projs - never touch real damage projs from processAction
   if(gameState){
     gameState.projs=gameState.projs.filter(function(p){
       return p.owner!==en.id||!p.visualOnly; // keep real projs, remove old visuals
@@ -3479,9 +3475,9 @@ function lerpRemote(en) {
   if(!en.dead)en._deathFired=false;
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // DRAW
-// ═══════════════════════════════════════════
+// ===========================================
 function draw(gs) {
   if(!gs||!canvas)return;
   gctx.clearRect(0,0,CW,CH);gctx.fillStyle='#0a0a0f';gctx.fillRect(0,0,CW,CH);
@@ -3495,11 +3491,11 @@ function draw(gs) {
   // ── DOPPELGANGERS ──
   if(gs.dopps){
     gs.dopps.forEach(function(d){
-      // Full opacity until last 300ms — then quick arcane blitz vanish
+      // Full opacity until last 300ms - then quick arcane blitz vanish
       var vanishDur=300;
       var isVanishing=d.life<vanishDur;
       var vanishT=isVanishing?d.life/vanishDur:1; // 1=full, 0=gone
-      // Arcane blitz flash — bright purple flicker as it disappears
+      // Arcane blitz flash - bright purple flicker as it disappears
       var blitzAlpha=isVanishing?(1-vanishT)*0.9:0;
       gctx.save();
       if(d.isMe){
@@ -3560,7 +3556,7 @@ function draw(gs) {
     gctx.globalAlpha=Math.max(0,a);
     if(ef.type==='slash'){gctx.strokeStyle='rgba(255,255,255,0.85)';gctx.lineWidth=3;gctx.beginPath();gctx.arc(ef.x,ef.y,24*(1-a)+6,(1-a)*Math.PI,(1-a+0.65)*Math.PI);gctx.stroke();}
     else if(ef.type==='bash'){
-      // Shield impact — concentric rings + star burst
+      // Shield impact - concentric rings + star burst
       gctx.strokeStyle='rgba(180,200,220,'+a*0.9+')';gctx.lineWidth=3;
       gctx.beginPath();gctx.arc(ef.x,ef.y,(1-a)*32+4,0,Math.PI*2);gctx.stroke();
       gctx.strokeStyle='rgba(220,230,255,'+a*0.6+')';gctx.lineWidth=1.5;
@@ -3584,7 +3580,7 @@ function draw(gs) {
     else if(ef.type==='blink'){gctx.fillStyle='rgba(122,74,240,0.55)';gctx.beginPath();gctx.arc(ef.x,ef.y,30*(1-a+0.05),0,Math.PI*2);gctx.fill();}
     else if(ef.type==='shadow_step'){
       gctx.save();
-      // Dark smoky burst — expanding shadow ring
+      // Dark smoky burst - expanding shadow ring
       gctx.strokeStyle='rgba(20,0,40,'+(a*0.9)+')';
       gctx.lineWidth=6;
       gctx.beginPath();gctx.arc(ef.x,ef.y-16,(1-a)*44+6,0,Math.PI*2);gctx.stroke();
@@ -3631,7 +3627,7 @@ function draw(gs) {
       }
     }
     else if(ef.type==='arcane_block'){
-      // Ice shatter effect — crystal shards burst outward
+      // Ice shatter effect - crystal shards burst outward
       gctx.strokeStyle='rgba(180,240,255,'+a+')';gctx.lineWidth=3;
       gctx.beginPath();gctx.arc(ef.x,ef.y-18,(1-a)*30+8,0,Math.PI*2);gctx.stroke();
       for(var is=0;is<6;is++){
@@ -3663,40 +3659,40 @@ function draw(gs) {
     var shakeX=0,shakeY=0;
     if(p.warCryShake>0){var sf=p.warCryShake/600;shakeX=(Math.random()-0.5)*6*sf;shakeY=(Math.random()-0.5)*4*sf;}
     DRAW[p.cls](gctx,p.x+shakeX,p.y+shakeY,p.dir,p.anim,p.hitFlash>0,p.level||1);
-    // Red eyes cosmetic — pulsing pixels only, no circles
+    // Red eyes cosmetic - pulsing pixels only, no circles
     // Cardboard crown cosmetic (shown when hasCrown() and it's my player, or crown synced for opponent)
     if((p.isMe&&hasCrown())||(!p.isMe&&p.crownOn)){
       gctx.save();
       gctx.translate(p.x,p.y-24); // shift up to head level
       if(p.dir!==2)gctx.scale(-1,1);
-      // Tilted slightly — lopsided, sitting crooked on the head
+      // Tilted slightly - lopsided, sitting crooked on the head
       gctx.rotate(0.18);
       var CS=1.2; // slightly bigger than before
-      // Worn cardboard colour — dull browns, no sheen
+      // Worn cardboard colour - dull browns, no sheen
       var cb='#8b5a1a', cl='#a06828', cd='#5a3208', cw='#7a4e14';
-      // Base band — slightly uneven height (crappy)
+      // Base band - slightly uneven height (crappy)
       gctx.fillStyle=cb;gctx.fillRect(-9*CS,0,18*CS,4*CS);
       // Darker bottom edge
       gctx.fillStyle=cd;gctx.fillRect(-9*CS,3*CS,18*CS,CS);
-      // Corrugation lines — uneven spacing
+      // Corrugation lines - uneven spacing
       gctx.fillStyle=cd;
       gctx.fillRect(-7*CS,0,CS,4*CS);
       gctx.fillRect(-3*CS,0,CS,4*CS);
       gctx.fillRect(CS,0,CS,4*CS);
       gctx.fillRect(5*CS,0,CS,4*CS);
-      // Three wonky points — uneven heights, slightly bent
+      // Three wonky points - uneven heights, slightly bent
       gctx.fillStyle=cb;
-      // Left point — short and bent left
+      // Left point - short and bent left
       gctx.beginPath();gctx.moveTo(-9*CS,0);gctx.lineTo(-8*CS,-4*CS);gctx.lineTo(-4*CS,-1*CS);gctx.lineTo(-3*CS,0);gctx.fill();
-      // Center point — tallest but leaning
+      // Center point - tallest but leaning
       gctx.beginPath();gctx.moveTo(-2*CS,0);gctx.lineTo(-1*CS,-7*CS);gctx.lineTo(2*CS,-6*CS);gctx.lineTo(3*CS,0);gctx.fill();
-      // Right point — slightly crumpled
+      // Right point - slightly crumpled
       gctx.beginPath();gctx.moveTo(4*CS,0);gctx.lineTo(5*CS,-3*CS);gctx.lineTo(8*CS,-2*CS);gctx.lineTo(9*CS,0);gctx.fill();
-      // Crease/damage marks — dark lines for worn look
+      // Crease/damage marks - dark lines for worn look
       gctx.fillStyle=cd;
       gctx.fillRect(-1*CS,-5*CS,CS,3*CS); // crease on center point
       gctx.fillRect(6*CS,-1*CS,CS,2*CS);  // dent on right
-      // Scribble detail — wonky marker line (drawn as a thin rect)
+      // Scribble detail - wonky marker line (drawn as a thin rect)
       gctx.fillStyle=cw;
       gctx.fillRect(-6*CS,CS,4*CS,CS); // rough stripe, like someone drew on it
       gctx.restore();
@@ -3713,7 +3709,7 @@ function draw(gs) {
       });
       gctx.restore();
     }
-    // War Cry buff — glowing red head and eyes
+    // War Cry buff - glowing red head and eyes
     if(p.cls==='warrior'&&p.warCryBuff>0){
       var wcRatio=Math.min(1,p.warCryBuff/3000);
       var wcPulse=0.5+Math.sin(Date.now()*0.012)*0.5;
@@ -3725,7 +3721,7 @@ function draw(gs) {
       wcGrad.addColorStop(1,'rgba(180,0,0,0)');
       gctx.fillStyle=wcGrad;
       gctx.beginPath();gctx.arc(p.x,p.y-38,24,0,Math.PI*2);gctx.fill();
-      // Eye glow pixels — warrior eyes at roughly -4 relative to center
+      // Eye glow pixels - warrior eyes at roughly -4 relative to center
       gctx.save();
       gctx.translate(p.x,p.y);
       if(p.dir!==2)gctx.scale(-1,1);
@@ -3740,7 +3736,7 @@ function draw(gs) {
       gctx.restore();
     }
     gctx.globalAlpha=1;
-    // Stealth bar (rogue only, while stealthed — drains to empty)
+    // Stealth bar (rogue only, while stealthed - drains to empty)
     if(p.isMe&&p.cls==='ranger'&&p.stealthed&&p.stealthTimer>0){
       var stealthMax=(CLS.ranger.s2&&CLS.ranger.s2.stealthDur)||7000;
       stealthRatio=Math.min(1,stealthRatio);
@@ -3778,7 +3774,7 @@ function draw(gs) {
         gctx.strokeStyle='rgba(255,200,0,'+(0.5+Math.sin(Date.now()*0.015)*0.5)+')';
         gctx.lineWidth=1;gctx.strokeRect(barX,barY,barW,5);
       }
-      // Burning hands — glow intensifies with charge, fixed segments
+      // Burning hands - glow intensifies with charge, fixed segments
       var seg=chargeRatio<0.34?1:chargeRatio<0.67?2:3;
       var handR=4+seg*3; // 7, 10, 13
       var handAlpha=0.3+seg*0.2;
@@ -3840,7 +3836,7 @@ function draw(gs) {
       // Fill tint
       gctx.fillStyle='rgba(120,210,255,'+(fade*pulse*0.10)+')';
       gctx.beginPath();gctx.ellipse(cx,cy,rw,rh,0,0,Math.PI*2);gctx.fill();
-      // 3 orbiting orbs — one per remaining charge, spaced evenly, spinning
+      // 3 orbiting orbs - one per remaining charge, spaced evenly, spinning
       for(var oi=0;oi<3;oi++){
         var active=oi<p.arcaneShieldHits;
         // Each orb offset by 120deg, spin around the ellipse perimeter
@@ -3858,7 +3854,7 @@ function draw(gs) {
           gctx.fillStyle='rgba(240,252,255,'+(fade*0.9)+')';
           gctx.beginPath();gctx.arc(ox2-1.5,oy2-1.5,2.5,0,Math.PI*2);gctx.fill();
         } else {
-          // Spent charge — small dim dot
+          // Spent charge - small dim dot
           gctx.fillStyle='rgba(60,120,180,'+(fade*0.35)+')';
           gctx.beginPath();gctx.arc(ox2,oy2,4,0,Math.PI*2);gctx.fill();
         }
@@ -3867,52 +3863,52 @@ function draw(gs) {
     }
     if(p.stealthed&&p.isMe){gctx.globalAlpha=0.25;}
     if(!p.stealthed||p.isMe){
-    // Equipped title above nameplate
-    var ptitle=p.isMe?(typeof getEquippedTitleName==='function'?getEquippedTitleName():''):(p.equippedTitle||'');
-    if(ptitle){
-      gctx.font='7px Courier New';gctx.textAlign='center';
-      var tw=gctx.measureText(ptitle).width+8;
-      gctx.fillStyle='rgba(0,0,0,0.45)';gctx.fillRect(p.x-tw/2,p.y-68,tw,11);
-      gctx.fillStyle='rgba(232,184,75,0.75)';gctx.textBaseline='middle';
-      gctx.fillText(ptitle,p.x,p.y-62);
+    // Layout from top: HP bar -> name -> title
+    // HP bar at p.y-76
+    gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-24,p.y-76,48,5);
+    if(!p.stealthed||p.isMe){
+      gctx.fillStyle=p.hp/p.maxHp>0.5?'#27ae60':p.hp/p.maxHp>0.25?'#f39c12':'#c0392b';
+      gctx.fillRect(p.x-24,p.y-76,48*(p.hp/p.maxHp),5);
     }
-    gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-30,p.y-56,60,14);
-    // Hit number for this player
+    // Name bar at p.y-70
+    gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-30,p.y-70,60,14);
+    // Hit number
     drawHitNumberForPlayer(gctx,p.x,p.y,p.id||p.name||'me');
     gctx.font='bold 9px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
-    // Render name with <GM> tag in white, rest in player color
     (function(){
       var fullName=p.name;
       var baseColor=p.isMe?'#e8b84b':'#cc5555';
       if(fullName.indexOf('<GM>')>=0){
-        // Split into parts and render segment by segment
         var parts=fullName.split('<GM>');
-        var gmTag='<GM>';
         var segments=[];
         for(var si=0;si<parts.length;si++){
           if(parts[si])segments.push({text:parts[si],color:baseColor});
-          if(si<parts.length-1)segments.push({text:gmTag,color:'#ffffff'});
+          if(si<parts.length-1)segments.push({text:'<GM>',color:'#ffffff'});
         }
-        // Measure total width to center
         var totalW=0;
-        segments.forEach(function(seg){gctx.fillStyle=seg.color;totalW+=gctx.measureText(seg.text).width;});
+        segments.forEach(function(seg){totalW+=gctx.measureText(seg.text).width;});
         var sx=p.x-totalW/2;
         gctx.textAlign='left';
         segments.forEach(function(seg){
           gctx.fillStyle=seg.color;
-          gctx.fillText(seg.text,sx,p.y-49);
+          gctx.fillText(seg.text,sx,p.y-63);
           sx+=gctx.measureText(seg.text).width;
         });
         gctx.textAlign='center';
       } else {
         gctx.fillStyle=baseColor;
-        gctx.fillText(fullName,p.x,p.y-49);
+        gctx.fillText(fullName,p.x,p.y-63);
       }
     })();
-    gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-24,p.y-62,48,5);}
-    if(!p.stealthed||p.isMe){
-    gctx.fillStyle=p.hp/p.maxHp>0.5?'#27ae60':p.hp/p.maxHp>0.25?'#f39c12':'#c0392b';
-    gctx.fillRect(p.x-24,p.y-62,48*(p.hp/p.maxHp),5);}
+    // Equipped title below name
+    var ptitle=p.isMe?(typeof getEquippedTitleName==='function'?getEquippedTitleName():''):(p.equippedTitle||'');
+    if(ptitle){
+      gctx.font='7px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
+      var tw=gctx.measureText(ptitle).width+8;
+      gctx.fillStyle='rgba(0,0,0,0.4)';gctx.fillRect(p.x-tw/2,p.y-57,tw,10);
+      gctx.fillStyle='rgba(232,184,75,0.75)';
+      gctx.fillText(ptitle,p.x,p.y-52);
+    }
 
     gctx.globalAlpha=1;
     // Frost dot stacks to the right of HP bar
@@ -3923,7 +3919,7 @@ function draw(gs) {
         gctx.strokeStyle='rgba(160,220,255,0.8)';gctx.lineWidth=0.5;gctx.stroke();
       }
       if(p.frosted){
-        // Icicle freeze — solid ice block with spikes
+        // Icicle freeze - solid ice block with spikes
         var frostPulse=0.7+Math.sin(gs.tick*0.15)*0.3;
         // Ice block body
         gctx.fillStyle='rgba(140,210,255,0.55)';gctx.fillRect(p.x-22,p.y-32,44,78);
@@ -3955,7 +3951,7 @@ function draw(gs) {
         gctx.strokeRect(p.x-23,p.y-33,46,80);
       }
     }
-    // Warrior charge — red flash overlay
+    // Warrior charge - red flash overlay
     if(p.warCharging&&!p.dead){
       gctx.fillStyle='rgba(200,20,20,0.3)';gctx.fillRect(p.x-20,p.y-55,42,75);
       // Red particles streaming behind
@@ -3967,7 +3963,7 @@ function draw(gs) {
         gctx.beginPath();gctx.arc(p.x+Math.cos(cpa)*cpr,p.y+Math.sin(cpa)*cpr,3+Math.random()*3,0,Math.PI*2);gctx.fill();
       }
     }
-    // Movecooldown indicator — small icon above name tag
+    // Movecooldown indicator - small icon above name tag
     if(p.isMe&&p.moveCd>0&&!p.dead){
       var mvPct=1-Math.min(1,p.moveCd/CLS[p.cls].move.cd);
       gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(p.x-6,p.y-78,12,4);
@@ -4009,12 +4005,12 @@ function draw(gs) {
       gctx.fillStyle='rgba(255,255,240,0.95)';
       gctx.beginPath();gctx.arc(fbR*0.1,-fbR*0.1,fbR*0.3,0,Math.PI*2);gctx.fill();
     } else if(pr2.type==='ice'){
-      // Ice shard — long aggressive spear, oriented along travel direction
+      // Ice shard - long aggressive spear, oriented along travel direction
       // Outer cold glow trail
       var ig2=gctx.createRadialGradient(0,0,0,0,0,8);
       ig2.addColorStop(0,'rgba(140,220,255,0.5)');ig2.addColorStop(1,'rgba(40,80,200,0)');
       gctx.fillStyle=ig2;gctx.beginPath();gctx.arc(0,0,8,0,Math.PI*2);gctx.fill();
-      // Main shard body — long narrow crystal spike
+      // Main shard body - long narrow crystal spike
       gctx.fillStyle='rgba(180,235,255,0.92)';
       gctx.beginPath();gctx.moveTo(16,0);gctx.lineTo(2,-3);gctx.lineTo(-10,0);gctx.lineTo(2,3);gctx.closePath();gctx.fill();
       // Inner bright core
@@ -4023,7 +4019,7 @@ function draw(gs) {
       // Sharp tip gleam
       gctx.fillStyle='#ffffff';
       gctx.beginPath();gctx.moveTo(16,0);gctx.lineTo(12,-1);gctx.lineTo(12,1);gctx.closePath();gctx.fill();
-      // Back spurs — aggressive crystal jagged edges
+      // Back spurs - aggressive crystal jagged edges
       gctx.fillStyle='rgba(160,220,255,0.7)';
       gctx.beginPath();gctx.moveTo(-4,-3);gctx.lineTo(-2,0);gctx.lineTo(-4,3);gctx.lineTo(-10,1);gctx.lineTo(-10,-1);gctx.closePath();gctx.fill();
       gctx.beginPath();gctx.moveTo(2,-4);gctx.lineTo(4,-1);gctx.lineTo(0,-1);gctx.closePath();gctx.fill();
@@ -4043,7 +4039,7 @@ function draw(gs) {
     gctx.fillStyle=gs.roundTimer<=10?'#c0392b':'#e8b84b';
     gctx.font='bold 14px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
     gctx.fillText(gs.roundTimer,AW*TILE/2,14);
-    // Arena name — left of timer, stone slab background
+    // Arena name - left of timer, stone slab background
     if(gs.arena&&gs.arena.name){
       var aname=gs.arena.name;
       gctx.font='bold 8px Courier New';
@@ -4063,7 +4059,7 @@ function draw(gs) {
   // ── Hit numbers (screen coords) ──
   var ox2=Math.floor((CW-AW*TILE)/2),oy2=Math.floor((CH-AH*TILE)/2);
 
-  // ── Ping display — bottom right ──
+  // ── Ping display - bottom right ──
   if(gameMode==='pvp'&&_pingMs>=0){
     var pCol=_pingMs<80?'#60e880':_pingMs<150?'#e8c860':'#e87060';
     var pTxt=_pingMs+'ms';
@@ -4075,7 +4071,7 @@ function draw(gs) {
     gctx.fillText(pTxt,CW-8,CH-6);
   }
 
-  // ── HP vignette — pulses red when low ──
+  // ── HP vignette - pulses red when low ──
   var me2=gs&&gs.players?gs.players.find(function(p){return p.isMe;}):null;
   if(me2&&me2.hp/me2.maxHp<0.35&&gs.phase==='fighting'){
     var vigPulse=0.4+Math.sin(Date.now()*0.005)*0.25;
@@ -4086,9 +4082,9 @@ function draw(gs) {
   }
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // ROUND MANAGEMENT
-// ═══════════════════════════════════════════
+// ===========================================
 function endRound(gs) {
   if(gs.phase==='gameOver')return;
   var dead=gs.players.find(function(p){return p.dead;});
@@ -4113,10 +4109,35 @@ function endRound(gs) {
       var newRating=calcElo(myRating,oppRating,wonRound);
       var change=newRating-myRating;
       saveRating(newRating);
+      // Show ELO change on overlay
+      var _eloChange=change,_eloNew=newRating,_eloOppR=oppRating;
+      setTimeout(function(){
+        var ovr2=document.getElementById('ov-rating');
+        if(!ovr2)return;
+        var t2=getRatingTier(_eloNew);
+        var enD2=gameState&&gameState.players?gameState.players.find(function(p){return !p.isMe;}):null;
+        var oppR3=enD2&&enD2.rating?enD2.rating:_eloOppR;
+        var oppT2=getRatingTier(oppR3);
+        var enName=enD2&&enD2.name?enD2.name:'Opponent';
+        ovr2.innerHTML=
+          '<div style="display:flex;justify-content:space-around;gap:16px;font-size:10px;letter-spacing:1px">'
+          +'<div style="text-align:center">'
+          +'<div style="color:rgba(255,255,255,0.45);font-size:8px;margin-bottom:3px">YOU</div>'
+          +'<div style="color:'+(_eloChange>=0?'#60e880':'#e87060')+';font-size:14px;font-weight:bold">'+(_eloChange>=0?'+':'')+_eloChange+'</div>'
+          +'<div style="color:rgba(255,255,255,0.7);margin-top:2px">'+t2.icon+' '+_eloNew+'</div>'
+          +'</div>'
+          +'<div style="text-align:center">'
+          +'<div style="color:rgba(255,255,255,0.45);font-size:8px;margin-bottom:3px">'+enName+'</div>'
+          +'<div style="color:'+(_eloChange<=0?'#60e880':'#e87060')+';font-size:14px;font-weight:bold">'+(_eloChange<=0?'+':'')+(-_eloChange)+'</div>'
+          +'<div style="color:rgba(255,255,255,0.7);margin-top:2px">'+oppT2.icon+' '+oppR3+'</div>'
+          +'</div>'
+          +'</div>';
+        ovr2.style.display='block';
+      },950);
       // Show rating change banner
       setTimeout(function(){
         var t=getRatingTier(newRating);
-        showBanner((change>=0?'+':'')+change+' ELO · '+t.icon+' '+newRating);
+        showBanner((change>=0?'+':'')+change+' ELO   '+t.icon+' '+newRating);
       },2000);
     }
     incrementGamesPlayed(meR.cls);
@@ -4128,7 +4149,7 @@ function endRound(gs) {
         if(pvpWinStreak>pvpBestStreak){pvpBestStreak=pvpWinStreak;try{localStorage.setItem('eldara_pvp_best_streak',pvpBestStreak);}catch(e){}}
         try{localStorage.setItem('eldara_pvp_streak',pvpWinStreak);}catch(e){}
         if(pvpWinStreak>=2){
-          setTimeout(function(){showBanner(pvpWinStreak+' WINS IN A ROW! 🔥');},1400);
+          setTimeout(function(){showBanner(pvpWinStreak+' WINS IN A ROW! \uD83D\uDD25');},1400);
           checkNewAchievements();
         }
       } else {
@@ -4150,16 +4171,16 @@ function endRound(gs) {
       // GM kill easter egg
       if(dead.name&&dead.name.indexOf('<GM>')>=0&&!hasKilledGM()){
         setKilledGM();
-        showBanner('YOU KILLED A GM!! 👑');
+        showBanner('YOU KILLED A GM!! \uD83D\uDC51');
         checkNewAchievements();
         renderAchievements(currentAchTab||'all');
       }
     }
-    // Kill quest — counts in both training and PvP
+    // Kill quest - counts in both training and PvP
     if(wonRound&&dead&&!dead.isMe){
       trackQuestEvent('kill',meR.cls);
       if(dead.stunned>0)trackQuestEvent('kill_stunned',meR.cls);
-      // Ghost title tracking — PvP wins where EVERY kill was a stealth first-hit
+      // Ghost title tracking - PvP wins where EVERY kill was a stealth first-hit
       if(gameMode==='pvp'&&meR.cls==='ranger'&&_matchStealthKills>0&&_matchKills===0){
         _ghostKills++;
         try{localStorage.setItem('eldara_ghost_kills',_ghostKills);}catch(e){}
@@ -4186,7 +4207,7 @@ function endRound(gs) {
 }
 
 function resetRound(gs) {
-  // Only randomize arena in training — in PvP the arena is controlled by host via rematch action
+  // Only randomize arena in training - in PvP the arena is controlled by host via rematch action
   if(gameMode==='training'){
     var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
     gs.arena=ARENAS[ak];gs.arenaKey=ak;
@@ -4205,6 +4226,7 @@ function resetRound(gs) {
     p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;p.fireballCharge=0;p.fireballCharging=false;
     if(p.isMe)p.level=getLevel(p.cls); // refresh level each round
     p.moveCd=0;p.chargeTimer=0;p.dmgReduce=0;p.stealthed=false;p.stealthTimer=0;p.stealthFirstHit=false;p.disarmed=0;p.shieldHp=0;p.shieldTimer=0;p.arcaneShield=0;p.arcaneShieldHits=0;p.frostSlow=0;p.burning=false;p.burnTimer=0;p.burnTick=0;
+    p.warCryBuff=0;p.warCharging=false;p.warCryShake=0;p.mp=CLS[p.cls]?CLS[p.cls].mp:100;
   }
   gs.projs=[];gs.effects=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
@@ -4237,9 +4259,9 @@ function showOverlay(t,s,hideRematch){opponentRematchReady=false;opponentRematch
 }
 function hideOverlay(){document.getElementById('game-overlay').classList.remove('show');var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';}
 
-// ═══════════════════════════════════════════
+// ===========================================
 // HUD
-// ═══════════════════════════════════════════
+// ===========================================
 function updateHUD(gs) {
   var me=gs.players.find(function(p){return p.isMe;});
   var en=gs.players.find(function(p){return !p.isMe;});
@@ -4316,9 +4338,9 @@ function updateHUD(gs) {
   }
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // FIREBASE REST SYNC
-// ═══════════════════════════════════════════
+// ===========================================
 function pushState(me) {
   // Include my active projectiles so opponent can render them
   var myProjs=[];
@@ -4375,7 +4397,7 @@ function processAction(msg,gs,me,en) {
         dmg:C5.atkDmg,dot:0,dotDur:0,range:projRange,traveled:0,alive:true,anim:0,
         applyFrostOnHit:projType2==='ice'});
     } else {
-      // Melee — check frost shield, then apply damage
+      // Melee - check frost shield, then apply damage
       spawnEfx(gs,'slash',expos.x,expos.y);
       if(!me.stealthed){
         var sneakMult=atkPos.sneak?2.0:1;
@@ -4402,7 +4424,7 @@ function processAction(msg,gs,me,en) {
     var enPos1={x:sp1.x!=null?sp1.x:en.x,y:sp1.y!=null?sp1.y:en.y};
     var sdist1=Math.hypot(enPos1.x-me.x,enPos1.y-me.y);
     en.s1cd=sk1r.cd;
-    // Trap placement — register on our side (we can't see it, but need it for trigger sync)
+    // Trap placement - register on our side (we can't see it, but need it for trigger sync)
     if(sk1r.trap&&sp1.x!=null){
       var myTraps2=gs.traps.filter(function(t){return t.owner===en.id;});
       if(myTraps2.length>=3){var old2=myTraps2[0];gs.traps.splice(gs.traps.indexOf(old2),1);}
@@ -4413,7 +4435,7 @@ function processAction(msg,gs,me,en) {
     dbg('SK1 recv type='+(sk1r.proj?'proj':sk1r.stun?'stun':sk1r.aoe?'aoe':'?'));
     spawnEfx(gs,'cast',enPos1.x,enPos1.y);
     if(sk1r.proj){
-      // Spawn projectile aimed at me — deals real damage on hit
+      // Spawn projectile aimed at me - deals real damage on hit
       var a2=Math.atan2(me.y-enPos1.y,me.x-enPos1.x);
       gs.projs.push({id:en.id+'_'+(en.projId++),owner:en.id,
         type:en.cls==='mage'?'fireball':'arrow',
@@ -4464,7 +4486,7 @@ function processAction(msg,gs,me,en) {
   } else if(msg.type==='frost_slow'){
     me.frostSlow=(me.frostSlow||0)+(msg.data&&msg.data.dur||1500);
   } else if(msg.type==='dopp'){
-    // Opponent spawned a doppelganger — add to our gameState
+    // Opponent spawned a doppelganger - add to our gameState
     if(gs.dopps&&msg.data){
       var dAngle2=Math.random()*Math.PI*2;
       gs.dopps.push({
@@ -4486,7 +4508,7 @@ function processAction(msg,gs,me,en) {
     opponentRematchReady=true;
     opponentRematchCls=opCls;
     if(pvpRematchReady){
-      // Both ready — host starts
+      // Both ready - host starts
       var st3=document.getElementById('ov-rematch-status');
       if(st3){st3.style.display='block';st3.textContent='Starting...';}
       if(isHost){
@@ -4511,7 +4533,7 @@ function processAction(msg,gs,me,en) {
     pvpRematchReady=false;opponentRematchReady=false;
     hideOverlay();resetRound(gs);
   } else if(msg.type==='opponent_left_lobby'){
-    // Opponent went back to menu — take us to lobby
+    // Opponent went back to menu - take us to lobby
     gs.phase='gameOver';
     showBanner('Opponent returned to lobby');
     setTimeout(function(){
@@ -4522,7 +4544,7 @@ function processAction(msg,gs,me,en) {
     },1200);
   } else if(msg.type==='opponent_left'){
     var meW=gs.players.find(function(p){return p.isMe;});
-    // Always go to title — no point staying in game alone
+    // Always go to title - no point staying in game alone
     if(gs.phase!=='gameOver'&&meW) awardMatchXP(meW.cls,true,true);
     pvpRematchReady=false;opponentRematchReady=false;
     hideOverlay();gameState=null;cleanupFB();
@@ -4534,7 +4556,7 @@ function processAction(msg,gs,me,en) {
 var actionPollInterval=null;
 var seenActionKeys={};
 
-// startListeningRematchStart removed — using inbox
+// startListeningRematchStart removed - using inbox
 
 // startListeningLobbyClass removed
 
@@ -4612,9 +4634,9 @@ function cleanupFB() {
 
 function genCode(){return Math.random().toString(36).substring(2,8).toUpperCase();}
 
-// ═══════════════════════════════════════════
+// ===========================================
 // MAIN LOOP
-// ═══════════════════════════════════════════
+// ===========================================
 function mainLoop(ts) {
   var dt=Math.min(ts-lastTs,50);lastTs=ts;
   if(gameState){
@@ -4630,9 +4652,9 @@ function mainLoop(ts) {
   requestAnimationFrame(mainLoop);
 }
 
-// ═══════════════════════════════════════════
+// ===========================================
 // INPUT
-// ═══════════════════════════════════════════
+// ===========================================
 document.addEventListener('keydown',function(e){
   // Never block keys when user is typing in an input
   var tag=document.activeElement&&document.activeElement.tagName;
@@ -4712,7 +4734,7 @@ window.addEventListener('blur',function(){
   Object.keys(keys).forEach(function(k){keys[k]=false;});
 });
 window.addEventListener('beforeunload',function(){
-  // Best-effort cleanup — browser may not complete async calls but tries
+  // Best-effort cleanup - browser may not complete async calls but tries
   if(_inQueue&&authUid){
     try{
       var xhr=new XMLHttpRequest();
@@ -4746,9 +4768,9 @@ document.addEventListener('keyup',function(e){
 
 });
 
-// ═══════════════════════════════════════════
+// ===========================================
 // UI WIRING
-// ═══════════════════════════════════════════
+// ===========================================
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
@@ -4782,19 +4804,19 @@ function showScreen(id){
           name:'THE IRONBLOOD CLAN',
           title:'House of the Red Banner',
           accent:'#8b1010',
-          lore:'From the frozen steppes beyond the Ashwall, the Ironblood have never bowed to a king. They elect their chieftain the only way they understand — the last one standing. They come to Eldara not for gold, but for the right to call themselves the strongest in the world. Their fighters carry blood debts and old grudges. They do not lose gracefully.'
+          lore:'From the frozen steppes beyond the Ashwall, the Ironblood have never bowed to a king. They elect their chieftain the only way they understand - the last one standing. They come to Eldara not for gold, but for the right to call themselves the strongest in the world. Their fighters carry blood debts and old grudges. They do not lose gracefully.'
         },
         {
           name:'HOUSE AELINDRA',
           title:'The Silver Moon Bloodline',
           accent:'#7a20c0',
-          lore:'Among the oldest elven families still walking the mortal world, House Aelindra has studied the arcane for over four thousand years. Their library beneath the Moonspire holds spells older than human civilization. They enter the Arena not for sport, but as observers — each champion is a living experiment in the limits of mortal and elven power.'
+          lore:'Among the oldest elven families still walking the mortal world, House Aelindra has studied the arcane for over four thousand years. Their library beneath the Moonspire holds spells older than human civilization. They enter the Arena not for sport, but as observers - each champion is a living experiment in the limits of mortal and elven power.'
         },
         {
           name:'GOLD BROTHERS TRADING CO.',
           title:'Purveyors of Fine & Rare Goods',
           accent:'#c8a030',
-          lore:'On paper, the Gold Brothers move spices, silks and curiosities across six continents. In practice, they move whatever pays. Their fighters are contracted professionals — assassins, disgraced soldiers, debt collectors who took one job too many. The Company has never lost money on an Arena season. They always back the right champion. Somehow.'
+          lore:'On paper, the Gold Brothers move spices, silks and curiosities across six continents. In practice, they move whatever pays. Their fighters are contracted professionals - assassins, disgraced soldiers, debt collectors who took one job too many. The Company has never lost money on an Arena season. They always back the right champion. Somehow.'
         }
       ];
       tc2.addEventListener('click',function(e){
@@ -4844,7 +4866,7 @@ function buildClassInfoHTML(cls) {
   if(C.s1.blink) html+=' &middot; blinks '+C.s1.blink+'px';
   html+='</span></div>';
   html+='<div class="cip-skill"><span class="sn">'+C.s2.name+'</span> [J] &nbsp;';
-  html+='<span class="ss">'+(C.s2.dmg||'—')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd &middot; '+C.s2.mp+' mp';
+  html+='<span class="ss">'+(C.s2.dmg||'-')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd &middot; '+C.s2.mp+' mp';
   if(C.s2.aoe) html+=' &middot; AOE spin';
   if(C.s2.blink) html+=' &middot; teleports '+C.s2.blink+'px';
   if(C.s2.smoke) html+=' &middot; invincible roll';
@@ -4869,7 +4891,7 @@ var SPRITE_W=90, SPRITE_H=110;
   var nameDiv=document.createElement('div');nameDiv.className='cn';nameDiv.textContent=C.name;
   card.appendChild(nameDiv);
   var statDiv=document.createElement('div');statDiv.className='cs';
-  statDiv.textContent='HP '+C.hp+' · SPD '+C.spd;
+  statDiv.textContent='HP '+C.hp+'   SPD '+C.spd;
   card.appendChild(statDiv);
 
   // Draw sprite on canvas
@@ -4879,7 +4901,7 @@ var SPRITE_W=90, SPRITE_H=110;
   function animCard(){
     cctx.clearRect(0,0,SPRITE_W,SPRITE_H);
     // Dark tile background
-    // transparent background — no fill
+    // transparent background - no fill
     // Idle bob animation
     animT+=0.04;
     var drawFn=DRAW[cls];
@@ -4903,13 +4925,13 @@ function buildSpellDesc(cls){
   var C=CLS[cls];var xpD=getXP(cls);var tierD=getTier(cls,xpD.level);
   var h='<div class="tsp-name">'+C.name.toUpperCase()+' &nbsp; <span style="color:var(--dim);font-size:11px">Lv.'+xpD.level+'</span></div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.atkLabel+'</span> [G] &nbsp; '+C.atkDmg+' dmg &middot; '+C.atkRange+'px range'+(cls==='ranger'?' &middot; hold to charge':'')+'</div>';
-  h+='<div class="tsp-skill"><span class="tsn">'+C.s1.name+'</span> [H] &nbsp; '+(C.s1.dmg||'—')+' dmg &middot; '+(C.s1.cd/1000).toFixed(1)+'s cd'+(C.s1.stun?' &middot; stuns '+(C.s1.stun/1000).toFixed(1)+'s':'')+(C.s1.trap?' &middot; snare trap &middot; 3 max &middot; invisible to enemy':'')+'</div>';
-  h+='<div class="tsp-skill"><span class="tsn">'+C.s2.name+'</span> [J] &nbsp; '+(C.s2.dmg||'—')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd'+(C.s2.aoe?' &middot; AOE spin':'')+(C.s2.smoke?' &middot; smoke cover':'')+'</div>';
+  h+='<div class="tsp-skill"><span class="tsn">'+C.s1.name+'</span> [H] &nbsp; '+(C.s1.dmg||'-')+' dmg &middot; '+(C.s1.cd/1000).toFixed(1)+'s cd'+(C.s1.stun?' &middot; stuns '+(C.s1.stun/1000).toFixed(1)+'s':'')+(C.s1.trap?' &middot; snare trap &middot; 3 max &middot; invisible to enemy':'')+'</div>';
+  h+='<div class="tsp-skill"><span class="tsn">'+C.s2.name+'</span> [J] &nbsp; '+(C.s2.dmg||'-')+' dmg &middot; '+(C.s2.cd/1000).toFixed(1)+'s cd'+(C.s2.aoe?' &middot; AOE spin':'')+(C.s2.smoke?' &middot; smoke cover':'')+'</div>';
   h+='<div class="tsp-skill"><span class="tsn">'+C.move.name+'</span> [SPC] &nbsp; '+C.move.name+(C.move.charge?' &middot; rush toward enemy &middot; dmg reduction':C.move.blink?' &middot; teleport 90px forward':' &middot; wind speed boost 1.2s')+'</div>';
   // Flavor text / backstory
   var flavor={
-    warrior:"Once a nameless conscript on the front lines, he survived sieges that killed entire battalions. He doesn't fight for glory or coin — only the next battle matters. Veterans say his eyes went cold the day he stopped counting the dead.",
-    mage:"An elven arcanist of a forgotten bloodline, he left his people's forest centuries ago seeking older, darker magic. He speaks little, but when he raises his staff, even warlords step back. The grey in his hair is not age — it is the cost of what he knows.",
+    warrior:"Once a nameless conscript on the front lines, he survived sieges that killed entire battalions. He doesn't fight for glory or coin - only the next battle matters. Veterans say his eyes went cold the day he stopped counting the dead.",
+    mage:"An elven arcanist of a forgotten bloodline, he left his people's forest centuries ago seeking older, darker magic. He speaks little, but when he raises his staff, even warlords step back. The grey in his hair is not age - it is the cost of what he knows.",
     ranger:"Nobody knows her real name. She appeared in the slums of Eldara at seventeen with nothing but a stolen blade and a talent for disappearing. She has since made six guilds, three kings, and one god deeply regret crossing her."
   };
   h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">';
@@ -4932,7 +4954,7 @@ function buildTitleChars() {
     var card = document.createElement('div');
     card.className = 'title-char-card';
     card.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;padding:2px 8px;border:1px solid transparent;transition:all .2s;border-radius:2px;width:120px;box-sizing:border-box';
-    // Canvas — no background box, transparent
+    // Canvas - no background box, transparent
     var cv = document.createElement('canvas');
     cv.width = 100; cv.height = 150;
     cv.style.cssText = 'display:block;width:100px;height:150px;image-rendering:pixelated;margin:-15px auto 0';
@@ -4994,7 +5016,7 @@ function buildTitleChars() {
         panel.classList.add('show');
       }
     });
-    // Animate — transparent background
+    // Animate - transparent background
     var cctx = cv.getContext('2d'); cctx.imageSmoothingEnabled = false;
     var animT2 = Math.random()*Math.PI*2;
     var _cardCls = cls;
@@ -5181,7 +5203,7 @@ function drawArenaPreview(canvas, ak){
       }
     }
   }
-  // Spawn point circles — shifted 1 tile down to match actual in-game feet position
+  // Spawn point circles - shifted 1 tile down to match actual in-game feet position
   ctx.fillStyle='rgba(100,200,100,0.55)';
   ctx.beginPath();ctx.arc(arena.sp1.x*ts+ts/2,(arena.sp1.y+1)*ts+ts/2,ts*0.55,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='rgba(200,100,100,0.55)';
@@ -5290,15 +5312,15 @@ function processQueueData(data){
     if(!data||!_inQueue||_matchmaking)return;
     var others=Object.keys(data).filter(function(k){return k!==authUid;});
     if(others.length===0)return;
-    // Found opponent — host match if our UID is lexicographically smaller
+    // Found opponent - host match if our UID is lexicographically smaller
     var oppKey=others[0];
     var opp=data[oppKey];
     if(!opp||!opp.uid)return;
-    // Ignore stale queue entries (older than 30s — player probably closed tab)
+    // Ignore stale queue entries (older than 30s - player probably closed tab)
     if(opp.ts&&Date.now()-opp.ts>30000)return;
     _matchmaking=true;
     if(authUid<oppKey){
-      // We are host — create room and write matchStart immediately
+      // We are host - create room and write matchStart immediately
       leaveQueue();
       fbSet('/queue/'+oppKey,null);
       gameMode='pvp';iAmHost=true;isHost=true;_fromQueue=true;
@@ -5321,7 +5343,7 @@ function processQueueData(data){
         launchPvP(arenaKey,myId,myName,myClass);
       });
     } else {
-      // Guest — wait for matchmade notification from host
+      // Guest - wait for matchmade notification from host
       if(!_matchmadeListener){
         _matchmadeListener=fbListen('/matchmade/'+authUid,function(mData){
           if(!mData||!mData.roomCode)return;
@@ -5347,7 +5369,7 @@ var _matchmadeListener=null;
 
 document.getElementById('btn-joinqueue').addEventListener('click',function(){joinQueue();});
 
-// Online player count — listen to /queue length + active sessions (approximate via /online)
+// Online player count - listen to /queue length + active sessions (approximate via /online)
 function updateOnlineCount(){
   fbGet('/presence').then(function(d){
     var now=Date.now();
@@ -5548,7 +5570,7 @@ function doStartRematch(guestCls){
   gameState.players.forEach(function(p){p.wins=0;});
   pvpRematchReady=false;
   opponentRematchReady=false;
-  // Send start to guest via inbox — retry a few times to ensure delivery
+  // Send start to guest via inbox - retry a few times to ensure delivery
   pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,spawnFlip:pvpSpawnFlip});
   setTimeout(function(){if(gameState&&gameState.phase==='fighting')return;pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,spawnFlip:pvpSpawnFlip});},300);
   hideOverlay();resetRound(gameState);
@@ -5721,7 +5743,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     });
 
 
-    // ══ BANNERS hanging from platform rim — long, torn, faded ══
+    // == BANNERS hanging from platform rim - long, torn, faded ==
     var bConfigs=[
       {bx:cx-rx*0.45, by:py+ry*0.6+th-4,  skew:-0.06},
       {bx:cx,          by:py+ry*0.85+th-2, skew:0},
@@ -5729,7 +5751,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     ];
     var bw=32,bh=110; // much longer
     var bTime=Date.now()/1000;
-    // Torn edge points — random but seeded per banner index
+    // Torn edge points - random but seeded per banner index
     var tornEdges=[
       // left banner torn bottom
       [[-16,bh-8],[-10,bh-18],[-5,bh-6],[2,bh-22],[8,bh-10],[12,bh-4],[16,bh-15]],
@@ -5741,7 +5763,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       var bx=bc.bx, by=bc.by;
       var torn=tornEdges[bi];
       var sk=bc.skew;
-      // Gentle wind sway — each banner slightly different phase
+      // Gentle wind sway - each banner slightly different phase
       var swayAmp=3.5;
       var swayPhase=bTime*0.9+bi*1.2;
       var sway=Math.sin(swayPhase)*swayAmp;
@@ -5755,7 +5777,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       tctx.fillRect(sx+3,sy+3,sw2,sh2);
       // Main stone block face
       tctx.fillStyle='#282630';tctx.fillRect(sx,sy,sw2,sh2);
-      // Top face (lighter — 3D effect)
+      // Top face (lighter - 3D effect)
       tctx.fillStyle='#323040';tctx.fillRect(sx,sy,sw2,sh2*0.45);
       // Left highlight
       tctx.fillStyle='#2e2c3c';tctx.fillRect(sx,sy,3,sh2);
@@ -5784,12 +5806,12 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       tctx.fillRect(bx-bw/2+4,by+4,bw,bh);
       tctx.globalAlpha=0.55;
 
-      // Banner body — top skewed, bottom hangs straight
+      // Banner body - top skewed, bottom hangs straight
       // Top attachment points (skewed toward platform curve)
       var topSkew=sk*bh*0.18; // only shift top by a fraction
       var tlx=bx-bw/2+topSkew, trx=bx+bw/2+topSkew; // top left/right x
       var blx=bx-bw/2, brx=bx+bw/2; // bottom left/right x (straight)
-      // Transition point — banner straightens out after ~20% height
+      // Transition point - banner straightens out after ~20% height
       var midY=by+bh*0.22;
       tctx.beginPath();
       tctx.moveTo(tlx,by);
@@ -5819,7 +5841,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       tctx.fillStyle='rgba(180,40,40,0.12)';
       tctx.fillRect(bx-bw/2+1,by,bw/4,bh*0.7);
 
-      // Heavy dirt/mud stains — dark blotches
+      // Heavy dirt/mud stains - dark blotches
       tctx.fillStyle='rgba(0,0,0,0.38)';
       tctx.fillRect(bx+bw/6,by+bh*0.2,bw/3,bh*0.35);
       tctx.fillRect(bx-bw/3,by+bh*0.5,bw/2,bh*0.28);
@@ -5843,13 +5865,13 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       tctx.fillRect(bx-3,by+bh*0.45,8,6);
       tctx.fillRect(bx+8,by+bh*0.62,5,4);
       tctx.fillRect(bx-9,by+bh*0.8,6,5);
-      // Overall grime — dark bottom half
+      // Overall grime - dark bottom half
       tctx.fillStyle='rgba(0,0,0,0.22)';
       tctx.fillRect(bx-bw/2,by+bh*0.5,bw,bh*0.5);
 
-      // Banner symbol — different per banner index
+      // Banner symbol - different per banner index
       if(bi===2){
-        // Right banner: Gold Brothers Trading Co. — black banner
+        // Right banner: Gold Brothers Trading Co. - black banner
         // Paint fully black over the red
         tctx.globalAlpha=0.96;
         tctx.fillStyle='#060408';
@@ -5862,7 +5884,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.closePath();tctx.fill();
         tctx.globalAlpha=0.55;
 
-        // GTBC logo — small and tight, centered upper third
+        // GTBC logo - small and tight, centered upper third
         var lx=bx+sway*0.2, ly=by+bh*0.28;
         var gold='rgba(175,135,22,0.62)', goldBright='rgba(205,162,28,0.78)';
         var arm=7; // small cross arms
@@ -5880,7 +5902,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
           tctx.beginPath();tctx.moveTo(xp[0]+xs,xp[1]-xs);tctx.lineTo(xp[0]-xs,xp[1]+xs);tctx.stroke();
         });
 
-        // Letters just inside the X arms — tight to center
+        // Letters just inside the X arms - tight to center
         tctx.fillStyle=goldBright;tctx.font='bold 5px serif';tctx.textAlign='center';tctx.textBaseline='middle';
         tctx.fillText('T',lx,ly-arm+1);
         tctx.fillText('G',lx-arm+1,ly);
@@ -5888,9 +5910,9 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.fillStyle=gold;tctx.font='4px serif';
         tctx.fillText('Co',lx,ly+arm-1);
       } else if(bi===0){
-        // Left banner: demonic skull head — scaled down, shifted down, pure black
+        // Left banner: demonic skull head - scaled down, shifted down, pure black
         var lx=bx+sway*0.2, ly=by+bh*0.32;
-        var sc=0.72; // scale factor — smaller
+        var sc=0.72; // scale factor - smaller
         tctx.save();
         tctx.translate(lx,ly);tctx.scale(sc,sc);tctx.translate(-lx,-ly);
         var blk='#000000';
@@ -5917,7 +5939,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.quadraticCurveTo(lx-5,ly-12,lx-8,ly-8);
         tctx.closePath();tctx.fill();
 
-        // Eye sockets — very subtle banner colour showing through
+        // Eye sockets - very subtle banner colour showing through
         tctx.fillStyle='rgba(80,8,6,0.45)';
         tctx.beginPath();tctx.moveTo(lx-8,ly-2);tctx.lineTo(lx-5,ly-6);tctx.lineTo(lx-2,ly-2);tctx.lineTo(lx-4,ly+1);tctx.closePath();tctx.fill();
         tctx.beginPath();tctx.moveTo(lx+8,ly-2);tctx.lineTo(lx+5,ly-6);tctx.lineTo(lx+2,ly-2);tctx.lineTo(lx+4,ly+1);tctx.closePath();tctx.fill();
@@ -5935,7 +5957,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.restore();
 
       } else {
-        // Center banner: House of the High Elves — deep purple, gold rim, elven emblem
+        // Center banner: House of the High Elves - deep purple, gold rim, elven emblem
         // Paint over with deep purple
         tctx.globalAlpha=0.94;
         tctx.fillStyle='#0e0618';
@@ -5948,7 +5970,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.closePath();tctx.fill();
         tctx.globalAlpha=0.55;
 
-        // Gold border — left and right edges only
+        // Gold border - left and right edges only
         tctx.strokeStyle='rgba(195,152,22,0.65)';tctx.lineWidth=1.5;
         tctx.beginPath();
         tctx.moveTo(tlx+1,by+2);tctx.lineTo(blx+2,by+bh*0.78);
@@ -5957,7 +5979,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.moveTo(trx-1,by+2);tctx.lineTo(brx-2,by+bh*0.72);
         tctx.stroke();
 
-        // Elven emblem — scaled down, centered upper third
+        // Elven emblem - scaled down, centered upper third
         var lx=bx+sway*0.2, ly=by+bh*0.28;
         tctx.save();tctx.translate(lx,ly);tctx.scale(0.78,0.78);tctx.translate(-lx,-ly);
         var gold='rgba(195,152,22,0.72)', goldHi='rgba(225,182,35,0.85)', goldDim='rgba(160,122,18,0.5)';
@@ -5989,7 +6011,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
           tctx.stroke();
         });
 
-        // Central sun/star — elven radiant symbol
+        // Central sun/star - elven radiant symbol
         tctx.strokeStyle=goldHi;tctx.lineWidth=1.2;
         for(var si=0;si<8;si++){
           var sa=si/8*Math.PI*2-Math.PI/8;
@@ -6003,7 +6025,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.fillStyle=goldHi;
         tctx.beginPath();tctx.arc(lx,ly,2,0,Math.PI*2);tctx.fill();
 
-        // Elvish arch above — two curved branches meeting at top
+        // Elvish arch above - two curved branches meeting at top
         tctx.strokeStyle=gold;tctx.lineWidth=1;
         tctx.beginPath();tctx.moveTo(lx-6,ly-11);
         tctx.quadraticCurveTo(lx-10,ly-18,lx,ly-21);tctx.stroke();
@@ -6023,13 +6045,13 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
         tctx.restore();
       }
 
-      // Faded gold border — patchy top only
+      // Faded gold border - patchy top only
       tctx.strokeStyle='rgba(140,100,15,0.3)';tctx.lineWidth=1;
       tctx.beginPath();tctx.moveTo(tlx+1,by);tctx.lineTo(trx-1,by);tctx.stroke();
       tctx.beginPath();tctx.moveTo(tlx+1,by);tctx.lineTo(blx+1,by+bh*0.55);tctx.stroke();
       tctx.beginPath();tctx.moveTo(trx-1,by);tctx.lineTo(brx-1,by+bh*0.4);tctx.stroke();
 
-      // Iron rod — dark and aged, follows top skew
+      // Iron rod - dark and aged, follows top skew
       tctx.globalAlpha=0.65;
       tctx.fillStyle='#252528';tctx.fillRect(tlx-3,by-5,bw+6,5);
       tctx.fillStyle='#35353a';tctx.fillRect(tlx-2,by-5,bw+4,3);
@@ -6104,17 +6126,17 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.fillStyle='rgba(0,0,0,0.25)';
     tctx.beginPath();tctx.ellipse(wrx,wry+6,16,4,0,0,Math.PI*2);tctx.fill();
 
-    // Rack back horizontal bar (far side — darker, higher up = 3D effect)
+    // Rack back horizontal bar (far side - darker, higher up = 3D effect)
     tctx.fillStyle='#2a1c0e';tctx.fillRect(wrx-22,wry-28,50,5);
     tctx.fillStyle='#261c0e';tctx.fillRect(wrx-22,wry-28,50,3); // top face
     tctx.fillStyle='#110804';tctx.fillRect(wrx-22,wry-25,50,2); // bottom face shadow
 
-    // Rack front horizontal bar (near side — lighter, lower = 3D effect)
+    // Rack front horizontal bar (near side - lighter, lower = 3D effect)
     tctx.fillStyle='#3a2810';tctx.fillRect(wrx-24,wry-10,54,5);
     tctx.fillStyle='#4a3820';tctx.fillRect(wrx-24,wry-10,54,3);
     tctx.fillStyle='#2a1808';tctx.fillRect(wrx-24,wry-7,54,2);
 
-    // Left vertical post — front face + side face (3D)
+    // Left vertical post - front face + side face (3D)
     tctx.fillStyle='#3a2810';tctx.fillRect(wrx-24,wry-34,6,30); // front face
     tctx.fillStyle='#4a3820';tctx.fillRect(wrx-24,wry-34,4,28); // lit left
     tctx.fillStyle='#110804';tctx.fillRect(wrx-18,wry-34,3,30); // right shadow side face
@@ -6130,7 +6152,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.fillStyle='#3a2410';tctx.fillRect(wrx+22,wry-6,8,4);
 
     // ── Weapons hanging on rack ──
-    // Sword 1 — leaning slightly left
+    // Sword 1 - leaning slightly left
     tctx.save();tctx.translate(wrx-10,wry-28);tctx.rotate(-0.08);
     tctx.fillStyle='#505858';tctx.fillRect(-2,-26,5,30);  // blade
     tctx.fillStyle='#707878';tctx.fillRect(-1,-26,2,24);  // blade shine
@@ -6142,7 +6164,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.fillStyle='#c8a030';tctx.fillRect(-3,17,6,4);    // pommel
     tctx.restore();
 
-    // Sword 2 — upright center
+    // Sword 2 - upright center
     tctx.save();tctx.translate(wrx+4,wry-28);tctx.rotate(0.05);
     tctx.fillStyle='#606870';tctx.fillRect(-2,-24,4,28);
     tctx.fillStyle='#808888';tctx.fillRect(-1,-24,2,22);
@@ -6152,7 +6174,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.fillStyle='#707070';tctx.fillRect(-3,16,6,4);
     tctx.restore();
 
-    // Axe — hanging right side
+    // Axe - hanging right side
     tctx.save();tctx.translate(wrx+16,wry-22);tctx.rotate(0.12);
     tctx.fillStyle='#4a3010';tctx.fillRect(-2,-20,4,28);  // haft
     tctx.fillStyle='#6a4a20';tctx.fillRect(-1,-20,2,24);  // haft highlight
@@ -6205,7 +6227,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
 
 
 
-// ══ XP & TIER SYSTEM ══
+// == XP & TIER SYSTEM ==
 
 function getClassData(cls) {
   try { var k=authUid?'eldara_cls_'+authUid+'_'+cls:'eldara_cls_'+cls; return JSON.parse(localStorage.getItem(k)||localStorage.getItem('eldara_cls_'+cls)||'{}'); }
@@ -6285,7 +6307,7 @@ function getXP(cls) {
   return {xp:d.xp||0, level:d.level||1, xpNext:xpForLevel(d.level||1)};
 }
 function xpForLevel(lvl) {
-  // Fast early, slow late — after a few games you see progress
+  // Fast early, slow late - after a few games you see progress
   if(lvl<=5)  return 60;
   if(lvl<=10) return 100;
   if(lvl<=20) return 180;
@@ -6341,7 +6363,7 @@ function awardMatchXP(cls, won, isPvP) {
   var d=addXP(cls,base);
   var tier=getTier(cls,d.level);
   var clsDisplay=cls==='ranger'?'Rogue':cls.charAt(0).toUpperCase()+cls.slice(1);
-  sidelog('★','+'+base+' XP → '+clsDisplay+' Lv.'+d.level);
+  sidelog('*','+'+base+' XP -> '+clsDisplay+' Lv.'+d.level);
   // Refresh sprite previews on setup screen if visible
   refreshCharCards();
   checkNewAchievements();
@@ -6427,7 +6449,7 @@ function doRegister(email,pass,uname,btn){
       return;
     }
     if (true) {
-      // Register — save profile + nickname index
+      // Register - save profile + nickname index
       fbPatchAuth('/users/'+result.localId+'/profile', {
         displayName: uname, email: email, created: Date.now()
       }).then(function() {
@@ -6474,7 +6496,7 @@ document.getElementById('auth-guest').addEventListener('click', function() {
       return;
     }
   } catch(e) {}
-  // No session — stay on auth screen
+  // No session - stay on auth screen
 })();
 
 // Save XP to Firebase after each match
@@ -6515,6 +6537,13 @@ document.getElementById('btn-settings').addEventListener('click',function(){
     document.getElementById('settings-save').disabled=left<=0;
     document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
   });
+  // Populate rating, streak, match history
+  buildMatchHistory();
+  loadLeaderboard();
+  var sdel=document.getElementById('streak-display');if(sdel)sdel.textContent=pvpWinStreak;
+  var sbdel=document.getElementById('best-streak-display');if(sbdel)sbdel.textContent=pvpBestStreak;
+  var rnk=document.getElementById('my-rank-display');
+  if(rnk){var t=getRatingTier(myRating);rnk.innerHTML='<span style="color:'+t.color+'">'+t.icon+' '+t.name+'</span> &nbsp;'+myRating+' pts';}
 });
 // ── MATCH HISTORY PANEL ──
 function buildMatchHistory(){
@@ -6532,7 +6561,7 @@ function buildMatchHistory(){
     return '<div style="border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:11px;color:'+(m.won?'#27ae60':'#c0392b')+'">'+( m.won?'W':'L')+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:9px;color:var(--gold);letter-spacing:1px">'+modeStr+' · '+aname+'</div>'
+      +'<div style="font-size:9px;color:var(--gold);letter-spacing:1px">'+modeStr+'   '+aname+'</div>'
       +'<div style="font-size:9px;color:rgba(255,255,255,0.6)">'+clsName+' Lv.'+m.myLvl+' vs '+(m.enName||'?')+' ('+enClsName+' Lv.'+m.enLvl+')</div>'
       +'</div>'
       +'<span style="font-size:9px;color:var(--dim);white-space:nowrap">'+ds+'</span>'
@@ -6643,44 +6672,44 @@ document.getElementById('btn-leave-game').addEventListener('click',function(){
   });
 })();
 
-// ══ ACHIEVEMENTS ══
+// == ACHIEVEMENTS ==
 var ACHIEVEMENTS = [
   // WARRIOR
   {id:'w_unlock',cls:'warrior',tier:0,name:'Conscript',desc:'Unlock the Warrior',icon:'\u2694',req:function(){return getLevel('warrior')>=1;},levelReq:1},
   {id:'w_t1',cls:'warrior',tier:1,name:'Footsoldier',desc:'Warrior reaches Lv.10',icon:'\u2694',req:function(){return getLevel('warrior')>=10;},levelReq:10},
-  {id:'w_t2',cls:'warrior',tier:2,name:'Knight',desc:'Warrior reaches Lv.20 — Full plate unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=20;},levelReq:20},
-  {id:'w_t3',cls:'warrior',tier:3,name:'Warlord',desc:'Warrior reaches Lv.30 — Warlord armor unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=30;},levelReq:30},
+  {id:'w_t2',cls:'warrior',tier:2,name:'Knight',desc:'Warrior reaches Lv.20 - Full plate unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=20;},levelReq:20},
+  {id:'w_t3',cls:'warrior',tier:3,name:'Warlord',desc:'Warrior reaches Lv.30 - Warlord armor unlocked',icon:'\u2694',req:function(){return getLevel('warrior')>=30;},levelReq:30},
   // MAGE
   {id:'m_unlock',cls:'mage',tier:0,name:'Apprentice',desc:'Unlock the Mage',icon:'\u2728',req:function(){return getLevel('mage')>=1;},levelReq:1},
-  {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.10 — Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=10;},levelReq:10},
-  {id:'m_t2',cls:'mage',tier:2,name:'Arcanist',desc:'Mage reaches Lv.20 — Arcane purple robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=20;},levelReq:20},
-  {id:'m_t3',cls:'mage',tier:3,name:'Archmage',desc:'Mage reaches Lv.30 — Archmage robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=30;},levelReq:30},
+  {id:'m_t1',cls:'mage',tier:1,name:'Scholar',desc:'Mage reaches Lv.10 - Scholar robe unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=10;},levelReq:10},
+  {id:'m_t2',cls:'mage',tier:2,name:'Arcanist',desc:'Mage reaches Lv.20 - Arcane purple robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=20;},levelReq:20},
+  {id:'m_t3',cls:'mage',tier:3,name:'Archmage',desc:'Mage reaches Lv.30 - Archmage robes unlocked',icon:'\u2728',req:function(){return getLevel('mage')>=30;},levelReq:30},
   // ROGUE
   {id:'r_unlock',cls:'ranger',tier:0,name:'Scout',desc:'Unlock the Rogue',icon:'\u2020',req:function(){return getLevel('ranger')>=1;},levelReq:1},
-  {id:'r_t1',cls:'ranger',tier:1,name:'Cutthroat',desc:'Rogue reaches Lv.10 — Leather vest unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=10;},levelReq:10},
-  {id:'r_t2',cls:'ranger',tier:2,name:'Shadowblade',desc:'Rogue reaches Lv.20 — Dark corset unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=20;},levelReq:20},
-  {id:'r_t3',cls:'ranger',tier:3,name:'Phantom',desc:'Rogue reaches Lv.30 — Phantom armor unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=30;},levelReq:30},
+  {id:'r_t1',cls:'ranger',tier:1,name:'Cutthroat',desc:'Rogue reaches Lv.10 - Leather vest unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=10;},levelReq:10},
+  {id:'r_t2',cls:'ranger',tier:2,name:'Shadowblade',desc:'Rogue reaches Lv.20 - Dark corset unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=20;},levelReq:20},
+  {id:'r_t3',cls:'ranger',tier:3,name:'Phantom',desc:'Rogue reaches Lv.30 - Phantom armor unlocked',icon:'\u2020',req:function(){return getLevel('ranger')>=30;},levelReq:30},
   // GENERAL
   // WARRIOR WEAPON ACHIEVEMENTS
-  {id:'ww0',cls:'warrior',tier:0,name:'Blade of Burden',desc:'Starting weapon — Rusty Shortsword',icon:'\u2694',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'ww1',cls:'warrior',tier:0,name:'First Steps',desc:'Win 25 games as Warrior — Iron Sword unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'ww2',cls:'warrior',tier:0,name:'Veteran Blade',desc:'Win 75 games as Warrior — Steel Greatsword unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'ww3',cls:'warrior',tier:0,name:'Warlord Edge',desc:'Win 150 games as Warrior — Legendary Blade unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'ww0',cls:'warrior',tier:0,name:'Blade of Burden',desc:'Starting weapon - Rusty Shortsword',icon:'\u2694',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
+  {id:'ww1',cls:'warrior',tier:0,name:'First Steps',desc:'Win 25 games as Warrior - Iron Sword unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'ww2',cls:'warrior',tier:0,name:'Veteran Blade',desc:'Win 75 games as Warrior - Steel Greatsword unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'ww3',cls:'warrior',tier:0,name:'Warlord Edge',desc:'Win 150 games as Warrior - Legendary Blade unlocked',icon:'\u2694',req:function(){return getGamesWon('warrior')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // MAGE WEAPON ACHIEVEMENTS
-  {id:'mw0',cls:'mage',tier:0,name:'Apprentice Stick',desc:'Starting weapon — Gnarled Wooden Staff',icon:'\u2728',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'mw1',cls:'mage',tier:0,name:'Apprentice Staff',desc:'Win 25 games as Mage — Iron Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'mw2',cls:'mage',tier:0,name:'Crystal Focus',desc:'Win 75 games as Mage — Crystal Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'mw3',cls:'mage',tier:0,name:'Arcane Catalyst',desc:'Win 150 games as Mage — Legendary Arcane Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'mw0',cls:'mage',tier:0,name:'Apprentice Stick',desc:'Starting weapon - Gnarled Wooden Staff',icon:'\u2728',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
+  {id:'mw1',cls:'mage',tier:0,name:'Apprentice Staff',desc:'Win 25 games as Mage - Iron Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'mw2',cls:'mage',tier:0,name:'Crystal Focus',desc:'Win 75 games as Mage - Crystal Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'mw3',cls:'mage',tier:0,name:'Arcane Catalyst',desc:'Win 150 games as Mage - Legendary Arcane Staff unlocked',icon:'\u2728',req:function(){return getGamesWon('mage')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // ROGUE WEAPON ACHIEVEMENTS
-  {id:'rw0',cls:'ranger',tier:0,name:'Street Knife',desc:'Starting weapon — Plain Short Knife',icon:'\u2020',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
-  {id:'rw1',cls:'ranger',tier:0,name:'Street Fighter',desc:'Win 25 games as Rogue — Iron Rapier unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
-  {id:'rw2',cls:'ranger',tier:0,name:'Blade Dancer',desc:'Win 75 games as Rogue — Fine Steel Rapier unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
-  {id:'rw3',cls:'ranger',tier:0,name:'Phantom Blade',desc:'Win 150 games as Rogue — Legendary Rapier + Ornate Dagger unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
+  {id:'rw0',cls:'ranger',tier:0,name:'Street Knife',desc:'Starting weapon - Plain Short Knife',icon:'\u2020',req:function(){return true;},levelReq:0,weaponAch:true,weaponTier:0},
+  {id:'rw1',cls:'ranger',tier:0,name:'Street Fighter',desc:'Win 25 games as Rogue - Iron Rapier unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=25;},levelReq:0,weaponAch:true,weaponTier:1},
+  {id:'rw2',cls:'ranger',tier:0,name:'Blade Dancer',desc:'Win 75 games as Rogue - Fine Steel Rapier unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=75;},levelReq:0,weaponAch:true,weaponTier:2},
+  {id:'rw3',cls:'ranger',tier:0,name:'Phantom Blade',desc:'Win 150 games as Rogue - Legendary Rapier + Ornate Dagger unlocked',icon:'\u2020',req:function(){return getGamesWon('ranger')>=150;},levelReq:0,weaponAch:true,weaponTier:3},
   // GENERAL
   // PVP KILL ACHIEVEMENTS
-  {id:'kw',cls:'warrior',tier:0,name:'Warlord Fury',desc:'Kill 100 players as Warrior — Red Eyes unlocked',icon:'\u2694',req:function(){return getPvPKills('warrior')>=100;},levelReq:0,killAch:true,killCls:'warrior'},
-  {id:'km',cls:'mage',tier:0,name:'Blood Mage',desc:'Kill 100 players as Mage — Red Eyes unlocked',icon:'\u2728',req:function(){return getPvPKills('mage')>=100;},levelReq:0,killAch:true,killCls:'mage'},
-  {id:'kr',cls:'ranger',tier:0,name:'Phantom Reaper',desc:'Kill 100 players as Rogue — Red Eyes unlocked',icon:'\u2020',req:function(){return getPvPKills('ranger')>=100;},levelReq:0,killAch:true,killCls:'ranger'},
+  {id:'kw',cls:'warrior',tier:0,name:'Warlord Fury',desc:'Kill 100 players as Warrior - Red Eyes unlocked',icon:'\u2694',req:function(){return getPvPKills('warrior')>=100;},levelReq:0,killAch:true,killCls:'warrior'},
+  {id:'km',cls:'mage',tier:0,name:'Blood Mage',desc:'Kill 100 players as Mage - Red Eyes unlocked',icon:'\u2728',req:function(){return getPvPKills('mage')>=100;},levelReq:0,killAch:true,killCls:'mage'},
+  {id:'kr',cls:'ranger',tier:0,name:'Phantom Reaper',desc:'Kill 100 players as Rogue - Red Eyes unlocked',icon:'\u2020',req:function(){return getPvPKills('ranger')>=100;},levelReq:0,killAch:true,killCls:'ranger'},
   // GENERAL
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
   {id:'g_gm_kill',cls:'general',tier:0,name:'I Killed a GM!',desc:'There is no way I will get banned now, right?',icon:'\uD83D\uDC51',hidden:true,
@@ -6885,7 +6914,7 @@ var _origLaunchPvP=launchPvP;
 function refreshCharCards(){
   // Re-draw card canvases with current levels (called after XP gain)
   ['warrior','mage','ranger'].forEach(function(cls){
-    // cards are animating via RAF already — level updates on next frame
+    // cards are animating via RAF already - level updates on next frame
   });
 }
 
@@ -7026,7 +7055,7 @@ function fallbackCopy(text,el){
 
 // Patch host creation to set URL after room created
 var _origConfirm = document.getElementById('setup-confirm');
-// We patch fbSet success in host branch — inject setUrlCode into the host flow
+// We patch fbSet success in host branch - inject setUrlCode into the host flow
 // by overriding showScreen for lobby
 var _lobbyShown = false;
 var _origShowScreen = showScreen;
