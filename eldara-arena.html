@@ -88,7 +88,8 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .sbtn{padding:8px 12px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:12px;cursor:pointer}
 .sbtn:hover{border-color:var(--gold);color:var(--gold)}
 #game-screen{flex-direction:row;align-items:stretch}
-#arena-canvas{display:block;flex-shrink:0}
+.mctl-btn{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:18px;cursor:pointer;transition:background 0.1s;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.2}
+.mctl-btn:active,.mctl-btn.pressed{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.45)}
 #side-panel{display:none}
 .sp-sec{padding:10px 12px;border-bottom:1px solid var(--border)}
 .sp-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:7px;text-transform:uppercase}
@@ -163,7 +164,19 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 
 </style>
 </head>
-<body>
+<body class="loading">
+<div id="loading-screen" style="position:fixed;inset:0;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s">
+  <img src="eldara-arena_logo.webp" alt="Eldara Arena" style="width:320px;max-width:80vw;object-fit:contain;filter:drop-shadow(0 0 40px rgba(232,184,75,0.5))">
+  <div style="margin-top:32px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:4px;color:rgba(232,184,75,0.5);animation:ldpulse 1.4s ease-in-out infinite">LOADING</div>
+  <style>@keyframes ldpulse{0%,100%{opacity:0.3}50%{opacity:1}}</style>
+  <script>
+    // Fallback: hide after 5s if Firebase never responds
+    setTimeout(function(){
+      var ld=document.getElementById('loading-screen');
+      if(ld&&ld.style.display!=='none'){ld.style.opacity='0';document.body.classList.remove('loading');setTimeout(function(){ld.style.display='none';},650);}
+    },5000);
+  </script>
+</div>
 
 <!-- AUTH -->
 <div class="screen active" id="auth-screen">
@@ -213,7 +226,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div id="daily-quests"></div>
   </div>
 
-  <button id="btn-achievements" style="position:absolute;top:50%;left:16px;transform:translateY(-50%);background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:3px" title="Achievements">ACHIEVEMENTS</button>
+  <div style="position:absolute;top:50%;left:16px;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;align-items:center">
+    <button id="btn-leaderboard" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:3px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed" title="Leaderboard">LEADERBOARD</button>
+    <button id="btn-achievements" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:3px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed" title="Achievements">ACHIEVEMENTS</button>
+  </div>
   <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
   <button id="btn-settings" style="position:absolute;top:46px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Settings">SETTINGS</button>
   <!-- Achievements overlay -->
@@ -233,7 +249,18 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div id="ach-list" style="flex:1;overflow-y:auto;padding:20px 28px;display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
   </div>
   <!-- Settings overlay -->
-  <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:90;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Courier New,monospace">
+  <!-- Leaderboard Overlay -->
+<div id="leaderboard-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:var(--panel);border:1px solid var(--border);padding:24px 28px;min-width:320px;max-width:480px;width:90vw;font-family:'Courier New',monospace;max-height:80vh;overflow-y:auto">
+    <div style="font-size:11px;letter-spacing:4px;color:var(--gold);margin-bottom:16px">PVP LEADERBOARD</div>
+    <div id="my-rank-display-lb" style="font-size:11px;color:var(--text);margin-bottom:12px;letter-spacing:1px;padding-bottom:10px;border-bottom:1px solid var(--border)"></div>
+    <div id="leaderboard-list-lb"></div>
+    <div style="margin-top:16px;text-align:center">
+      <button id="lb-close" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;padding:6px 20px;cursor:pointer">CLOSE</button>
+    </div>
+  </div>
+</div>
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:90;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Courier New,monospace">
     <div style="background:rgba(10,8,20,0.97);border:1px solid var(--border);padding:32px 40px;display:flex;flex-direction:column;gap:14px;width:360px">
       <div style="font-size:15px;letter-spacing:3px;color:var(--gold);margin-bottom:4px">SETTINGS</div>
       <div style="font-size:11px;color:var(--dim);letter-spacing:1px">DISPLAY NAME</div>
@@ -319,6 +346,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div class="lob-header">
       <div class="lob-htitle" id="lob-class-label">WARRIOR</div>
       <div class="lob-hname" id="lob-myname">&#8212;</div>
+      <div id="lob-title-display" style="font-size:9px;color:rgba(232,184,75,0.6);letter-spacing:1px;margin-top:2px;font-family:'Courier New',monospace;text-align:center;min-height:14px"></div>
     </div>
     <div class="room-box">
       <div class="room-label">ROOM CODE</div>
@@ -370,6 +398,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div id="game-overlay">
     <div class="ov-title" id="ov-title">VICTORY</div>
     <div class="ov-sub" id="ov-sub">You won the match!</div>
+    <div id="ov-rating" style="font-family:'Courier New',monospace;font-size:11px;color:rgba(232,184,75,0.85);letter-spacing:2px;margin:6px 0 0;display:none;text-align:center"></div>
     <div class="ov-btns">
       <button class="menu-btn primary" id="ov-rematch" style="width:150px">REMATCH</button>
       <button class="menu-btn" id="ov-menu" style="width:110px">LEAVE</button>
@@ -393,6 +422,23 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <div id="conn-bar">OFFLINE</div>
   <div id="profile-badge"></div>
+  <!-- Mobile touch controls -->
+  <div id="mobile-controls" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;pointer-events:none;user-select:none">
+    <!-- Joystick left -->
+    <div id="joystick-zone" style="position:absolute;bottom:16px;left:16px;width:130px;height:130px;pointer-events:auto">
+      <div id="joystick-base" style="position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.14)"></div>
+      <div id="joystick-knob" style="position:absolute;top:42px;left:42px;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.35);transition:none"></div>
+    </div>
+    <!-- Action buttons right -->
+    <div style="position:absolute;bottom:16px;right:16px;pointer-events:auto">
+      <div style="position:relative;width:160px;height:130px">
+        <div class="mctl-btn mctl-action" data-key="Space" style="position:absolute;top:0;left:27px;width:106px;height:40px;background:rgba(120,80,20,0.4);font-size:9px">MOVE</div>
+        <div class="mctl-btn mctl-action" data-key="KeyG" style="position:absolute;bottom:0;left:0;width:50px;height:50px;background:rgba(180,40,40,0.4);font-size:9px">ATK</div>
+        <div class="mctl-btn mctl-action" data-key="KeyH" style="position:absolute;bottom:0;left:55px;width:50px;height:50px;background:rgba(40,80,180,0.4);font-size:9px">SK1</div>
+        <div class="mctl-btn mctl-action" data-key="KeyJ" style="position:absolute;bottom:0;right:0;width:50px;height:50px;background:rgba(40,150,80,0.4);font-size:9px">SK2</div>
+      </div>
+    </div>
+  </div>
   <button id="btn-leave-game" style="position:absolute;top:8px;right:12px;background:rgba(10,8,20,0.85);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:5px 10px;cursor:pointer;text-transform:uppercase;z-index:60">LEAVE</button>
 
 
@@ -516,10 +562,29 @@ function loadUserProfile() {
       // Never push local data to a fresh account — only sync if Firebase already has something
     });
     showScreen('title-screen');
-    updateProfileBadge();
-    registerOnline();
+    updateProfileBadge();registerOnline();
+    // Hide loading screen
+    var ld=document.getElementById('loading-screen');
+    if(ld){ld.style.opacity='0';document.body.classList.remove('loading');setTimeout(function(){ld.style.display='none';},650);}
     loadPvpPlayed();
-    loadQuests();
+    loadQuests();loadRating();loadLeaderboard();
+    try{_ghostKills=parseInt(localStorage.getItem('eldara_ghost_kills')||'0');}catch(e){}
+    // Purge stale rooms — only if abandoned (both players gone for 10+ min)
+    fbGet('/rooms').then(function(rooms){
+      if(!rooms)return;
+      var cutoff=Date.now()-10*60*1000;
+      Object.keys(rooms).forEach(function(code){
+        var r=rooms[code];
+        var createdAt=r.createdAt||0;
+        if(createdAt<cutoff){
+          // Check last activity — host/guest ts fields
+          var hostTs=r.host&&r.host.ts||0;
+          var guestTs=r.guest&&r.guest.ts||0;
+          var lastActivity=Math.max(createdAt,hostTs,guestTs);
+          if(lastActivity<cutoff)fbDelete('/rooms/'+code);
+        }
+      });
+    }).catch(function(){});
     setTimeout(function(){
       // On very first login, seed all current achievements as seen (no false glow)
       var seen=loadSeenAchs();
@@ -1799,11 +1864,13 @@ var QUEST_POOL = {
 
 // Get today's quest date key (resets at 04:00 CEST = 02:00 UTC)
 function getQuestDateKey(){
-  var now=new Date();
-  var utc=now.getTime()+now.getTimezoneOffset()*60000;
-  var cest=new Date(utc+2*3600000); // CEST = UTC+2
-  if(cest.getHours()<4){cest.setDate(cest.getDate()-1);} // before 04:00 = yesterday's quests
-  return cest.getFullYear()+'-'+(cest.getMonth()+1)+'-'+cest.getDate();
+  // Use UTC time, shift by +2h for CEST (04:00 CEST = 02:00 UTC reset)
+  var utcMs=Date.now()+2*3600000; // shift to CEST
+  var d=new Date(utcMs);
+  // If before 04:00 CEST, use previous day
+  var cestHour=new Date(utcMs).getUTCHours();
+  if(cestHour<4){d=new Date(utcMs-86400000);}
+  return d.getUTCFullYear()+'-'+(d.getUTCMonth()+1)+'-'+d.getUTCDate();
 }
 
 // Pick today's 3 quests (1 per class) deterministically from date
@@ -1825,20 +1892,64 @@ var _questDateKey='';
 function loadQuests(){
   _todaysQuests=getTodaysQuests();
   _questDateKey=getQuestDateKey();
-  // Load progress from localStorage
-  try{
-    var saved=JSON.parse(localStorage.getItem('eldara_quest_'+_questDateKey)||'{}');
-    _questProgress=saved;
-  }catch(e){_questProgress={};}
-  // Clear old quest data
+  // Clear old quest data from localStorage
   try{
     var keys=Object.keys(localStorage);
     keys.forEach(function(k){if(k.startsWith('eldara_quest_')&&k!=='eldara_quest_'+_questDateKey)localStorage.removeItem(k);});
   }catch(e){}
+  // Clean old quest keys from Firebase
+  if(authUid&&!isGuest){
+    fbGetAuth('/users/'+authUid+'/quests').then(function(data){
+      if(data&&typeof data==='object'){
+        Object.keys(data).forEach(function(k){
+          if(k!==_questDateKey)fbDelete('/users/'+authUid+'/quests/'+k);
+        });
+      }
+    }).catch(function(){});
+  }
+  loadQuestProgress();
 }
 
 function saveQuestProgress(){
+  if(!_questDateKey)_questDateKey=getQuestDateKey();
+  // Save to localStorage as cache
   try{localStorage.setItem('eldara_quest_'+_questDateKey,JSON.stringify(_questProgress));}catch(e){}
+  // Save to Firebase tied to account
+  if(authUid&&!isGuest){
+    fbSet('/users/'+authUid+'/quests/'+_questDateKey,_questProgress);
+  }
+}
+
+function loadQuestProgress(){
+  if(!authUid||isGuest){
+    // Guest: localStorage only
+    try{
+      var saved=JSON.parse(localStorage.getItem('eldara_quest_'+_questDateKey)||'{}');
+      _questProgress=saved;
+    }catch(e){_questProgress={};}
+    renderDailyQuests();
+    return;
+  }
+  // Logged in: load from Firebase (authoritative), fallback to localStorage
+  fbGetAuth('/users/'+authUid+'/quests/'+_questDateKey).then(function(data){
+    if(data&&typeof data==='object'){
+      _questProgress=data;
+      // Sync to localStorage cache
+      try{localStorage.setItem('eldara_quest_'+_questDateKey,JSON.stringify(_questProgress));}catch(e){}
+    } else {
+      // Nothing in Firebase yet — check localStorage cache
+      try{
+        var saved=JSON.parse(localStorage.getItem('eldara_quest_'+_questDateKey)||'{}');
+        _questProgress=saved;
+        // Push to Firebase if we have local progress
+        if(Object.keys(_questProgress).length>0)saveQuestProgress();
+      }catch(e){_questProgress={};}
+    }
+    renderDailyQuests();
+  }).catch(function(){
+    try{_questProgress=JSON.parse(localStorage.getItem('eldara_quest_'+_questDateKey)||'{}');}catch(e){_questProgress={};}
+    renderDailyQuests();
+  });
 }
 
 function trackQuestEvent(evt,cls){
@@ -2544,6 +2655,7 @@ var CLS = {
 var myId='p_'+Math.random().toString(36).slice(2,9);
 var myName='HERO', myClass='warrior';
 var setupMode='host', gameMode='training';
+var _fromQueue=false;
 var roomCode=null, isHost=false;
 var gameState=null;
 var canvas, gctx, CW, CH;
@@ -2585,6 +2697,9 @@ function drawHitNumberForPlayer(ctx,px,py,id){
 
 // ── PVP WIN STREAK ──
 var pvpWinStreak=0;
+var _ghostKills=0; // stealth-only kills in a single match (all kills must be stealth first-hit)
+var _matchKills=0; // total kills this match
+var _matchStealthKills=0; // stealth first-hit kills this match
 try{pvpWinStreak=parseInt(localStorage.getItem('eldara_pvp_streak')||'0');}catch(e){}
 var pvpBestStreak=0;
 try{pvpBestStreak=parseInt(localStorage.getItem('eldara_pvp_best_streak')||'0');}catch(e){}
@@ -2592,6 +2707,94 @@ try{pvpBestStreak=parseInt(localStorage.getItem('eldara_pvp_best_streak')||'0');
 // ── MATCH HISTORY ──
 var matchHistory=[];
 try{matchHistory=JSON.parse(localStorage.getItem('eldara_match_history')||'[]');}catch(e){}
+
+// ═══════════════════════════════════════════
+// ELO RATING SYSTEM
+// ═══════════════════════════════════════════
+var myRating=1000;
+var _ratingLoaded=false;
+
+function loadRating(){
+  if(!authUid||isGuest)return;
+  fbGet('/users/'+authUid+'/rating').then(function(r){
+    if(r&&r>0){myRating=r;}else{myRating=1000;}
+    _ratingLoaded=true;
+    renderLeaderboard();
+  }).catch(function(){myRating=1000;});
+}
+
+function saveRating(r){
+  myRating=r;
+  if(authUid&&!isGuest){
+    fbSet('/users/'+authUid+'/rating',r);
+    fbSet('/leaderboard/'+authUid,{rating:r,name:displayName||myName||'?',ts:Date.now()});
+  }
+}
+
+function calcElo(myR,oppR,won){
+  var K=32;
+  var expected=1/(1+Math.pow(10,(oppR-myR)/400));
+  var actual=won?1:0;
+  var change=Math.round(K*(actual-expected));
+  return Math.max(0,myR+change); // floor at 0
+}
+
+function getRatingChange(myR,oppR,won){
+  var K=32;
+  var expected=1/(1+Math.pow(10,(oppR-myR)/400));
+  var actual=won?1:0;
+  return Math.round(K*(actual-expected));
+}
+
+function getRatingTier(r){
+  if(r>=2000)return{name:'Grandmaster',color:'#e8b84b',icon:'👑'};
+  if(r>=1600)return{name:'Master',color:'#e8b84b',icon:'⚔'};
+  if(r>=1400)return{name:'Diamond',color:'#60c8ff',icon:'💎'};
+  if(r>=1200)return{name:'Platinum',color:'#80e8c0',icon:'✦'};
+  if(r>=1000)return{name:'Gold',color:'#e8c860',icon:'◈'};
+  if(r>=800)return{name:'Silver',color:'#c0c0c0',icon:'◇'};
+  return{name:'Bronze',color:'#c87840',icon:'○'};
+}
+
+var leaderboardData=[];
+function loadLeaderboard(){
+  fbGet('/leaderboard').then(function(data){
+    if(!data)return;
+    leaderboardData=Object.keys(data).map(function(uid){
+      return {uid:uid,rating:data[uid].rating||1000,name:data[uid].name||'?'};
+    }).sort(function(a,b){return b.rating-a.rating;});
+    renderLeaderboard();
+  }).catch(function(){});
+}
+
+function renderLeaderboard(){
+  var el=document.getElementById('leaderboard-list');
+  if(!el||leaderboardData.length===0)return;
+  var myRank=-1;
+  var html=leaderboardData.slice(0,20).map(function(p,i){
+    var isMe=p.uid===authUid;
+    if(isMe)myRank=i+1;
+    var tier=getRatingTier(p.rating);
+    var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
+    return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);'+(isMe?'background:rgba(232,184,75,0.06);border-radius:3px;padding:4px 4px;margin:0 -4px;':'')+'">'
+      +'<span style="font-size:10px;width:22px;text-align:center;flex-shrink:0">'+medal+'</span>'
+      +'<span style="font-size:9px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+(isMe?'var(--gold)':'rgba(255,255,255,0.75)')+'">'+p.name+'</span>'
+      +'<span style="font-size:9px;color:'+tier.color+';white-space:nowrap">'+tier.icon+' '+p.rating+'</span>'
+      +'</div>';
+  }).join('');
+  el.innerHTML=html;
+  // Also populate standalone leaderboard overlay
+  var lbListEl=document.getElementById('leaderboard-list-lb');
+  if(lbListEl)lbListEl.innerHTML=el?el.innerHTML:'';
+  var rankEl2=document.getElementById('my-rank-display-lb');
+  if(rankEl2&&rankEl){rankEl2.innerHTML=rankEl?'Your rating: '+rankEl.innerHTML:'';}
+  var rankEl=document.getElementById('my-rank-display');
+  if(rankEl){
+    var t=getRatingTier(myRating);
+    rankEl.innerHTML='<span style="color:'+t.color+'">'+t.icon+' '+t.name+'</span> &nbsp;'+myRating+' pts'+(myRank>0?' &nbsp;#'+myRank:'');
+  }
+}
+
 function saveMatchHistory(entry){
   matchHistory.unshift(entry);
   if(matchHistory.length>10)matchHistory=matchHistory.slice(0,10);
@@ -2623,6 +2826,16 @@ function drawFootDust(ctx,ox,oy){
   });
 }
 var pushThrottle=0;
+var _roomHeartbeatTimer=0;
+
+function updateRoomHeartbeat(dt){
+  if(!roomCode||!authUid||!isHost)return;
+  _roomHeartbeatTimer+=dt;
+  if(_roomHeartbeatTimer>120000){
+    _roomHeartbeatTimer=0;
+    fbPatchAuth('/rooms/'+roomCode+'/host',{ts:Date.now()});
+  }
+}
 
 function mkPlayer(id,cls,name,spawn,isMe) {
   var C=CLS[cls];
@@ -2679,8 +2892,8 @@ function dealDmg(gs,target,dmg,type) {
     return;
   }
   var finalDmg=Math.round(dmg*(target.warCharging&&target.dmgReduce?(1-target.dmgReduce):1));
-  // Spawn hit number
-  spawnHitNumber(target.id||target.name||'me', finalDmg);
+  // Spawn hit number only during active fighting, for all players
+  if(gs&&gs.phase==='fighting') spawnHitNumber(target.id||target.name||'p', finalDmg);
   if(target.shieldHp>0){
     var absorbed=Math.min(target.shieldHp,finalDmg);
     target.shieldHp-=absorbed;
@@ -2795,7 +3008,10 @@ function doAttack(gs,attacker,target) {
   var C=CLS[attacker.cls];
   // Break stealth when attacking
   var hadStealthFirstHit=attacker.stealthed&&attacker.stealthFirstHit;
-  if(hadStealthFirstHit&&attacker.isMe)trackQuestEvent('sneak_hit','ranger');
+  if(hadStealthFirstHit&&attacker.isMe){
+    trackQuestEvent('sneak_hit','ranger');
+    if(gameMode==='pvp')_matchStealthKills++;
+  }
   if(attacker.stealthed){attacker.stealthed=false;attacker.stealthTimer=0;attacker.rollInv=false;attacker.stealthFirstHit=false;}
   attacker.attacking=14;attacker.atkTimer=C.atkMs;
   if(C.atkType==='proj') {
@@ -3150,7 +3366,10 @@ function update(gs,dt) {
     }
   }
   updateHUD(gs);
-  if(gameMode==='pvp'){pushThrottle+=dt;if(pushThrottle>80){pushThrottle=0;pushState(me);}}
+  if(gameMode==='pvp'){pushThrottle+=dt;if(pushThrottle>80){pushThrottle=0;pushState(me);}
+    _pingTimer+=dt;if(_pingTimer>3000){_pingTimer=0;measurePing();}
+    updateRoomHeartbeat(dt);
+  }
 }
 
 function updateLocal(gs,p,dt) {
@@ -3205,6 +3424,9 @@ function lerpRemote(en) {
   if(remoteState.fireballCharging!=null) en.fireballCharging=remoteState.fireballCharging;
   if(remoteState.fireballCharge!=null) en.fireballCharge=remoteState.fireballCharge;
   if(remoteState.crownOn!=null) en.crownOn=remoteState.crownOn;
+  if(remoteState.rating!=null) en.rating=remoteState.rating;
+  if(remoteState.equippedTitle!=null) en.equippedTitle=remoteState.equippedTitle;
+  en._lastStateTs=Date.now();
   // Sync opponent projectiles for rendering only
   // Only remove/replace visual-only projs — never touch real damage projs from processAction
   if(gameState){
@@ -3622,6 +3844,15 @@ function draw(gs) {
     }
     if(p.stealthed&&p.isMe){gctx.globalAlpha=0.25;}
     if(!p.stealthed||p.isMe){
+    // Equipped title above nameplate
+    var ptitle=p.isMe?getEquippedTitleName():(p.equippedTitle||'');
+    if(ptitle){
+      gctx.font='7px Courier New';gctx.textAlign='center';
+      var tw=gctx.measureText(ptitle).width+8;
+      gctx.fillStyle='rgba(0,0,0,0.45)';gctx.fillRect(p.x-tw/2,p.y-68,tw,11);
+      gctx.fillStyle='rgba(232,184,75,0.75)';gctx.textBaseline='middle';
+      gctx.fillText(ptitle,p.x,p.y-62);
+    }
     gctx.fillStyle='rgba(0,0,0,0.55)';gctx.fillRect(p.x-30,p.y-56,60,14);
     // Hit number for this player
     drawHitNumberForPlayer(gctx,p.x,p.y,p.id||p.name||'me');
@@ -3809,6 +4040,18 @@ function draw(gs) {
   // ── Hit numbers (screen coords) ──
   var ox2=Math.floor((CW-AW*TILE)/2),oy2=Math.floor((CH-AH*TILE)/2);
 
+  // ── Ping display — bottom right ──
+  if(gameMode==='pvp'&&_pingMs>=0){
+    var pCol=_pingMs<80?'#60e880':_pingMs<150?'#e8c860':'#e87060';
+    var pTxt=_pingMs+'ms';
+    gctx.font='9px Courier New';gctx.textAlign='right';gctx.textBaseline='bottom';
+    gctx.fillStyle='rgba(0,0,0,0.5)';
+    var pw=gctx.measureText(pTxt).width;
+    gctx.fillRect(CW-pw-12,CH-18,pw+10,14);
+    gctx.fillStyle=pCol;
+    gctx.fillText(pTxt,CW-8,CH-6);
+  }
+
   // ── HP vignette — pulses red when low ──
   var me2=gs&&gs.players?gs.players.find(function(p){return p.isMe;}):null;
   if(me2&&me2.hp/me2.maxHp<0.35&&gs.phase==='fighting'){
@@ -3828,7 +4071,6 @@ function endRound(gs) {
   var dead=gs.players.find(function(p){return p.dead;});
   var alive=gs.players.find(function(p){return !p.dead;});
   var wonRound=alive&&alive.isMe;
-  if(wonRound&&dead&&dead.stunned>0)trackQuestEvent('kill_stunned',myClass);
   if(alive){showBanner(alive.isMe?'YOU WIN!':alive.name+' WINS!');}
   else{showBanner('DRAW!');}
   // Award XP
@@ -3838,6 +4080,20 @@ function endRound(gs) {
     if(wonRound){
       trackQuestEvent('win',meR.cls);
       if(gameMode==='pvp')trackQuestEvent('pvp_win',meR.cls);
+    }
+    // Elo rating update (PvP only)
+    if(gameMode==='pvp'&&_fromQueue&&_ratingLoaded){
+      var enForElo=gs.players.find(function(p){return !p.isMe;});
+      var oppRating=1000; // default if unknown
+      if(enForElo&&enForElo.rating)oppRating=enForElo.rating;
+      var newRating=calcElo(myRating,oppRating,wonRound);
+      var change=newRating-myRating;
+      saveRating(newRating);
+      // Show rating change banner
+      setTimeout(function(){
+        var t=getRatingTier(newRating);
+        showBanner((change>=0?'+':'')+change+' ELO · '+t.icon+' '+newRating);
+      },2000);
     }
     incrementGamesPlayed(meR.cls);
     if(wonRound)incrementGamesWon(meR.cls);
@@ -3866,7 +4122,6 @@ function endRound(gs) {
     });
     if(gameMode==='pvp'&&wonRound&&dead&&!dead.isMe){
       var kills=incrementPvPKills(meR.cls);
-      trackQuestEvent('kill',meR.cls);
       if(kills===100){showBanner('RED EYES UNLOCKED!');setRedEyes(meR.cls,true);}
       // GM kill easter egg
       if(dead.name&&dead.name.indexOf('<GM>')>=0&&!hasKilledGM()){
@@ -3876,8 +4131,21 @@ function endRound(gs) {
         renderAchievements(currentAchTab||'all');
       }
     }
+    // Kill quest — counts in both training and PvP
+    if(wonRound&&dead&&!dead.isMe){
+      trackQuestEvent('kill',meR.cls);
+      if(dead.stunned>0)trackQuestEvent('kill_stunned',meR.cls);
+      // Ghost title tracking — PvP wins where EVERY kill was a stealth first-hit
+      if(gameMode==='pvp'&&meR.cls==='ranger'&&_matchStealthKills>0&&_matchKills===0){
+        _ghostKills++;
+        try{localStorage.setItem('eldara_ghost_kills',_ghostKills);}catch(e){}
+        checkNewAchievements();
+      }
+      _matchKills++;
+    }
   }
   gs.phase='gameOver';
+  footDust=[];hitNumbers=[];
   if(gameMode==='training'){
     // Training: start next game after short delay, no rematch screen
     setTimeout(function(){
@@ -3916,6 +4184,7 @@ function resetRound(gs) {
   }
   gs.projs=[];gs.effects=[];gs.traps=[];
   gs.phase='fighting';gs.roundTimer=99;gs.roundMs=0;gs.round++;
+  _matchKills=0;_matchStealthKills=0;
   if(gameMode==='pvp'){seenActionKeys={};} // clear inbox cache so new actions process
   var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';
   showBanner('ROUND '+gs.round);updateHUD(gs);
@@ -3940,8 +4209,9 @@ function showOverlay(t,s,hideRematch){opponentRematchReady=false;opponentRematch
     });
   }
   pvpRematchReady=false;
+  var ovr=document.getElementById('ov-rating');if(ovr){ovr.style.display='none';ovr.textContent='';}
 }
-function hideOverlay(){document.getElementById('game-overlay').classList.remove('show');var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';}
+function hideOverlay(){document.getElementById('game-overlay').classList.remove('show');var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';clearLobbyAbandonTimer();}
 
 // ═══════════════════════════════════════════
 // HUD
@@ -4043,6 +4313,8 @@ function pushState(me) {
     warCryBuff:Math.round(me.warCryBuff||0),warCryShake:Math.round(me.warCryShake||0),
     fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
     crownOn:hasCrown(),
+    rating:myRating||1000,
+    equippedTitle:_equippedTitle||'',
     projs:myProjs.length>0?myProjs:null
   });
 }
@@ -4407,19 +4679,27 @@ window.addEventListener('blur',function(){
 window.addEventListener('beforeunload',function(){
   // Best-effort cleanup — browser may not complete async calls but tries
   if(_inQueue&&authUid){
-    // Synchronous XHR as last resort (fetch won't complete on tab close)
     try{
       var xhr=new XMLHttpRequest();
-      xhr.open('DELETE',FB_BASE+'/queue/'+authUid+'.json?auth='+authToken,false);
-      xhr.send();
-      xhr.open('DELETE',FB_BASE+'/presence/'+authUid+'.json?auth='+authToken,false);
-      xhr.send();
+      xhr.open('DELETE',FB_BASE+'/queue/'+authUid+'.json?auth='+authToken,false);xhr.send();
+      xhr.open('DELETE',FB_BASE+'/presence/'+authUid+'.json?auth='+authToken,false);xhr.send();
     }catch(e){}
   } else if(authUid){
     try{
       var xhr2=new XMLHttpRequest();
-      xhr2.open('DELETE',FB_BASE+'/presence/'+authUid+'.json?auth='+authToken,false);
-      xhr2.send();
+      xhr2.open('DELETE',FB_BASE+'/presence/'+authUid+'.json?auth='+authToken,false);xhr2.send();
+    }catch(e){}
+  }
+  // Clean up room on tab close
+  if(roomCode&&authUid){
+    try{
+      var xhr3=new XMLHttpRequest();
+      // Guest deletes their inbox; host deletes whole room
+      if(isHost){
+        xhr3.open('DELETE',FB_BASE+'/rooms/'+roomCode+'.json?auth='+authToken,false);xhr3.send();
+      } else {
+        xhr3.open('DELETE',FB_BASE+'/rooms/'+roomCode+'/inbox/'+myId+'.json?auth='+authToken,false);xhr3.send();
+      }
     }catch(e){}
   }
 });
@@ -4439,6 +4719,8 @@ function showScreen(id){
   document.getElementById(id).classList.add('active');
   // Always hide setup-screen overlay when navigating anywhere
   document.getElementById('setup-screen').style.display='none';
+  // Mobile controls
+  showMobileControls(id==='game-screen'&&_isMobile);
   if(id==='title-screen'){
     footDust=[];hitNumbers=[];_footStepCounter=0;
     registerOnline(); // refresh online presence
@@ -4680,13 +4962,98 @@ function buildTitleChars() {
     // Animate — transparent background
     var cctx = cv.getContext('2d'); cctx.imageSmoothingEnabled = false;
     var animT2 = Math.random()*Math.PI*2;
-    (function animTitleCard() {
-      cctx.clearRect(0,0,100,120);
-      animT2 += 0.025;
-      var fn = DRAW[cls];
-      if(fn) fn(cctx, 50, 80, 3, Math.sin(animT2)*3, false, xpD.level);
-      requestAnimationFrame(animTitleCard);
-    })();
+    var _cardCls = cls;
+    var _actionTimer = Math.random()*300; // stagger action triggers
+    var _actionPhase = 0; // 0=idle, 1=action playing
+    var _actionT = 0;
+    var _loopId = {};
+    cv._loopId = _loopId;
+    (function animTitleCard(myId) {
+      if(cv._loopId !== myId) return;
+      cctx.clearRect(0,0,100,150);
+      animT2 += 0.018;
+      var isSelected = card.classList.contains('selected');
+      var fn = DRAW[_cardCls];
+      if(fn){
+        var SY = 85;
+        var bounce = isSelected ? Math.sin(animT2*1.4)*1.5 : 0;
+        var cy2 = SY + bounce;
+        var cx2 = 50;
+        var t3 = Date.now()*0.0015;
+
+        if(isSelected){
+          _actionTimer += 16;
+          if(_actionPhase===0 && _actionTimer > 4000+Math.random()*2000){
+            _actionPhase=1; _actionT=0; _actionTimer=0;
+          }
+          if(_actionPhase===1){
+            _actionT+=16;
+            if(_actionT>1200) _actionPhase=0;
+          }
+          var anim=0;
+          if(_actionPhase===1){
+            var p2=Math.min(1,_actionT/600);
+            var swing=Math.sin(p2*Math.PI);
+            if(_cardCls==='warrior') anim=swing*8;
+            if(_cardCls==='mage')    anim=swing*5;
+            if(_cardCls==='ranger')  anim=-swing*4;
+          }
+          // Draw sprite
+          fn(cctx, cx2, cy2, 3, anim, false, xpD.level);
+          // Spell effects on top
+          var headY = cy2-20; // head center: top at -9*S=-27, so center ~-20px above feet
+          var bodyY = cy2-10; // body center: torso midpoint ~-10px above feet
+          if(_cardCls==='warrior'&&_actionPhase===1){
+            var wcA=Math.min(1,_actionT/400)*(1-Math.max(0,(_actionT-900)/300));
+            var wcP=0.5+Math.sin(Date.now()*0.012)*0.5;
+            var wcG=cctx.createRadialGradient(cx2,headY,0,cx2,headY,22);
+            wcG.addColorStop(0,'rgba(255,30,0,'+(wcA*wcP*0.85)+')');
+            wcG.addColorStop(0.5,'rgba(200,10,0,'+(wcA*0.4)+')');
+            wcG.addColorStop(1,'rgba(180,0,0,0)');
+            cctx.fillStyle=wcG;cctx.beginPath();cctx.arc(cx2,headY,22,0,Math.PI*2);cctx.fill();
+            // Eyes are at y=-4*S=-12 relative to feet
+            cctx.fillStyle='rgba(255,40,0,'+(0.7+wcP*0.3)+')';
+            cctx.fillRect(cx2-6,cy2-15,3,3);cctx.fillRect(cx2+0,cy2-15,3,3);
+          }
+          if(_cardCls==='mage'&&_actionPhase===1){
+            var fsA=Math.min(1,_actionT/500)*(1-Math.max(0,(_actionT-900)/300));
+            var fsP=0.7+Math.sin(Date.now()*0.005)*0.2;
+            var shY=cy2+3; // mage body center
+            cctx.strokeStyle='rgba(100,200,255,'+(fsA*0.22)+')';cctx.lineWidth=12;
+            cctx.beginPath();cctx.ellipse(cx2,shY,26,33,0,0,Math.PI*2);cctx.stroke();
+            cctx.strokeStyle='rgba(160,230,255,'+(fsA*0.82)+')';cctx.lineWidth=1.5;
+            cctx.beginPath();cctx.ellipse(cx2,shY,26,33,0,0,Math.PI*2);cctx.stroke();
+            cctx.fillStyle='rgba(120,210,255,'+(fsA*fsP*0.10)+')';
+            cctx.beginPath();cctx.ellipse(cx2,shY,26,33,0,0,Math.PI*2);cctx.fill();
+            for(var oi=0;oi<3;oi++){
+              var oa=t3+oi*(Math.PI*2/3);
+              var ox3=cx2+Math.cos(oa)*26, oy3=shY+Math.sin(oa)*33;
+              var og3=cctx.createRadialGradient(ox3,oy3,0,ox3,oy3,7);
+              og3.addColorStop(0,'rgba(220,248,255,'+(fsA*0.95)+')');
+              og3.addColorStop(0.5,'rgba(100,200,255,'+(fsA*0.85)+')');
+              og3.addColorStop(1,'rgba(60,160,255,0)');
+              cctx.fillStyle=og3;cctx.beginPath();cctx.arc(ox3,oy3,7,0,Math.PI*2);cctx.fill();
+              cctx.fillStyle='rgba(240,252,255,'+(fsA*0.9)+')';
+              cctx.beginPath();cctx.arc(ox3-1,oy3-1,2,0,Math.PI*2);cctx.fill();
+            }
+          }
+          if(_cardCls==='ranger'&&_actionPhase===1){
+            var stA=Math.min(1,_actionT/400)*(1-Math.max(0,(_actionT-900)/300));
+            var rg3=cctx.createRadialGradient(cx2,bodyY,2,cx2,bodyY,28);
+            rg3.addColorStop(0,'rgba(100,0,160,'+(stA*0.45)+')');
+            rg3.addColorStop(1,'rgba(60,0,100,0)');
+            cctx.fillStyle=rg3;cctx.fillRect(cx2-30,cy2-46,60,50);
+          }
+          cctx.globalAlpha=1;
+          // Shadow
+          cctx.fillStyle='rgba(0,0,0,0.12)';
+          cctx.beginPath();cctx.ellipse(cx2,cy2+2,14,3,0,0,Math.PI*2);cctx.fill();
+        } else {
+          fn(cctx, cx2, SY, 3, Math.sin(animT2)*0.8, false, xpD.level);
+        }
+      }
+      requestAnimationFrame(function(){animTitleCard(myId);});
+    })(_loopId);
   });
 }
 buildTitleChars();
@@ -4703,7 +5070,7 @@ buildTitleChars();
 
 document.getElementById('btn-pvp').addEventListener('click',function(e){
   e.stopPropagation();
-  gameMode='pvp';setupMode='host';
+  gameMode='pvp';setupMode='host';_fromQueue=false;
   document.getElementById('join-code-wrap').style.display='none';
   document.getElementById('setup-error').textContent='';
   document.getElementById('setup-screen').style.display='flex';
@@ -4899,7 +5266,7 @@ function processQueueData(data){
       // We are host — create room and write matchStart immediately
       leaveQueue();
       fbSet('/queue/'+oppKey,null);
-      gameMode='pvp';iAmHost=true;isHost=true;
+      gameMode='pvp';iAmHost=true;isHost=true;_fromQueue=true;
       myName=displayName||CLS[myClass].name.toUpperCase();
       roomCode=genCode();
       pvpSpawnFlip=Math.random()<0.5;
@@ -4907,6 +5274,7 @@ function processQueueData(data){
       var matchData={roomCode:roomCode,hostId:myId,hostName:myName,hostCls:myClass,spawnFlip:pvpSpawnFlip,arenaKey:arenaKey,ts:Date.now()};
       // Write room host + notify opponent
       fbSet('/rooms/'+roomCode+'/host',{id:myId,name:myName,cls:myClass,ts:Date.now()});
+      fbSet('/rooms/'+roomCode+'/createdAt',Date.now());
       fbSet('/matchmade/'+oppKey,matchData);
       // Wait for guest to join then launch
       var _guestWait=fbListen('/rooms/'+roomCode+'/guest',function(gd){
@@ -4925,7 +5293,7 @@ function processQueueData(data){
           _matchmadeListener();_matchmadeListener=null;
           leaveQueue();
           fbSet('/matchmade/'+authUid,null);
-          gameMode='pvp';iAmHost=false;isHost=false;
+          gameMode='pvp';iAmHost=false;isHost=false;_fromQueue=true;
           myName=displayName||CLS[myClass].name.toUpperCase();
           roomCode=mData.roomCode;
           if(mData.spawnFlip!==undefined)pvpSpawnFlip=mData.spawnFlip;
@@ -4996,6 +5364,7 @@ document.getElementById('setup-confirm').addEventListener('click',function(){
       showScreen('lobby-screen');
       document.getElementById('lob-myname').textContent=myName;
       document.getElementById('lob-class-label').textContent=CLS[myClass]&&CLS[myClass].name?CLS[myClass].name.toUpperCase():'WARRIOR';
+      updateTitleDisplay();
       document.getElementById('lob-code').textContent=roomCode;
       updateLobbyPlayers([{name:myName,you:true}]);
       errEl.textContent='';
@@ -6284,6 +6653,12 @@ var ACHIEVEMENTS = [
   {id:'g_streak2',cls:'general',tier:0,name:'Heated',desc:'Win 2 PvP matches in a row',icon:'\uD83D\uDD25',req:function(){return pvpBestStreak>=2;},levelReq:0},
   {id:'g_streak5',cls:'general',tier:0,name:'On a Roll',desc:'Win 5 PvP matches in a row',icon:'\u26A1',req:function(){return pvpBestStreak>=5;},levelReq:0},
   {id:'g_streak10',cls:'general',tier:0,name:'Warlord Streak',desc:'Win 10 PvP matches in a row',icon:'\uD83D\uDC51',req:function(){return pvpBestStreak>=10;},levelReq:0},
+  // Title achievements
+  {id:'t_undefeated',cls:'general',tier:0,name:'The Undefeated',desc:'Win 50 PvP matches in a row without a single loss',icon:'\u2694',req:function(){return pvpBestStreak>=50;},levelReq:0,isTitle:true},
+  {id:'t_ghost',cls:'general',tier:0,name:'Ghost',desc:'Win 20 PvP matches as Rogue where every kill was a Stealth first-hit',icon:'\uD83D\uDC7B',req:function(){return _ghostKills>=20;},levelReq:0,isTitle:true},
+  {id:'t_master',cls:'general',tier:0,name:'Master',desc:'Reach 1600 rating in PvP',icon:'\u2694',req:function(){return myRating>=1600;},levelReq:0,isTitle:true},
+  {id:'t_legend',cls:'general',tier:0,name:'Grandmaster',desc:'Reach 2000 rating in PvP',icon:'\uD83C\uDF1F',req:function(){return myRating>=2000;},levelReq:0,isTitle:true},
+  {id:'t_eternal',cls:'general',tier:0,name:'The Eternal',desc:'Hold #1 on the PvP leaderboard',icon:'\uD83D\uDC51',req:function(){return leaderboardData.length>0&&leaderboardData[0].uid===authUid;},levelReq:0,isTitle:true,hidden:false},
   {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return (s&&parseInt(s)>0)||(_pvpPlayedFirebase>0);},levelReq:0},
   {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.30 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=30||getLevel('mage')>=30||getLevel('ranger')>=30;},levelReq:0},
   {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.30 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=30&&getLevel('mage')>=30&&getLevel('ranger')>=30;},levelReq:0},
@@ -6328,6 +6703,10 @@ function buildAchCard(ach){
     var wearingCrown=hasCrown();
     wearBtn='<button class="wear-crown-btn" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearingCrown?'#e74c3c':'#c8781a')+';color:'+(wearingCrown?'#e74c3c':'#c8781a')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearingCrown?'REMOVE CROWN':'WEAR CROWN')+'</button>';
   }
+  if(ach.isTitle&&earned){
+    var wearingT=_equippedTitle===ach.id;
+    wearBtn=(wearBtn||'')+'<button class="equip-title-btn" data-id="'+ach.id+'" style="margin-top:6px;padding:5px 12px;background:transparent;border:1px solid '+(wearingT?'#e8b84b':'rgba(255,255,255,0.25)')+';color:'+(wearingT?'#e8b84b':'rgba(255,255,255,0.6)')+';font-family:Courier New,monospace;font-size:9px;letter-spacing:1px;cursor:pointer">'+(wearingT?'UNEQUIP TITLE':'EQUIP TITLE')+'</button>';
+  }
   card.innerHTML=leftHTML+'<div style="flex:1;min-width:0"><div style="font-size:12px;letter-spacing:1px;color:'+nameColor+'">'+ach.name+checkmark+'</div><div style="font-size:11px;color:rgba(255,255,255,0.82);margin-top:4px;line-height:1.5">'+ach.desc+'</div>'+(ach.levelReq>1?'<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px">Requires Lv.'+ach.levelReq+'</div>':'')+progressStr+wearBtn+'</div>';
   return {card:card,earned:earned};
 }
@@ -6365,6 +6744,9 @@ function renderAchievements(tab){
   });
   list.querySelectorAll('.wear-crown-btn').forEach(function(btn){
     btn.addEventListener('click',function(){toggleCrown();});
+  });
+  list.querySelectorAll('.equip-title-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){equipTitle(_equippedTitle===btn.dataset.id?'':btn.dataset.id);});
   });
   
   // Animate sprites
@@ -6424,6 +6806,16 @@ function checkNewAchievements(){
   document.head.appendChild(s);
 })();
 
+
+document.getElementById('btn-leaderboard').addEventListener('click',function(){
+  var ov=document.getElementById('leaderboard-overlay');
+  ov.style.display='flex';
+  loadLeaderboard();
+});
+document.getElementById('lb-close').addEventListener('click',function(){
+  document.getElementById('leaderboard-overlay').style.display='none';
+});
+
 document.getElementById('btn-achievements').addEventListener('click',function(){
   // Mark all currently earned achievements as seen and remove glow
   var seen=loadSeenAchs();
@@ -6465,7 +6857,87 @@ function refreshCharCards(){
 function resizeCanvas(){canvas=document.getElementById('arena-canvas');CW=window.innerWidth;CH=window.innerHeight;canvas.width=CW;canvas.height=CH;gctx=canvas.getContext('2d');gctx.imageSmoothingEnabled=false;}
 window.addEventListener('resize',resizeCanvas);
 
-// ── URL sharing ──
+// ── MOBILE TOUCH CONTROLS ──
+var _isMobile=/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||window.innerWidth<700;
+function showMobileControls(show){
+  var el=document.getElementById('mobile-controls');
+  if(el)el.style.display=show?'block':'none';
+}
+
+(function(){
+  // ── Joystick ──
+  var jzone=null,jknob=null,jActive=false,jTouchId=null;
+  var jCx=65,jCy=65,jR=50,jDeadzone=12;
+  var jKeys={KeyW:false,KeyA:false,KeyS:false,KeyD:false};
+
+  function fireKey(code,down){
+    document.dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{code:code,bubbles:true,cancelable:true}));
+  }
+  function setJKey(code,val){
+    if(jKeys[code]===val)return;
+    jKeys[code]=val;fireKey(code,val);
+  }
+  function updateJoystick(dx,dy){
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    var nx=dist>jR?dx/dist*jR:dx;
+    var ny=dist>jR?dy/dist*jR:dy;
+    if(jknob){jknob.style.left=(jCx+nx-23)+'px';jknob.style.top=(jCy+ny-23)+'px';}
+    var threshold=jDeadzone;
+    setJKey('KeyW',ny<-threshold);
+    setJKey('KeyS',ny>threshold);
+    setJKey('KeyA',nx<-threshold);
+    setJKey('KeyD',nx>threshold);
+  }
+  function resetJoystick(){
+    if(jknob){jknob.style.left=(jCx-23)+'px';jknob.style.top=(jCy-23)+'px';}
+    ['KeyW','KeyS','KeyA','KeyD'].forEach(function(k){setJKey(k,false);});
+  }
+
+  document.addEventListener('touchstart',function(e){
+    jzone=jzone||document.getElementById('joystick-zone');
+    jknob=jknob||document.getElementById('joystick-knob');
+    Array.from(e.changedTouches).forEach(function(t){
+      if(jzone&&!jActive){
+        var r=jzone.getBoundingClientRect();
+        if(t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom){
+          jActive=true;jTouchId=t.identifier;
+          var dx=t.clientX-r.left-jCx,dy=t.clientY-r.top-jCy;
+          updateJoystick(dx,dy);e.preventDefault();return;
+        }
+      }
+      // Action buttons
+      var el=document.elementFromPoint(t.clientX,t.clientY);
+      var btn=el&&el.closest?el.closest('[data-key]'):null;
+      if(btn){e.preventDefault();var code=btn.getAttribute('data-key');btn.classList.add('pressed');fireKey(code,true);btn._touchId=t.identifier;}
+    });
+  },{passive:false});
+
+  document.addEventListener('touchmove',function(e){
+    Array.from(e.changedTouches).forEach(function(t){
+      if(jActive&&t.identifier===jTouchId){
+        var r=document.getElementById('joystick-zone').getBoundingClientRect();
+        updateJoystick(t.clientX-r.left-jCx,t.clientY-r.top-jCy);
+        e.preventDefault();
+      }
+    });
+  },{passive:false});
+
+  document.addEventListener('touchend',function(e){
+    Array.from(e.changedTouches).forEach(function(t){
+      if(jActive&&t.identifier===jTouchId){jActive=false;jTouchId=null;resetJoystick();}
+      // Action buttons
+      document.querySelectorAll('[data-key]').forEach(function(btn){
+        if(btn._touchId===t.identifier){
+          btn.classList.remove('pressed');
+          fireKey(btn.getAttribute('data-key'),false);
+          delete btn._touchId;
+        }
+      });
+    });
+  },{passive:false});
+})();
+
+// Mobile controls shown via showScreen directly below
 function buildInviteLink(code) {
   var base = window.location.href.split('?')[0].split('#')[0];
   return base + '?join=' + code;
