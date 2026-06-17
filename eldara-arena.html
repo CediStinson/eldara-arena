@@ -730,7 +730,7 @@ function px(ctx, gx, gy, color, w, h) {
   ctx.fillRect(gx*S, gy*S, (w||1)*S, (h||1)*S);
 }
 
-// ── Warrior (battle-scarred knight) ──
+// -- Warrior (battle-scarred knight) --
 function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   level=level||1;
   var wT=level<10?0:level<20?1:level<30?2:3;
@@ -739,7 +739,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   var bob=Math.sin(anim*0.15)*0.5, leg=Math.sin(anim*0.3)*1.2;
   var sw=(anim>0&&anim<12)?Math.sin(anim*0.5)*6:0;
 
-  // ── CAPE (tier 2+) ──
+  // -- CAPE (tier 2+) --
   if(wT===2){
     px(ctx,-4,2+bob,'#4a0404',8,11);
     px(ctx,-4,2+bob,'#620606',7,9);
@@ -759,7 +759,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,10+bob,'#500505',6,2);  // lower highlight
   }
 
-  // ── BODY ──
+  // -- BODY --
   if(wT===0){
     // Bare chest - skin with two crossed leather straps
     px(ctx,-3,0+bob,'#c09050',6,9);   // bare chest skin
@@ -838,7 +838,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,5,-2+bob,'#8b1010',1,1);   // right blood trim
   }
 
-  // ── ARMS ──
+  // -- ARMS --
   if(wT===0){
     px(ctx,-5,1+bob,'#d4a76a',2,6);px(ctx,3,1+bob,'#d4a76a',2,6);
     px(ctx,-5,1+bob,'#c09050',1,5); // shadow
@@ -860,7 +860,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     }
   }
 
-  // ── LEGS ──
+  // -- LEGS --
   if(wT===0){
     px(ctx,-3,10+bob+leg,'#4a3828',2,6);px(ctx,1,10+bob-leg,'#4a3828',2,6);
     px(ctx,-3,10+bob+leg,'#3a2818',1,5);px(ctx,2,10+bob-leg,'#3a2818',1,5);
@@ -875,7 +875,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     if(wT>=3){px(ctx,-3,10+bob+leg,'#c8a030',1,1);px(ctx,1,10+bob-leg,'#c8a030',1,1);}
   }
 
-  // ── BOOTS ──
+  // -- BOOTS --
   if(wT===0){
     px(ctx,-4,15+bob+leg,'#4a3828',3,3);px(ctx,1,15+bob-leg,'#4a3828',3,3);
     px(ctx,-4,17+bob+leg,'#3a2818',3,1);px(ctx,1,17+bob-leg,'#3a2818',3,1);
@@ -892,7 +892,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     if(wT>=3){px(ctx,-4,15+bob+leg,'#c8a030',1,1);px(ctx,4,15+bob-leg,'#c8a030',1,1);}
   }
 
-  // ── HELM ──
+  // -- HELM --
   if(wT===0){
     // No helmet - bare head with short hair + red headband
     // Hair
@@ -965,7 +965,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,-6+bob,'#10101a',1,4);px(ctx,2,-6+bob,'#10101a',1,4);
   }
 
-  // ── SWORD (weapon tier by games played) ──
+  // -- SWORD (weapon tier by games played) --
   var wpT=getWeaponTier('warrior');
   var gx=4;
   if(wpT===0){
@@ -1029,7 +1029,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   }
   // (no swing glow)
 
-  // ── SHIELD (upgrades with weapon tier) ──
+  // -- SHIELD (upgrades with weapon tier) --
   px(ctx,-6,2+bob,wT===0?'#d4a76a':'#2a2e36',1,6); // arm
   if(wpT===0){
     // Battered wooden round shield
@@ -1077,7 +1077,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   ctx.restore();
 }
 
-// ── Mage (ancient arcane scholar) ──
+// -- Mage (ancient arcane scholar) --
 function drawMage(ctx, x, y, dir, anim, flash, level) {
   level=level||1;
   var mT=level<10?0:level<20?1:level<30?2:3;
@@ -1087,7 +1087,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   var oy=Math.sin(anim*0.08)*2;
   var rv=Math.sin(anim*0.06)*1;
 
-  // ── ROBE COLORS per tier ──
+  // -- ROBE COLORS per tier --
   // T0: dark grey-purple (apprentice, simple)
   // T1: deep midnight blue-purple (scholar)
   // T2: rich dark purple (arcanist)
@@ -1098,7 +1098,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   var trimCol =mT===0?'#483060':mT===1?'#5a2890':mT===2?'#7a20c0':'#9a30e0';
   var shCol   =mT===0?'#100e18':mT===1?'#0e0a20':mT===2?'#0a0618':'#080412';
 
-  // ── FLOWING ROBE BODY ──
+  // -- FLOWING ROBE BODY --
   // Back layer (slightly wider, darker - gives depth)
   px(ctx,-4,-1+bob,shCol,8,15);
   // Main robe body - slim torso, flares at hem
@@ -1148,7 +1148,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,3,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
   }
 
-  // ── SLEEVES - wide and flowing ──
+  // -- SLEEVES - wide and flowing --
   px(ctx,-5,0+bob,robeBase,2,11);px(ctx,3,0+bob,robeBase,2,11);
   px(ctx,-6,2+bob,shCol,1,9);px(ctx,4,2+bob,shCol,1,9); // outer sleeve shadow
   px(ctx,-5,0+bob,shCol,1,10);
@@ -1162,7 +1162,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   px(ctx,-6,10+bob,'#d0c8b8',2,2);px(ctx,4,10+bob,'#d0c8b8',2,2);
   px(ctx,-6,11+bob,'#b8b0a0',2,1);px(ctx,4,11+bob,'#b8b0a0',2,1);
 
-  // ── SHOES - dark elegant pointed ──
+  // -- SHOES - dark elegant pointed --
   px(ctx,-3,15+bob,'#18141e',3,3);px(ctx,0,15+bob,'#18141e',3,3);
   px(ctx,-2,17+bob,'#0e0c14',2,1);px(ctx,1,17+bob,'#0e0c14',2,1);
   // Pointed toe
@@ -1171,7 +1171,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-4,15+bob,trimCol,1,1);px(ctx,3,15+bob,trimCol,1,1);
   }
 
-  // ── FACE - pale elven ──
+  // -- FACE - pale elven --
   var skinCol='#d8cfc0'; // pale elven skin all tiers
   var eyeCol=mT===0?'rgba(100,160,220,0.9)':mT===1?'rgba(120,80,220,0.9)':mT===2?'rgba(160,60,240,0.95)':'rgba(200,80,255,1.0)';
   // Grey hair behind face
@@ -1205,7 +1205,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   px(ctx,2,-8+bob,'#989890',1,2);   // right flow
   px(ctx,-1,-10+bob,'#c0c0b8',2,1); // crown highlight
 
-  // ── HEADBAND ──
+  // -- HEADBAND --
   if(mT===0){
     // Simple thin dark cord headband
     px(ctx,-2,-8+bob,'#2a1840',5,1); // dark cord
@@ -1243,7 +1243,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-3,-9+bob,'#8030c0',1,1);px(ctx,2,-9+bob,'#8030c0',1,1);
   }
 
-  // ── BEARD - silver-grey, all tiers but grows ──
+  // -- BEARD - silver-grey, all tiers but grows --
   if(mT===0){
     // Short stubble / young elf
     px(ctx,-1,-2+bob,'#888080',2,1);
@@ -1266,7 +1266,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,0,5+bob,'#c0c0b8',1,3);
   }
 
-  // ── STAFF (thin long shaft, orb scales with weapon tier) ──
+  // -- STAFF (thin long shaft, orb scales with weapon tier) --
   var mwpT=getWeaponTier('mage');
   // Thin single-pixel shaft - long and elegant
   ctx.strokeStyle=mwpT===0?'#3a2408':'#4a3010';
@@ -1320,7 +1320,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   ctx.restore();
 }
 
-// ── Ranger (female elf) ──
+// -- Ranger (female elf) --
 function drawRanger(ctx, x, y, dir, anim, flash, level) {
   level=level||1;
   var rT=level<10?0:level<20?1:level<30?2:3;
@@ -1989,7 +1989,7 @@ function getQuestProgressText(cls){
   if(!_todaysQuests)return '';
   var q=_todaysQuests[cls];
   var d=_questProgress[cls]||{};
-  if(d._done)return 'DONE ✓';
+  if(d._done)return 'DONE \u2713';
   var val=d.wins||d.kills||d.uses||d.hits||d.secs||0;
   var target=q.desc.match(/\d+/);
   if(target)return val+'/'+target[0]; // always show, even 0/3
@@ -2001,7 +2001,7 @@ function renderDailyQuests(){
   if(!el||!_todaysQuests)return;
   var clses=['warrior','mage','ranger'];
   var colors={warrior:'#8a6a20',mage:'#6040c0',ranger:'#8a4a10'};
-  var icons={warrior:'\u2694',mage:'🔮',ranger:'🗡'};
+  var icons={warrior:'\u2694',mage:'\u1f52e',ranger:'\u1f5e1'};
   el.innerHTML=clses.map(function(cls){
     var q=_todaysQuests[cls];
     var d=_questProgress[cls]||{};
@@ -2009,7 +2009,7 @@ function renderDailyQuests(){
     var prog=getQuestProgressText(cls);
     var col=done?'rgba(40,160,60,0.8)':colors[cls];
     return '<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);opacity:'+(done?0.6:1)+'">'
-      +'<div style="font-size:10px;margin-top:1px">'+(done?'✓':'\u25CB')+'</div>'
+      +'<div style="font-size:10px;margin-top:1px">'+(done?'\u2713':'\u25CB')+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:9px;color:'+col+';letter-spacing:1px;font-weight:bold">'+q.name+'</div>'
       +'<div style="font-size:8px;color:rgba(255,255,255,0.55);line-height:1.4">'+q.desc+'</div>'
@@ -2674,7 +2674,7 @@ var remoteState=null;
 var enemyNamePvp='Opponent', enemyClsPvp='warrior', enemyIdPvp='';
 var esEnemy=null, esActions=null, esGuest=null, esMatchStart=null, esChat=null;
 
-// ── HIT NUMBERS ──
+// -- HIT NUMBERS --
 // Hit numbers - stored per-player, drawn above health bar
 var hitNumbers=[];
 function spawnHitNumber(playerId,dmg){
@@ -2705,7 +2705,7 @@ function drawHitNumberForPlayer(ctx,px,py,id){
   }
 }
 
-// ── PVP WIN STREAK ──
+// -- PVP WIN STREAK --
 var pvpWinStreak=0;
 var _ghostKills=0; // stealth-only kills in a single match (all kills must be stealth first-hit)
 var _matchKills=0; // total kills this match
@@ -2714,14 +2714,14 @@ try{pvpWinStreak=parseInt(localStorage.getItem('eldara_pvp_streak')||'0');}catch
 var pvpBestStreak=0;
 try{pvpBestStreak=parseInt(localStorage.getItem('eldara_pvp_best_streak')||'0');}catch(e){}
 
-// ── MATCH HISTORY ──
+// -- MATCH HISTORY --
 var matchHistory=[];
 try{matchHistory=JSON.parse(localStorage.getItem('eldara_match_history')||'[]');}catch(e){}
 
 // ===========================================
 // ELO RATING SYSTEM
 // ===========================================
-// ── EQUIPPED TITLE (declared early so draw() can use it) ──
+// -- EQUIPPED TITLE (declared early so draw() can use it) --
 var _equippedTitle='';
 try{_equippedTitle=localStorage.getItem('eldara_equipped_title')||'';}catch(e){}
 function getEquippedTitleName(){
@@ -2820,7 +2820,7 @@ function saveMatchHistory(entry){
   try{localStorage.setItem('eldara_match_history',JSON.stringify(matchHistory));}catch(e){}
 }
 
-// ── FOOTSTEPS (desert only, sparse imprints) ──
+// -- FOOTSTEPS (desert only, sparse imprints) --
 var footDust=[];
 var _footStepCounter=0;
 var _footSide=1;
@@ -2934,7 +2934,7 @@ function applyFrost(gs, target) {
   if(target.frosted) return; // already frozen, no more stacks
   target.frost = (target.frost||0) + 1;
   target.frostTimer = 5000; // reset 5s timer on each hit
-  sidelog('❄', target.name + ' frost x'+target.frost);
+  sidelog('\u2744', target.name + ' frost x'+target.frost);
   if(target.frost >= 4) {
     // Third hit - freeze! Turn blue, stun 1s, clear stacks
     target.frosted = true;
@@ -2943,7 +2943,7 @@ function applyFrost(gs, target) {
     target.frost = 0;
     target.frostTimer = 0;
     gs.effects.push({type:'frost_burst',x:target.x,y:target.y,life:900,max:900,anim:0});
-    sidelog('❄', target.name + ' FROZEN!');
+    sidelog('\u2744', target.name + ' FROZEN!');
     // Push state if this is us
     if(target.isMe && gameMode==='pvp') pushState(target);
   }
@@ -3485,10 +3485,10 @@ function draw(gs) {
   gctx.save();gctx.translate(ox,oy);
   drawArena(gctx,gs.arena,gs.tick);
 
-  // ── FOOTPRINTS (behind everything) ──
+  // -- FOOTPRINTS (behind everything) --
   drawFootDust(gctx,0,0); // coords already in arena space
 
-  // ── DOPPELGANGERS ──
+  // -- DOPPELGANGERS --
   if(gs.dopps){
     gs.dopps.forEach(function(d){
       // Full opacity until last 300ms - then quick arcane blitz vanish
@@ -4059,10 +4059,10 @@ function draw(gs) {
   }
   gctx.restore();
 
-  // ── Hit numbers (screen coords) ──
+  // -- Hit numbers (screen coords) --
   var ox2=Math.floor((CW-AW*TILE)/2),oy2=Math.floor((CH-AH*TILE)/2);
 
-  // ── Ping display - bottom right ──
+  // -- Ping display - bottom right --
   if(gameMode==='pvp'&&_pingMs>=0){
     var pCol=_pingMs<80?'#60e880':_pingMs<150?'#e8c860':'#e87060';
     var pTxt=_pingMs+'ms';
@@ -4074,7 +4074,7 @@ function draw(gs) {
     gctx.fillText(pTxt,CW-8,CH-6);
   }
 
-  // ── HP vignette - pulses red when low ──
+  // -- HP vignette - pulses red when low --
   var me2=gs&&gs.players?gs.players.find(function(p){return p.isMe;}):null;
   if(me2&&me2.hp/me2.maxHp<0.35&&gs.phase==='fighting'){
     var vigPulse=0.4+Math.sin(Date.now()*0.005)*0.25;
@@ -5257,7 +5257,7 @@ document.getElementById('btn-start-train').addEventListener('click',function(){
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   launchTraining();
 });
-// ── MATCHMAKING QUEUE ──
+// -- MATCHMAKING QUEUE --
 var _queueTimer=null, _queueSeconds=0, _queueListener=null, _inQueue=false;
 var _queuePollTimer=null;
 var _onlineListener=null;
@@ -5273,7 +5273,7 @@ function leaveQueue(){
   if(authUid)fbSet('/queue/'+authUid,null);
   var _qs=document.getElementById('queue-status');if(_qs)_qs.textContent='';
   var _qb=document.getElementById('btn-joinqueue');
-  if(_qb){_qb.textContent='▶ JOIN QUEUE';_qb.style.borderColor='rgba(232,184,75,0.4)';}
+  if(_qb){_qb.textContent='\u25b6 JOIN QUEUE';_qb.style.borderColor='rgba(232,184,75,0.4)';}
 }
 
 function joinQueue(){
@@ -5281,7 +5281,7 @@ function joinQueue(){
   if(_inQueue){leaveQueue();return;}
   _inQueue=true;
   _queueSeconds=0;
-  document.getElementById('btn-joinqueue').textContent='■ LEAVE QUEUE';
+  document.getElementById('btn-joinqueue').textContent='\u25a0 LEAVE QUEUE';
   document.getElementById('btn-joinqueue').style.borderColor='rgba(200,50,50,0.6)';
   // Write self to queue
   var qData={uid:authUid,name:myName,cls:myClass,ts:Date.now()};
@@ -5685,7 +5685,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.strokeStyle='rgba(15,10,25,1.0)';tctx.lineWidth=1.5;
     tctx.beginPath();tctx.ellipse(cx,py+th,rx,ry,0,0,Math.PI);tctx.stroke();
 
-    // ── TORCHES on poles left and right of platform ──
+    // -- TORCHES on poles left and right of platform --
     var t=Date.now()/1000;
     [{tx:cx-rx+18,ty:py-ry+38},{tx:cx+rx-18,ty:py-ry+38}].forEach(function(tor,ti){
       var tx=tor.tx,ty=tor.ty;
@@ -5769,7 +5769,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       var sway=Math.sin(swayPhase)*swayAmp;
       var sway2=Math.sin(swayPhase+0.8)*swayAmp*0.6; // secondary flutter
 
-      // ── Stone block attachment behind banner ──
+      // -- Stone block attachment behind banner --
       var sw2=44, sh2=22; // stone block size
       var sx=bx-sw2/2, sy=by-sh2+10;
       // Drop shadow
@@ -6063,7 +6063,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       tctx.restore();
     });
 
-    // ── TORCHES on poles left and right of platform ──
+    // -- TORCHES on poles left and right of platform --
     var t=Date.now()/1000;
     [{tx:cx-rx+18,ty:py-ry+38},{tx:cx+rx-18,ty:py-ry+38}].forEach(function(tor,ti){
       var tx=tor.tx,ty=tor.ty;
@@ -6119,7 +6119,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
       tctx.fillStyle=floorGrad;
       tctx.beginPath();tctx.ellipse(tx,ty,40,15,0,0,Math.PI*2);tctx.fill();
     });
-    // ── WEAPON RACK behind warrior (left side of platform) ──
+    // -- WEAPON RACK behind warrior (left side of platform) --
     var wrx=cx-95, wry=py-26; // smaller, pushed further back
 
     // Rack shadow on floor
@@ -6151,7 +6151,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.fillStyle='#2a1808';tctx.fillRect(wrx+22,wry-6,10,8);
     tctx.fillStyle='#3a2410';tctx.fillRect(wrx+22,wry-6,8,4);
 
-    // ── Weapons hanging on rack ──
+    // -- Weapons hanging on rack --
     // Sword 1 - leaning slightly left
     tctx.save();tctx.translate(wrx-10,wry-28);tctx.rotate(-0.08);
     tctx.fillStyle='#505858';tctx.fillRect(-2,-26,5,30);  // blade
@@ -6370,7 +6370,7 @@ function awardMatchXP(cls, won, isPvP) {
   return d;
 }
 
-// ── AUTH SCREEN WIRING ──
+// -- AUTH SCREEN WIRING --
 var authMode2 = 'login';
 
 function showAuthError(msg) {
@@ -6406,7 +6406,7 @@ document.getElementById('auth-submit').addEventListener('click', function() {
     if (!uname) { showAuthError('Please enter a display name.'); return; }
     if (uname.length < 3) { showAuthError('Name must be at least 3 characters.'); return; }
     // Block special symbols (allow letters incl. umlauts, numbers, spaces, underscores, hyphens)
-    if (/[<>\[\](){}.,;:!?@#$%^&*=+|\\/\"\'`~]/.test(uname)) {
+    if (/[^a-zA-Z0-9\u00C0-\u024F _\-]/.test(uname)) {
       showAuthError('Name contains invalid characters. No < > [ ] ( ) symbols allowed.'); return;
     }
   }
@@ -6545,7 +6545,7 @@ document.getElementById('btn-settings').addEventListener('click',function(){
   var rnk=document.getElementById('my-rank-display');
   if(rnk){var t=getRatingTier(myRating);rnk.innerHTML='<span style="color:'+t.color+'">'+t.icon+' '+t.name+'</span> &nbsp;'+myRating+' pts';}
 });
-// ── MATCH HISTORY PANEL ──
+// -- MATCH HISTORY PANEL --
 function buildMatchHistory(){
   var el=document.getElementById('match-history-list');
   if(!el)return;
@@ -6578,7 +6578,7 @@ document.getElementById('settings-save').addEventListener('click',function(){
   var err=document.getElementById('settings-err');
   if(!newName){err.textContent='Enter a name.';return;}
   if(newName.length<3){err.textContent='Name must be at least 3 characters.';return;}
-  if(/[<>\[\](){}.,;:!?@#$%^&*=+|\\/\"\'`~]/.test(newName)){err.textContent='Name contains invalid characters.';return;}
+  if(/[^a-zA-Z0-9\u00C0-\u024F _\-]/.test(newName)){err.textContent='Name contains invalid characters.';return;}
   if(newName===displayName){err.textContent='Same as current name.';return;}
   fbGetAuth('/users/'+authUid+'/profile').then(function(d){
     var used=d&&d.nameChanges||0;
@@ -6835,7 +6835,7 @@ function renderAchievements(tab){
 }
 
 // Wire achievements button
-// ── ACHIEVEMENT NOTIFICATION GLOW ──
+// -- ACHIEVEMENT NOTIFICATION GLOW --
 var _seenAchievements=null;
 function loadSeenAchs(){
   try{return JSON.parse(localStorage.getItem('eldara_seen_achs')||'{}');}catch(e){return {};}
@@ -6921,7 +6921,7 @@ function refreshCharCards(){
 function resizeCanvas(){canvas=document.getElementById('arena-canvas');CW=window.innerWidth;CH=window.innerHeight;canvas.width=CW;canvas.height=CH;gctx=canvas.getContext('2d');gctx.imageSmoothingEnabled=false;}
 window.addEventListener('resize',resizeCanvas);
 
-// ── MOBILE TOUCH CONTROLS ──
+// -- MOBILE TOUCH CONTROLS --
 var _isMobile=/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||('ontouchstart' in window)||window.innerWidth<1024;
 function showMobileControls(show){
   var el=document.getElementById('mobile-controls');
@@ -6929,7 +6929,7 @@ function showMobileControls(show){
 }
 
 (function(){
-  // ── Joystick ──
+  // -- Joystick --
   var jzone=null,jknob=null,jActive=false,jTouchId=null;
   var jCx=80,jCy=80,jR=62,jDeadzone=18;
   var jKeys={KeyW:false,KeyA:false,KeyS:false,KeyD:false};
@@ -7002,7 +7002,7 @@ function showMobileControls(show){
 })();
 
 // Mobile controls shown via showScreen directly below
-// ── PING INDICATOR ──
+// -- PING INDICATOR --
 var _pingMs=0;
 var _pingTimer=0;
 function measurePing(){
@@ -7022,7 +7022,7 @@ function equipTitle(id){
 function updateTitleDisplay(){
   var t=getEquippedTitleName();
   var el=document.getElementById('lob-title-display');
-  if(el)el.textContent=t?('⟨ '+t+' ⟩'):'';
+  if(el)el.textContent=t?('\u27e8 '+t+' \u27e9'):'';
 }
 
 function buildInviteLink(code) {
