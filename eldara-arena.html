@@ -2711,8 +2711,18 @@ try{matchHistory=JSON.parse(localStorage.getItem('eldara_match_history')||'[]');
 // ═══════════════════════════════════════════
 // ELO RATING SYSTEM
 // ═══════════════════════════════════════════
+// ── EQUIPPED TITLE (declared early so draw() can use it) ──
+var _equippedTitle='';
+try{_equippedTitle=localStorage.getItem('eldara_equipped_title')||'';}catch(e){}
+function getEquippedTitleName(){
+  if(!_equippedTitle)return '';
+  var names={t_undefeated:'The Undefeated',t_ghost:'Ghost',t_master:'Master',
+    t_legend:'Grandmaster',t_eternal:'The Eternal',g_streak2:'Heated',
+    g_streak5:'On a Roll',g_streak10:'Warlord Streak',g_gm_kill:'GM Slayer'};
+  return names[_equippedTitle]||'';
+}
+
 var myRating=1000;
-var _ratingLoaded=false;
 
 function loadRating(){
   if(!authUid||isGuest)return;
@@ -3845,7 +3855,7 @@ function draw(gs) {
     if(p.stealthed&&p.isMe){gctx.globalAlpha=0.25;}
     if(!p.stealthed||p.isMe){
     // Equipped title above nameplate
-    var ptitle=p.isMe?getEquippedTitleName():(p.equippedTitle||'');
+    var ptitle=p.isMe?(typeof getEquippedTitleName==='function'?getEquippedTitleName():''):(p.equippedTitle||'');
     if(ptitle){
       gctx.font='7px Courier New';gctx.textAlign='center';
       var tw=gctx.measureText(ptitle).width+8;
@@ -4211,7 +4221,7 @@ function showOverlay(t,s,hideRematch){opponentRematchReady=false;opponentRematch
   pvpRematchReady=false;
   var ovr=document.getElementById('ov-rating');if(ovr){ovr.style.display='none';ovr.textContent='';}
 }
-function hideOverlay(){document.getElementById('game-overlay').classList.remove('show');var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';clearLobbyAbandonTimer();}
+function hideOverlay(){document.getElementById('game-overlay').classList.remove('show');var pt=document.getElementById('pregame-timer');if(pt)pt.style.opacity='0';}
 
 // ═══════════════════════════════════════════
 // HUD
