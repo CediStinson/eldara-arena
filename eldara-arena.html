@@ -270,7 +270,17 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
       <div style="font-size:10px;color:#e74c3c;min-height:12px" id="settings-err"></div>
       <div style="display:flex;gap:10px">
         <button id="settings-save" style="flex:1;padding:11px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">SAVE NAME</button>
-        <button id="settings-close" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">CANCEL</button>
+        <button id="settings-close" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border);color:rgba(255,255,255,0.7);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">CANCEL</button>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:6px">YOUR RATING</div>
+        <div id="my-rank-display" style="font-size:11px;color:var(--text);letter-spacing:1px;margin-bottom:4px">—</div>
+        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin:10px 0 6px">PVP STREAK</div>
+        <div style="font-size:10px;color:var(--text)">Current: <span id="streak-display">0</span> &nbsp;·&nbsp; Best: <span id="best-streak-display">0</span></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:8px">MATCH HISTORY</div>
+        <div id="match-history-list" style="max-height:180px;overflow-y:auto;font-size:9px"></div>
       </div>
     </div>
   </div>
@@ -426,17 +436,17 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <!-- Mobile touch controls -->
   <div id="mobile-controls" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;pointer-events:none;user-select:none">
     <!-- Joystick left -->
-    <div id="joystick-zone" style="position:absolute;bottom:16px;left:16px;width:130px;height:130px;pointer-events:auto">
+    <div id="joystick-zone" style="position:absolute;bottom:20px;left:20px;width:160px;height:160px;pointer-events:auto">
       <div id="joystick-base" style="position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.14)"></div>
-      <div id="joystick-knob" style="position:absolute;top:42px;left:42px;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.35);transition:none"></div>
+      <div id="joystick-knob" style="position:absolute;top:50px;left:50px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.22);border:2px solid rgba(255,255,255,0.5);transition:none"></div>
     </div>
     <!-- Action buttons right -->
-    <div style="position:absolute;bottom:16px;right:16px;pointer-events:auto">
-      <div style="position:relative;width:160px;height:130px">
-        <div class="mctl-btn mctl-action" data-key="Space" style="position:absolute;top:0;left:27px;width:106px;height:40px;background:rgba(120,80,20,0.4);font-size:9px">MOVE</div>
-        <div class="mctl-btn mctl-action" data-key="KeyG" style="position:absolute;bottom:0;left:0;width:50px;height:50px;background:rgba(180,40,40,0.4);font-size:9px">ATK</div>
-        <div class="mctl-btn mctl-action" data-key="KeyH" style="position:absolute;bottom:0;left:55px;width:50px;height:50px;background:rgba(40,80,180,0.4);font-size:9px">SK1</div>
-        <div class="mctl-btn mctl-action" data-key="KeyJ" style="position:absolute;bottom:0;right:0;width:50px;height:50px;background:rgba(40,150,80,0.4);font-size:9px">SK2</div>
+    <div style="position:absolute;bottom:20px;right:20px;pointer-events:auto">
+      <div style="position:relative;width:190px;height:155px">
+        <div class="mctl-btn mctl-action" data-key="Space" style="position:absolute;top:0;left:27px;width:130px;height:48px;background:rgba(120,80,20,0.4);font-size:10px">MOVE</div>
+        <div class="mctl-btn mctl-action" data-key="KeyG" style="position:absolute;bottom:0;left:0;width:60px;height:60px;background:rgba(180,40,40,0.4);font-size:10px">ATK</div>
+        <div class="mctl-btn mctl-action" data-key="KeyH" style="position:absolute;bottom:0;left:65px;width:60px;height:60px;background:rgba(40,80,180,0.4);font-size:10px">SK1</div>
+        <div class="mctl-btn mctl-action" data-key="KeyJ" style="position:absolute;bottom:0;right:0;width:60px;height:60px;background:rgba(40,150,80,0.4);font-size:10px">SK2</div>
       </div>
     </div>
   </div>
@@ -2801,6 +2811,7 @@ function renderLeaderboard(){
   var rankEl2=document.getElementById('my-rank-display-lb');
   if(rankEl2&&rankEl){rankEl2.innerHTML=rankEl?'Your rating: '+rankEl.innerHTML:'';}
   var rankEl=document.getElementById('my-rank-display');
+  var rankEl3=document.getElementById('my-rank-display'); // settings panel same id
   if(rankEl){
     var t=getRatingTier(myRating);
     rankEl.innerHTML='<span style="color:'+t.color+'">'+t.icon+' '+t.name+'</span> &nbsp;'+myRating+' pts'+(myRank>0?' &nbsp;#'+myRank:'');
@@ -6882,7 +6893,7 @@ function resizeCanvas(){canvas=document.getElementById('arena-canvas');CW=window
 window.addEventListener('resize',resizeCanvas);
 
 // ── MOBILE TOUCH CONTROLS ──
-var _isMobile=/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||window.innerWidth<700;
+var _isMobile=/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||('ontouchstart' in window)||window.innerWidth<1024;
 function showMobileControls(show){
   var el=document.getElementById('mobile-controls');
   if(el)el.style.display=show?'block':'none';
@@ -6891,7 +6902,7 @@ function showMobileControls(show){
 (function(){
   // ── Joystick ──
   var jzone=null,jknob=null,jActive=false,jTouchId=null;
-  var jCx=65,jCy=65,jR=50,jDeadzone=12;
+  var jCx=80,jCy=80,jR=62,jDeadzone=18;
   var jKeys={KeyW:false,KeyA:false,KeyS:false,KeyD:false};
 
   function fireKey(code,down){
@@ -6905,7 +6916,7 @@ function showMobileControls(show){
     var dist=Math.sqrt(dx*dx+dy*dy);
     var nx=dist>jR?dx/dist*jR:dx;
     var ny=dist>jR?dy/dist*jR:dy;
-    if(jknob){jknob.style.left=(jCx+nx-23)+'px';jknob.style.top=(jCy+ny-23)+'px';}
+    if(jknob){jknob.style.left=(jCx+nx-30)+'px';jknob.style.top=(jCy+ny-30)+'px';}
     var threshold=jDeadzone;
     setJKey('KeyW',ny<-threshold);
     setJKey('KeyS',ny>threshold);
@@ -6913,7 +6924,7 @@ function showMobileControls(show){
     setJKey('KeyD',nx>threshold);
   }
   function resetJoystick(){
-    if(jknob){jknob.style.left=(jCx-23)+'px';jknob.style.top=(jCy-23)+'px';}
+    if(jknob){jknob.style.left=(jCx-30)+'px';jknob.style.top=(jCy-30)+'px';}
     ['KeyW','KeyS','KeyA','KeyD'].forEach(function(k){setJKey(k,false);});
   }
 
@@ -6969,6 +6980,20 @@ function measurePing(){
   if(!authUid)return;
   var start=Date.now();
   fbGet('/presence/'+authUid).then(function(){_pingMs=Date.now()-start;}).catch(function(){_pingMs=-1;});
+}
+
+
+function equipTitle(id){
+  _equippedTitle=id||'';
+  try{localStorage.setItem('eldara_equipped_title',_equippedTitle);}catch(e){}
+  if(authUid&&!isGuest)fbPatchAuth('/users/'+authUid+'/profile',{equippedTitle:_equippedTitle}).catch(function(){});
+  renderAchievements(currentAchTab||'all');
+  updateTitleDisplay();
+}
+function updateTitleDisplay(){
+  var t=getEquippedTitleName();
+  var el=document.getElementById('lob-title-display');
+  if(el)el.textContent=t?('⟨ '+t+' ⟩'):'';
 }
 
 function buildInviteLink(code) {
