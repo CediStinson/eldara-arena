@@ -3870,7 +3870,7 @@ function draw(gs) {
     gctx.font='bold 9px Courier New';gctx.textAlign='center';gctx.textBaseline='middle';
     // Render name with <GM> tag in white, rest in player color
     (function(){
-      var fullName=p.name+(p.wins>0?' ('+p.wins+')':'');
+      var fullName=p.name;
       var baseColor=p.isMe?'#e8b84b':'#cc5555';
       if(fullName.indexOf('<GM>')>=0){
         // Split into parts and render segment by segment
@@ -4082,7 +4082,8 @@ function endRound(gs) {
   var dead=gs.players.find(function(p){return p.dead;});
   var alive=gs.players.find(function(p){return !p.dead;});
   var wonRound=alive&&alive.isMe;
-  if(alive){showBanner(alive.isMe?'YOU WIN!':alive.name+' WINS!');}
+  if(alive&&alive.isMe){showBanner('YOU WIN!');}
+  else if(alive){showBanner(alive.name+' WINS!');}
   else{showBanner('DRAW!');}
   // Award XP
   var meR=gs.players.find(function(p){return p.isMe;});
@@ -4167,7 +4168,7 @@ function endRound(gs) {
     // PvP: show victory/defeat overlay with rematch
     setTimeout(function(){
       var rb=document.getElementById('ov-rematch');if(rb)rb.style.display='';
-      showOverlay(wonRound?'VICTORY':'DEFEAT', alive?alive.name+' wins!':'Draw!');
+      showOverlay(wonRound?'VICTORY':'DEFEAT', alive&&!alive.isMe?alive.name+' wins!':wonRound?'You win!':'Draw!');
     },900);
   }
 }
@@ -4492,7 +4493,9 @@ function processAction(msg,gs,me,en) {
     if(en&&msg.data&&msg.data.hostCls){en.cls=msg.data.hostCls;}
     var meR4=gs.players.find(function(p){return p.isMe;});
     if(meR4)meR4.cls=myClass;
-    gs.players.forEach(function(p){p.wins=0;});
+    // Draw opponent first, then local player (local always on top)
+  var drawOrder=gs.players.slice().sort(function(a,b){return (b.isMe?0:1)-(a.isMe?0:1);});
+  drawOrder.forEach(function(p){p.wins=0;});
     pvpRematchReady=false;opponentRematchReady=false;
     hideOverlay();resetRound(gs);
   } else if(msg.type==='opponent_left_lobby'){
@@ -6958,6 +6961,15 @@ function showMobileControls(show){
 })();
 
 // Mobile controls shown via showScreen directly below
+// ── PING INDICATOR ──
+var _pingMs=0;
+var _pingTimer=0;
+function measurePing(){
+  if(!authUid)return;
+  var start=Date.now();
+  fbGet('/presence/'+authUid).then(function(){_pingMs=Date.now()-start;}).catch(function(){_pingMs=-1;});
+}
+
 function buildInviteLink(code) {
   var base = window.location.href.split('?')[0].split('#')[0];
   return base + '?join=' + code;
