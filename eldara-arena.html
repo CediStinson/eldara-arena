@@ -3727,45 +3727,38 @@ function draw(gs) {
     // Skull helmet cosmetic (200 PvP kills reward) - styled like floor skulls
     if(p.isMe&&hasSkullHelmet(p.cls)||(!p.isMe&&p.skullHelmet)){
       gctx.save();
-      // Position helmet on the head - offset based on player position
-      var hx=p.x, hy=p.y;
-      if(p.dir!==2) hx=p.x; // same regardless of dir since we translate
-      // Translate to player, flip if facing left (same as sprite)
       gctx.translate(p.x, p.y);
       if(p.dir!==2) gctx.scale(-1,1);
-      // Draw skull helmet - same style as drawFloorSkull variant 0 but scaled up and opaque on head
-      var sx=0, sy=-18; // head position: jaw base sits at ~p.y-18, matching crown height
-      var a=1.0; // fully opaque
-      var SK=1.8; // scale multiplier over floor skull (which uses radius ~9)
+      // Small sideways skull sitting on top of head, like floor skull variant 1 (3/4 view)
+      var sx=2, sy=-30; // sits just above head
+      var R=6; // cranium radius - small, same scale as floor skulls
+      var a=1.0;
       var c1='rgba(195,180,140,'+a+')';
       var c2='rgba(155,138,100,'+a+')';
       var c3='rgba(100,85,60,'+a+')';
-      // Cranium
+      // Cranium - slightly flattened ellipse, tilted
+      gctx.save();
+      gctx.translate(sx,sy);
+      gctx.rotate(-0.25);
+      gctx.scale(1,0.85);
       gctx.fillStyle=c1;
-      gctx.beginPath();gctx.arc(sx,sy-4*SK,9*SK,0,Math.PI*2);gctx.fill();
-      // Cranium highlight
+      gctx.beginPath();gctx.arc(0,0,R,0,Math.PI*2);gctx.fill();
+      // Highlight
       gctx.fillStyle=c3;
-      gctx.beginPath();gctx.arc(sx+3*SK,sy-6*SK,4*SK,0,Math.PI*2);gctx.fill();
-      // Jaw
-      gctx.fillStyle=c2;
-      gctx.fillRect(sx-6*SK,sy+4*SK,13*SK,7*SK);
-      gctx.fillStyle=c3;
-      gctx.fillRect(sx-6*SK,sy+9*SK,13*SK,2*SK);
-      // Eye sockets - dark
+      gctx.beginPath();gctx.arc(2,-2,R*0.42,0,Math.PI*2);gctx.fill();
+      gctx.restore();
+      // Eye sockets - 3/4 view so near eye bigger, far eye smaller
       gctx.fillStyle='rgba(15,10,8,0.95)';
-      gctx.beginPath();gctx.arc(sx-4*SK,sy-4*SK,3*SK,0,Math.PI*2);gctx.fill();
-      gctx.beginPath();gctx.arc(sx+4*SK,sy-4*SK,3*SK,0,Math.PI*2);gctx.fill();
-      // Red glowing pupils inside sockets
+      gctx.beginPath();gctx.arc(sx-2,sy,2.2,0,Math.PI*2);gctx.fill(); // near eye
+      gctx.beginPath();gctx.arc(sx+3,sy+1,1.4,0,Math.PI*2);gctx.fill(); // far eye
+      // Red pupils
       var rePulse=0.75+Math.sin(Date.now()*0.0018)*0.25;
       gctx.fillStyle='rgba(255,0,0,'+rePulse+')';
-      gctx.beginPath();gctx.arc(sx-4*SK,sy-4*SK,1.5*SK,0,Math.PI*2);gctx.fill();
-      gctx.beginPath();gctx.arc(sx+4*SK,sy-4*SK,1.5*SK,0,Math.PI*2);gctx.fill();
-      // Nose cavity
+      gctx.beginPath();gctx.arc(sx-2,sy,1.1,0,Math.PI*2);gctx.fill();
+      gctx.beginPath();gctx.arc(sx+3,sy+1,0.7,0,Math.PI*2);gctx.fill();
+      // Nose cavity - tiny
       gctx.fillStyle='rgba(40,30,20,0.9)';
-      gctx.beginPath();gctx.arc(sx,sy+SK,1.5*SK,0,Math.PI*2);gctx.fill();
-      // Teeth
-      gctx.fillStyle='rgba(15,10,8,0.85)';
-      for(var ti=-3;ti<=3;ti+=2){gctx.fillRect(sx+ti*1.5*SK-0.5*SK,sy+5*SK,1.5*SK,3*SK);}
+      gctx.beginPath();gctx.arc(sx+1,sy+3,1,0,Math.PI*2);gctx.fill();
       gctx.restore();
     }
     if(p.cls==='warrior'&&p.warCryBuff>0){
