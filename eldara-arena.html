@@ -4582,15 +4582,19 @@ function connectGameWS(){
           if(meW&&enW)processAction(msg.data,gameState,meW,enW);
         }
       } else if(msg.type==='opponent_left'){
+        // Only treat as opponent leaving if explicitly told so by server
         _wsOpponentLeft();
       }
     }catch(ex){}
   };
 
   _ws.onclose=function(){
+    // WS closed - just disable WS, fall back to Firebase. Don't kick back to title.
     _wsReady=false;
     clearInterval(_wsPingTimer);_wsPingTimer=null;
-    _wsOpponentLeft();
+    // Only handle as disconnect if game isn't running
+    if(!gameState||gameMode!=='pvp') return;
+    sidelog('WS','Connection lost — falling back to Firebase');
   };
   _ws.onerror=function(){ _wsReady=false; };
 }
