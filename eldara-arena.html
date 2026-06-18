@@ -141,7 +141,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 #pregame-timer{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:120px;font-weight:900;font-family:'Courier New',monospace;color:var(--gold);text-shadow:0 0 60px #e8b84b,0 0 120px #e8b84b44;pointer-events:none;opacity:0;transition:opacity .3s;z-index:45;line-height:1}
 
 /* AUTH SCREEN */
-#auth-screen{background:url('login_bg.webp') center center / cover no-repeat;display:flex;align-items:center;justify-content:center;}
+#auth-screen{background:url('login_bg.webp') center center / cover no-repeat;}
 .auth-box{background:rgba(5,3,12,0.88);border:1px solid rgba(120,60,200,0.4);box-shadow:0 0 40px rgba(80,20,160,0.3),inset 0 0 20px rgba(0,0,0,0.5);backdrop-filter:blur(2px);padding:36px 40px;width:380px;display:flex;flex-direction:column;gap:12px}
 .auth-logo{font-size:28px;font-weight:900;letter-spacing:5px;color:var(--gold);text-align:center;margin-bottom:4px}
 .auth-sub{font-size:11px;letter-spacing:4px;color:var(--dim);text-align:center;margin-bottom:8px}
@@ -4654,11 +4654,11 @@ function startListeningActions() {
   if(actionPollInterval)clearInterval(actionPollInterval);
   // Also poll for direct leave signal (survives room deletion)
   var leaveSignalInterval=setInterval(function(){
-    if(!gameState){clearInterval(leaveSignalInterval);return;}
+    if(!gameState||gameMode!=='pvp'){clearInterval(leaveSignalInterval);return;}
     fbGet('/leave_signals/'+myId).then(function(d){
       if(!d)return;
       fbDelete('/leave_signals/'+myId);
-      if(!gameState)return;
+      if(!gameState||gameMode!=='pvp')return; // guard against race with training start
       var meW2=gameState.players.find(function(p){return p.isMe;});
       if(meW2&&gameState.phase!=='gameOver')awardMatchXP(meW2.cls,true,true);
       pvpRematchReady=false;opponentRematchReady=false;
@@ -5367,6 +5367,7 @@ document.getElementById('arena-picker-close').addEventListener('click',function(
 document.getElementById('btn-start-train').addEventListener('click',function(){
   document.getElementById('train-overlay').style.display='none';
   cleanupFB(); // make sure no lingering PvP connections
+  if(authUid)fbDelete('/leave_signals/'+myId); // clear any stale leave signal
   roomCode=null;
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   launchTraining();
