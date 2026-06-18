@@ -88,6 +88,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .sbtn{padding:8px 12px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:12px;cursor:pointer}
 .sbtn:hover{border-color:var(--gold);color:var(--gold)}
 #game-screen{flex-direction:row;align-items:stretch}
+#arena-canvas{display:block;width:100%;height:100%;}
 .mctl-btn{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:18px;cursor:pointer;transition:background 0.1s;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.2}
 .mctl-btn:active,.mctl-btn.pressed{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.45)}
 #side-panel{display:none}
@@ -3514,6 +3515,7 @@ function lerpRemote(en) {
 // ===========================================
 function draw(gs) {
   if(!gs||!canvas)return;
+  gctx.globalAlpha=1;
   gctx.clearRect(0,0,CW,CH);gctx.fillStyle='#0a0a0f';gctx.fillRect(0,0,CW,CH);
   var ox=Math.floor((CW-AW*TILE)/2),oy=Math.floor((CH-AH*TILE)/2);
   gctx.save();gctx.translate(ox,oy);
@@ -4065,6 +4067,7 @@ function draw(gs) {
       }
     }
     // moveCd indicator removed - shown in skill bar only
+    gctx.globalAlpha=1;
   }
   for(var ri=0;ri<gs.projs.length;ri++) {
     var pr2=gs.projs[ri],angle=Math.atan2(pr2.vy,pr2.vx);
