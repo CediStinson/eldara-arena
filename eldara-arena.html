@@ -88,7 +88,6 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 .sbtn{padding:8px 12px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Courier New',monospace;font-size:12px;cursor:pointer}
 .sbtn:hover{border-color:var(--gold);color:var(--gold)}
 #game-screen{flex-direction:row;align-items:stretch}
-#arena-canvas{display:block;width:100%;height:100%;}
 .mctl-btn{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:18px;cursor:pointer;transition:background 0.1s;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.2}
 .mctl-btn:active,.mctl-btn.pressed{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.45)}
 #side-panel{display:none}
@@ -4876,8 +4875,13 @@ document.addEventListener('keyup',function(e){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
-  // Always hide setup-screen overlay when navigating anywhere
-  document.getElementById('setup-screen').style.display='none';
+  // Hide all fixed overlays when navigating
+  ['setup-screen','train-overlay','ach-overlay','settings-overlay','leaderboard-overlay'].forEach(function(oid){
+    var oel=document.getElementById(oid);if(oel)oel.style.display='none';
+  });
+  // Always hide loading screen when entering any screen
+  var ld=document.getElementById('loading-screen');
+  if(ld&&ld.style.display!=='none'){ld.style.opacity='0';ld.style.display='none';}
   // Mobile controls
   showMobileControls(id==='game-screen'&&_isMobile);
   if(id==='title-screen'){
@@ -5623,7 +5627,7 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
   showScreen('game-screen');hideOverlay();
   resizeCanvas();
-  if(!canvas||!gctx){resizeCanvas();} // ensure canvas always initialized
+  setTimeout(function(){resizeCanvas();},50);
   startListeningEnemy(enId);startListeningActions();
 
   updateProfileBadge();
@@ -5654,7 +5658,9 @@ function launchTraining(continuing) {
   gameState=mkGS(ak,me,en);gameMode='training';
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   document.getElementById('conn-bar').textContent='TRAINING';
-  showScreen('game-screen');hideOverlay();resizeCanvas();updateHUD(gameState);
+  showScreen('game-screen');hideOverlay();
+  resizeCanvas();
+  setTimeout(function(){resizeCanvas();updateHUD(gameState);},50);
   var xpW2=document.getElementById('ingame-xp-wrap');if(xpW2)xpW2.style.display='flex';
   // First game gets pregame timer; subsequent games start immediately
   if(continuing){
@@ -7253,7 +7259,7 @@ showScreen = function(id) {
     _lobbyShown = true;
     setUrlCode(roomCode);
   }
-  if(id==='title-screen') { _lobbyShown=false; clearUrlCode(); }
+  if(id==='title-screen'||id==='game-screen') { _lobbyShown=false; clearUrlCode(); }
 };
 
 // lob-back handled above
