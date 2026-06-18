@@ -4488,20 +4488,9 @@ function updateHUD(gs) {
 // FIREBASE REST SYNC
 // ===========================================
 function pushState(me) {
-  // When WS is active it handles position at 30fps - only push to Firebase for important state changes
-  if(_wsReady){
-    // Still sync critical state (HP, abilities) to Firebase as backup
-    fbSet('/rooms/'+roomCode+'/players/'+myId, {
-      hp:Math.round(me.hp),dead:me.dead,wins:me.wins,
-      stealthed:me.stealthed||false,arcaneShield:Math.round(me.arcaneShield||0),
-      arcaneShieldHits:me.arcaneShieldHits||0,stunned:Math.round(Math.max(0,me.stunned)),
-      hitFlash:me.hitFlash>0?1:0,warCryBuff:Math.round(me.warCryBuff||0),
-      fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
-      frosted:me.frosted||false,frostSlow:Math.round(me.frostSlow||0)
-    });
-    return;
-  }
-  // Full state push when on Firebase only
+  // When WS is active, it handles all sync - skip Firebase entirely
+  if(_wsReady) return;
+  // Firebase-only fallback: full state push
   var myProjs=[];
   if(gameState){
     gameState.projs.filter(function(p){return p.owner===me.id;}).forEach(function(p){
@@ -4517,9 +4506,7 @@ function pushState(me) {
     moveCd:Math.round(me.moveCd||0),level:me.level||1,cls:me.cls,
     warCryBuff:Math.round(me.warCryBuff||0),warCryShake:Math.round(me.warCryShake||0),
     fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
-    crownOn:hasCrown(),
-    rating:myRating||1000,
-    equippedTitle:_equippedTitle||'',
+    crownOn:hasCrown(),rating:myRating||1000,equippedTitle:_equippedTitle||'',
     projs:myProjs.length>0?myProjs:null
   });
 }
