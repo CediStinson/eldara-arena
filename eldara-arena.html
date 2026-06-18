@@ -2717,6 +2717,9 @@ var gameState=null;
 var canvas, gctx, CW, CH;
 var keys={}, lastTs=0;
 var remoteState=null;
+// Interpolation: ring buffer of timestamped position snapshots
+var _enPosBuffer=[];
+var _INTERP_DELAY=120; // render 120ms behind real-time (covers ~100ms jitter)
 var enemyNamePvp='Opponent', enemyClsPvp='warrior', enemyIdPvp='';
 var esEnemy=null, esActions=null, esGuest=null, esMatchStart=null, esChat=null;
 
@@ -3466,11 +3469,45 @@ function updateLocal(gs,p,dt) {
 
 function lerpRemote(en) {
   if(!remoteState)return;
-  var t=0.18;
-  en.x+=(remoteState.x-en.x)*t;en.y+=(remoteState.y-en.y)*t;
-  en.dir=remoteState.dir!=null?remoteState.dir:en.dir;
-  en.anim=remoteState.anim!=null?remoteState.anim:en.anim;
-  en.moving=!!remoteState.moving;
+
+  // --- Position interpolation from snapshot buffer ---
+  if(_enPosBuffer.length>=2){
+    var renderTime=Date.now()-_INTERP_DELAY;
+    // Find the two snapshots that bracket renderTime
+    var older=null,newer=null;
+    for(var bi=0;bi<_enPosBuffer.length;bi++){
+      if(_enPosBuffer[bi].t<=renderTime)older=_enPosBuffer[bi];
+      else{newer=_enPosBuffer[bi];break;}
+    }
+    if(older&&newer){
+      // Interpolate between the two bracketing snapshots
+      var span=newer.t-older.t;
+      var frac=span>0?Math.max(0,Math.min(1,(renderTime-older.t)/span)):1;
+      en.x=older.x+(newer.x-older.x)*frac;
+      en.y=older.y+(newer.y-older.y)*frac;
+      en.dir=frac>0.5?newer.dir:older.dir;
+      en.anim=frac>0.5?newer.anim:older.anim;
+      en.moving=frac>0.5?!!newer.moving:!!older.moving;
+    } else if(older){
+      // Ran out of future snapshots - dead reckoning: hold last position
+      en.x=older.x;en.y=older.y;en.dir=older.dir;en.anim=older.anim;en.moving=!!older.moving;
+    } else if(newer){
+      // No past snapshots yet - snap to earliest available
+      en.x=newer.x;en.y=newer.y;en.dir=newer.dir;en.anim=newer.anim;en.moving=!!newer.moving;
+    }
+  } else if(_enPosBuffer.length===1){
+    // Only one snapshot - snap directly
+    var s=_enPosBuffer[0];
+    en.x=s.x;en.y=s.y;en.dir=s.dir;en.anim=s.anim;en.moving=!!s.moving;
+  } else if(remoteState.x!=null){
+    // Fallback: old lerp if buffer empty (e.g. first frame)
+    en.x+=(remoteState.x-en.x)*0.18;en.y+=(remoteState.y-en.y)*0.18;
+    en.dir=remoteState.dir!=null?remoteState.dir:en.dir;
+    en.anim=remoteState.anim!=null?remoteState.anim:en.anim;
+    en.moving=!!remoteState.moving;
+  }
+
+  // --- Non-positional state: apply immediately ---
   en.attacking=remoteState.attacking||0;
   if(remoteState.stealthed!=null) en.stealthed=!!remoteState.stealthed;
   if(remoteState.shieldHp!=null) en.shieldHp=remoteState.shieldHp;
@@ -4483,7 +4520,16 @@ function pushAction(type,data) {
 
 function startListeningEnemy(enemyId) {
   esEnemy=fbListen('/rooms/'+roomCode+'/players/'+enemyId,function(data){
-    if(data)remoteState=data;
+    if(!data)return;
+    remoteState=data;
+    // Push position snapshot to interpolation buffer
+    if(data.x!=null&&data.y!=null){
+      var now=Date.now();
+      _enPosBuffer.push({t:now,x:data.x,y:data.y,dir:data.dir,anim:data.anim,moving:data.moving});
+      // Keep only last 600ms of snapshots
+      var cutoff=now-600;
+      while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
+    }
   });
 }
 
@@ -4727,6 +4773,7 @@ function startListeningLobbyChat() {
 }
 
 function cleanupFB() {
+  _enPosBuffer=[];remoteState=null;
   footDust=[];hitNumbers=[];_footStepCounter=0;
   if(actionPollInterval){clearInterval(actionPollInterval);actionPollInterval=null;}
   if(esEnemy){try{esEnemy();}catch(e){}esEnemy=null;}
