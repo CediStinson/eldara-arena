@@ -558,6 +558,14 @@ function onAuthSuccess(result, uname) {
 
 function loadUserProfile() {
   fbGetAuth('/users/' + authUid + '/profile').then(function(data) {
+    // Detect deleted or invalid account - Firebase returns error object
+    if(data && data.error){
+      // Token is invalid or account deleted - clear session and go to login
+      try{sessionStorage.removeItem('eldara_token');sessionStorage.removeItem('eldara_uid');sessionStorage.removeItem('eldara_name');}catch(e){}
+      authToken=null;authUid=null;authEmail=null;displayName='';isGuest=false;
+      showScreen('auth-screen');
+      return Promise.reject('invalid_token');
+    }
     if (data && data.displayName) {
       displayName = data.displayName;
       myName = displayName;
@@ -589,7 +597,7 @@ function loadUserProfile() {
       }
       // Never push local data to a fresh account - only sync if Firebase already has something
     });
-    showScreen('title-screen');
+    if(!gameState)showScreen('title-screen');
     updateProfileBadge();registerOnline();
     // Hide loading screen
     var ld=document.getElementById('loading-screen');
@@ -630,7 +638,7 @@ function loadUserProfile() {
       checkNewAchievements();
     },500);
   }).catch(function() {
-    showScreen('title-screen');
+    if(!gameState)showScreen('title-screen');
     registerOnline();
   });
 }
