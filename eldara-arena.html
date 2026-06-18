@@ -208,7 +208,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <!-- Main content centered -->
   <div class="title-content">
-    <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:3px;color:rgba(232,184,75,0.55);text-align:center;margin-bottom:10px">PICK YOUR CLASS</div>
+    <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:3px;color:rgba(232,184,75,0.55);text-align:center;margin-bottom:10px;margin-top:-28px">PICK YOUR CLASS</div>
     <div class="title-chars-row" id="title-chars"></div>
     <div id="title-spell-panel"></div>
     <div class="menu-list">
@@ -3714,60 +3714,58 @@ function draw(gs) {
     }
     if(p.isMe&&hasRedEyes(p.cls)||(!p.isMe&&p.redEyes)){
       var re=getRedEyePos(p.cls,p.level||1);
-      var rePulse=0.6+Math.sin(Date.now()*0.008)*0.4;
+      var rePulse=0.75+Math.sin(Date.now()*0.0018)*0.25;
       gctx.save();
       gctx.translate(p.x,p.y);
       if(p.dir!==2)gctx.scale(-1,1);
       re.forEach(function(e){
-        gctx.fillStyle='rgba(255,20,0,'+(rePulse)+')';
+        gctx.fillStyle='rgba(255,20,0,'+rePulse+')';
         gctx.fillRect(e[0]*S,e[1]*S,S,S);
       });
       gctx.restore();
     }
-    // Skull helmet cosmetic (200 PvP wins reward)
+    // Skull helmet cosmetic (200 PvP kills reward) - styled like floor skulls
     if(p.isMe&&hasSkullHelmet(p.cls)||(!p.isMe&&p.skullHelmet)){
-      var skPulse=0.7+Math.sin(Date.now()*0.009)*0.3;
       gctx.save();
-      gctx.translate(p.x,p.y-24);
-      if(p.dir!==2)gctx.scale(-1,1);
-      var SK=S; // use same scale as sprite
-      // Skull cap - bone white base
-      gctx.fillStyle='#d8d0c0';
-      gctx.fillRect(-4*SK,-8*SK,8*SK,6*SK); // top of skull
-      gctx.fillRect(-3*SK,-9*SK,6*SK,SK);   // crown
-      gctx.fillRect(-5*SK,-6*SK,SK,4*SK);   // left side
-      gctx.fillRect(4*SK,-6*SK,SK,4*SK);    // right side
-      // Jaw/cheekbones
-      gctx.fillStyle='#c8c0b0';
-      gctx.fillRect(-4*SK,-3*SK,8*SK,2*SK); // jaw base
-      gctx.fillRect(-5*SK,-7*SK,SK,2*SK);   // left cheek
-      gctx.fillRect(4*SK,-7*SK,SK,2*SK);    // right cheek
-      // Dark eye sockets
-      gctx.fillStyle='#1a0505';
-      gctx.fillRect(-4*SK,-7*SK,3*SK,3*SK); // left socket
-      gctx.fillRect(SK,-7*SK,3*SK,3*SK);    // right socket
-      // Glowing red eyes in sockets
-      gctx.fillStyle='rgba(255,0,0,'+skPulse+')';
-      gctx.fillRect(-3*SK,-6*SK,SK,SK);     // left eye
-      gctx.fillRect(2*SK,-6*SK,SK,SK);      // right eye
-      // Eye glow
-      gctx.fillStyle='rgba(255,60,0,'+(skPulse*0.4)+')';
-      gctx.fillRect(-4*SK,-7*SK,3*SK,3*SK);
-      gctx.fillRect(SK,-7*SK,3*SK,3*SK);
+      // Position helmet on the head - offset based on player position
+      var hx=p.x, hy=p.y;
+      if(p.dir!==2) hx=p.x; // same regardless of dir since we translate
+      // Translate to player, flip if facing left (same as sprite)
+      gctx.translate(p.x, p.y);
+      if(p.dir!==2) gctx.scale(-1,1);
+      // Draw skull helmet - same style as drawFloorSkull variant 0 but scaled up and opaque on head
+      var sx=0, sy=-18; // head position: jaw base sits at ~p.y-18, matching crown height
+      var a=1.0; // fully opaque
+      var SK=1.8; // scale multiplier over floor skull (which uses radius ~9)
+      var c1='rgba(195,180,140,'+a+')';
+      var c2='rgba(155,138,100,'+a+')';
+      var c3='rgba(100,85,60,'+a+')';
+      // Cranium
+      gctx.fillStyle=c1;
+      gctx.beginPath();gctx.arc(sx,sy-4*SK,9*SK,0,Math.PI*2);gctx.fill();
+      // Cranium highlight
+      gctx.fillStyle=c3;
+      gctx.beginPath();gctx.arc(sx+3*SK,sy-6*SK,4*SK,0,Math.PI*2);gctx.fill();
+      // Jaw
+      gctx.fillStyle=c2;
+      gctx.fillRect(sx-6*SK,sy+4*SK,13*SK,7*SK);
+      gctx.fillStyle=c3;
+      gctx.fillRect(sx-6*SK,sy+9*SK,13*SK,2*SK);
+      // Eye sockets - dark
+      gctx.fillStyle='rgba(15,10,8,0.95)';
+      gctx.beginPath();gctx.arc(sx-4*SK,sy-4*SK,3*SK,0,Math.PI*2);gctx.fill();
+      gctx.beginPath();gctx.arc(sx+4*SK,sy-4*SK,3*SK,0,Math.PI*2);gctx.fill();
+      // Red glowing pupils inside sockets
+      var rePulse=0.75+Math.sin(Date.now()*0.0018)*0.25;
+      gctx.fillStyle='rgba(255,0,0,'+rePulse+')';
+      gctx.beginPath();gctx.arc(sx-4*SK,sy-4*SK,1.5*SK,0,Math.PI*2);gctx.fill();
+      gctx.beginPath();gctx.arc(sx+4*SK,sy-4*SK,1.5*SK,0,Math.PI*2);gctx.fill();
       // Nose cavity
-      gctx.fillStyle='#2a1010';
-      gctx.fillRect(-SK,-5*SK,2*SK,SK);
+      gctx.fillStyle='rgba(40,30,20,0.9)';
+      gctx.beginPath();gctx.arc(sx,sy+SK,1.5*SK,0,Math.PI*2);gctx.fill();
       // Teeth
-      gctx.fillStyle='#d0c8b8';
-      gctx.fillRect(-3*SK,-3*SK,SK,2*SK);
-      gctx.fillRect(-SK,-3*SK,SK,2*SK);
-      gctx.fillRect(SK,-3*SK,SK,2*SK);
-      gctx.fillRect(3*SK,-3*SK,SK,2*SK);
-      // Tooth gaps (dark)
-      gctx.fillStyle='#111';
-      gctx.fillRect(-2*SK,-3*SK,SK,2*SK);
-      gctx.fillRect(0,-3*SK,SK,2*SK);
-      gctx.fillRect(2*SK,-3*SK,SK,2*SK);
+      gctx.fillStyle='rgba(15,10,8,0.85)';
+      for(var ti=-3;ti<=3;ti+=2){gctx.fillRect(sx+ti*1.5*SK-0.5*SK,sy+5*SK,1.5*SK,3*SK);}
       gctx.restore();
     }
     if(p.cls==='warrior'&&p.warCryBuff>0){
@@ -5730,14 +5728,14 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     var scale=rx*2/iw*1.02;
     var dw=iw*scale, dh=ih*scale;
     if(platformImg.complete && platformImg.naturalWidth>0){
-      tctx.globalAlpha=0.38;
+      tctx.globalAlpha=0.72;
       tctx.drawImage(platformImg, cx-dw/2, py-dh*0.5+8, dw, dh);
       tctx.globalAlpha=1;
     } else {
       // Fallback plain ellipse
-      tctx.fillStyle='rgba(14,12,20,0.4)';
+      tctx.fillStyle='#0e0c14';
       tctx.beginPath();tctx.ellipse(cx,py,rx,ry,0,0,Math.PI*2);tctx.fill();
-      tctx.strokeStyle='rgba(55,44,80,0.4)';tctx.lineWidth=2;
+      tctx.strokeStyle='rgba(55,44,80,0.8)';tctx.lineWidth=2;
       tctx.beginPath();tctx.ellipse(cx,py,rx,ry,0,0,Math.PI*2);tctx.stroke();
     }
 
