@@ -4488,7 +4488,20 @@ function updateHUD(gs) {
 // FIREBASE REST SYNC
 // ===========================================
 function pushState(me) {
-  // Include my active projectiles so opponent can render them
+  // When WS is active it handles position at 30fps - only push to Firebase for important state changes
+  if(_wsReady){
+    // Still sync critical state (HP, abilities) to Firebase as backup
+    fbSet('/rooms/'+roomCode+'/players/'+myId, {
+      hp:Math.round(me.hp),dead:me.dead,wins:me.wins,
+      stealthed:me.stealthed||false,arcaneShield:Math.round(me.arcaneShield||0),
+      arcaneShieldHits:me.arcaneShieldHits||0,stunned:Math.round(Math.max(0,me.stunned)),
+      hitFlash:me.hitFlash>0?1:0,warCryBuff:Math.round(me.warCryBuff||0),
+      fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
+      frosted:me.frosted||false,frostSlow:Math.round(me.frostSlow||0)
+    });
+    return;
+  }
+  // Full state push when on Firebase only
   var myProjs=[];
   if(gameState){
     gameState.projs.filter(function(p){return p.owner===me.id;}).forEach(function(p){
@@ -4839,6 +4852,8 @@ function startListeningActions() {
   },500);
   actionPollInterval=setInterval(function(){
     if(!gameState)return;
+    // Skip Firebase polling when WebSocket is handling actions
+    if(_wsReady)return;
     fbGet(myInbox).then(function(data){
       if(!data)return;
       dbg('Poll: '+Object.keys(data).length+' entries');
