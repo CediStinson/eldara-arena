@@ -3101,9 +3101,9 @@ function doAttack(gs,attacker,target) {
       range:C.atkRange,traveled:0,alive:true,anim:0
     });
     } else {
-    // In PvP: always send action, receiver applies damage
-    // In training: check range locally
+    // In PvP: check range, then send action; receiver also validates
     if(gameMode==='pvp'){
+      if(dist(attacker,target)>C.atkRange+20)return; // out of range - don't attack
       spawnEfx(gs,'slash',attacker.x,attacker.y);
     } else {
       if(dist(attacker,target)<C.atkRange+10) {
@@ -4506,9 +4506,10 @@ function processAction(msg,gs,me,en) {
         dmg:C5.atkDmg,dot:0,dotDur:0,range:projRange,traveled:0,alive:true,anim:0,
         applyFrostOnHit:projType2==='ice'});
     } else {
-      // Melee - check frost shield, then apply damage
+      // Melee - validate range before applying damage
+      var meleeDist=Math.hypot(expos.x-me.x,expos.y-me.y);
       spawnEfx(gs,'slash',expos.x,expos.y);
-      if(!me.stealthed){
+      if(!me.stealthed&&meleeDist<C5.atkRange+80){
         var sneakMult=atkPos.sneak?2.0:1;
         var dmg=Math.round((C5.atkDmg+Math.floor(Math.random()*4)-1)*sneakMult);
         if(me.arcaneShield>0&&me.arcaneShieldHits>0){
