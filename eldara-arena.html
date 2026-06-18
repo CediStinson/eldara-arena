@@ -208,6 +208,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <!-- Main content centered -->
   <div class="title-content">
+    <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:3px;color:rgba(232,184,75,0.55);text-align:center;margin-bottom:10px">PICK YOUR CLASS</div>
     <div class="title-chars-row" id="title-chars"></div>
     <div id="title-spell-panel"></div>
     <div class="menu-list">
@@ -407,7 +408,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div id="game-overlay">
     <div class="ov-title" id="ov-title">VICTORY</div>
     <div class="ov-sub" id="ov-sub">You won the match!</div>
-    <div id="ov-rating" style="font-family:'Courier New',monospace;font-size:11px;color:rgba(232,184,75,0.85);letter-spacing:2px;margin:6px 0 0;display:none;text-align:center"></div>
+    <div id="ov-rating" style="font-family:'Courier New',monospace;font-size:11px;color:rgba(232,184,75,0.85);letter-spacing:2px;margin:6px 0 18px;display:none;text-align:center"></div>
     <div class="ov-btns">
       <button class="menu-btn primary" id="ov-rematch" style="width:150px">REMATCH</button>
       <button class="menu-btn" id="ov-menu" style="width:110px">LEAVE</button>
@@ -580,6 +581,10 @@ function loadUserProfile() {
     loadQuests();loadRating();loadLeaderboard();
     // Load season reward flags
     fbGet('/users/'+authUid+'/eternal').then(function(v){if(v===true)_hasEternal=true;}).catch(function(){});
+    // Restore killedGM from Firebase (localStorage clears on logout)
+    fbGet('/users/'+authUid+'/killedGM').then(function(v){
+      if(v===true){try{localStorage.setItem('eldara_killed_gm','true');}catch(e){}}
+    }).catch(function(){});
     try{_ghostKills=parseInt(localStorage.getItem('eldara_ghost_kills')||'0');}catch(e){}
     // Purge stale rooms - only if abandoned (both players gone for 10+ min)
     fbGet('/rooms').then(function(rooms){
@@ -3720,7 +3725,7 @@ function draw(gs) {
       gctx.restore();
     }
     // Skull helmet cosmetic (200 PvP wins reward)
-    if(p.isMe&&hasSkullHelmet()||(!p.isMe&&p.skullHelmet)){
+    if(p.isMe&&hasSkullHelmet(p.cls)||(!p.isMe&&p.skullHelmet)){
       var skPulse=0.7+Math.sin(Date.now()*0.009)*0.3;
       gctx.save();
       gctx.translate(p.x,p.y-24);
@@ -4190,11 +4195,6 @@ function endRound(gs) {
           +'</div>';
         ovr2.style.display='block';
       },950);
-      // Show rating change banner
-      setTimeout(function(){
-        var t=getRatingTier(newRating);
-        showBanner((change>=0?'+':'')+change+' ELO   '+t.icon+' '+newRating);
-      },2000);
     }
     incrementGamesPlayed(meR.cls);
     if(wonRound)incrementGamesWon(meR.cls);
@@ -4410,7 +4410,7 @@ function pushState(me) {
     moving:me.moving,hp:Math.round(me.hp),attacking:me.attacking>0?1:0,
     stunned:Math.round(Math.max(0,me.stunned)),
     hitFlash:me.hitFlash>0?1:0,dead:me.dead,wins:me.wins,
-    stealthed:me.stealthed||false,redEyes:hasRedEyes(me.cls),skullHelmet:hasSkullHelmet(),shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
+    stealthed:me.stealthed||false,redEyes:hasRedEyes(me.cls),skullHelmet:hasSkullHelmet(me.cls),shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
     moveCd:Math.round(me.moveCd||0),level:me.level||1,cls:me.cls,
     warCryBuff:Math.round(me.warCryBuff||0),warCryShake:Math.round(me.warCryShake||0),
     fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
@@ -5033,7 +5033,8 @@ function buildTitleChars() {
     card.appendChild(cv);
     if(card)container.appendChild(card);
     // Click: show spell panel
-    card.addEventListener('click', function() {
+    card.addEventListener('click', function(e) {
+      e.stopPropagation();
       if (selectedCls === cls) {
         selectedCls = null;
         panel.classList.remove('show');
@@ -5167,6 +5168,31 @@ function buildTitleChars() {
   });
 }
 buildTitleChars();
+
+// Click anywhere outside chars to deselect
+document.addEventListener('click', function(e){
+  var container=document.getElementById('title-chars');
+  var panel=document.getElementById('title-spell-panel');
+  if(!panel||!panel.classList.contains('show'))return;
+  // Don't close if the click was inside the chars row, the panel itself, or a banner area
+  if(container&&container.contains(e.target))return;
+  if(panel.contains(e.target))return;
+  // Check if a banner hit area was clicked - if so, let the banner handler manage the panel
+  if(window._bannerHitAreas){
+    var tc2=document.getElementById('title-screen');
+    if(tc2){
+      var rect=tc2.getBoundingClientRect();
+      var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      var hitBanner=false;
+      window._bannerHitAreas.forEach(function(b){
+        if(mx>=b.bx-b.bw/2-10&&mx<=b.bx+b.bw/2+10&&my>=b.by-10&&my<=b.by+b.bh+10)hitBanner=true;
+      });
+      if(hitBanner)return;
+    }
+  }
+  panel.classList.remove('show');
+  document.querySelectorAll('.title-char-card').forEach(function(c){c.classList.remove('selected');});
+});
 
 // Show warrior info by default
 (function(){
@@ -5704,19 +5730,19 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     var scale=rx*2/iw*1.02;
     var dw=iw*scale, dh=ih*scale;
     if(platformImg.complete && platformImg.naturalWidth>0){
-      tctx.globalAlpha=0.72;
+      tctx.globalAlpha=0.38;
       tctx.drawImage(platformImg, cx-dw/2, py-dh*0.5+8, dw, dh);
       tctx.globalAlpha=1;
     } else {
       // Fallback plain ellipse
-      tctx.fillStyle='#0e0c14';
+      tctx.fillStyle='rgba(14,12,20,0.4)';
       tctx.beginPath();tctx.ellipse(cx,py,rx,ry,0,0,Math.PI*2);tctx.fill();
-      tctx.strokeStyle='rgba(55,44,80,0.8)';tctx.lineWidth=2;
+      tctx.strokeStyle='rgba(55,44,80,0.4)';tctx.lineWidth=2;
       tctx.beginPath();tctx.ellipse(cx,py,rx,ry,0,0,Math.PI*2);tctx.stroke();
     }
 
     // Cylinder side face (front arc only)
-    tctx.fillStyle='#050408';
+    tctx.fillStyle='rgba(5,4,8,0.45)';
     tctx.beginPath();
     tctx.ellipse(cx,py+th,rx,ry,0,0,Math.PI);
     tctx.lineTo(cx+rx,py);
@@ -5724,9 +5750,9 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.closePath();tctx.fill();
     // Side shading gradient
     var sideGrad=tctx.createLinearGradient(cx-rx,py,cx+rx,py);
-    sideGrad.addColorStop(0,'rgba(20,15,30,0.9)');
-    sideGrad.addColorStop(0.5,'rgba(8,6,14,0.95)');
-    sideGrad.addColorStop(1,'rgba(3,2,6,1.0)');
+    sideGrad.addColorStop(0,'rgba(20,15,30,0.45)');
+    sideGrad.addColorStop(0.5,'rgba(8,6,14,0.5)');
+    sideGrad.addColorStop(1,'rgba(3,2,6,0.5)');
     tctx.fillStyle=sideGrad;
     tctx.beginPath();
     tctx.ellipse(cx,py+th,rx,ry,0,0,Math.PI);
@@ -5734,7 +5760,7 @@ function updateLobbyPlayers(players){var el=document.getElementById('lob-playerl
     tctx.ellipse(cx,py,rx,ry,0,0,Math.PI,true);
     tctx.closePath();tctx.fill();
     // Bottom ellipse edge
-    tctx.strokeStyle='rgba(15,10,25,1.0)';tctx.lineWidth=1.5;
+    tctx.strokeStyle='rgba(15,10,25,0.4)';tctx.lineWidth=1.5;
     tctx.beginPath();tctx.ellipse(cx,py+th,rx,ry,0,0,Math.PI);tctx.stroke();
 
     // -- TORCHES on poles left and right of platform --
@@ -6293,18 +6319,21 @@ function incrementGamesWon(cls){var d=getClassData(cls);d.wins=(d.wins||0)+1;sav
 function getTotalPvPWins(){
   return getGamesWon('warrior')+getGamesWon('mage')+getGamesWon('ranger');
 }
-function hasSkullHelmet(){
-  try{return localStorage.getItem('eldara_skull_helmet')==='true';}catch(e){return false;}
+function hasSkullHelmet(cls){
+  var d=getClassData(cls);
+  return d.skullHelmet===true;
 }
-function setSkullHelmet(val){
-  try{localStorage.setItem('eldara_skull_helmet',val?'true':'false');}catch(e){}
-  if(authUid&&!isGuest)fbSet('/users/'+authUid+'/skullHelmet',val);
+function setSkullHelmet(cls,val){
+  var d=getClassData(cls);
+  d.skullHelmet=val?true:false;
+  saveClassData(cls,d);
+  if(authUid&&!isGuest)fbSet('/users/'+authUid+'/skullHelmet_'+cls,val);
 }
-function toggleSkullHelmet(){
-  var next=!hasSkullHelmet();
-  setSkullHelmet(next);
-  // Mutually exclusive with red eyes - unequip red eyes when wearing skull helmet
-  if(next){['warrior','mage','ranger'].forEach(function(c){setRedEyes(c,false);});}
+function toggleSkullHelmet(cls){
+  var next=!hasSkullHelmet(cls);
+  setSkullHelmet(cls,next);
+  // Mutually exclusive with red eyes on same class
+  if(next){setRedEyes(cls,false);}
   renderAchievements(currentAchTab||'all');
 }
 function getRedEyePos(cls,level){
@@ -6355,8 +6384,8 @@ var currentAchTab='all';
 function toggleRedEyes(cls){
   var next=!hasRedEyes(cls);
   setRedEyes(cls,next);
-  // Mutually exclusive with skull helmet
-  if(next){setSkullHelmet(false);}
+  // Mutually exclusive with skull helmet on same class
+  if(next){setSkullHelmet(cls,false);}
   renderAchievements(currentAchTab||'all');
 }
 function setRedEyes(cls,val){
@@ -6786,7 +6815,9 @@ var ACHIEVEMENTS = [
   {id:'kw',cls:'warrior',tier:0,name:'Warlord Fury',desc:'Kill 100 players as Warrior - Red Eyes unlocked',icon:'\u2694',req:function(){return getPvPKills('warrior')>=100;},levelReq:0,killAch:true,killCls:'warrior'},
   {id:'km',cls:'mage',tier:0,name:'Blood Mage',desc:'Kill 100 players as Mage - Red Eyes unlocked',icon:'\u2728',req:function(){return getPvPKills('mage')>=100;},levelReq:0,killAch:true,killCls:'mage'},
   {id:'kr',cls:'ranger',tier:0,name:'Phantom Reaper',desc:'Kill 100 players as Rogue - Red Eyes unlocked',icon:'\u2020',req:function(){return getPvPKills('ranger')>=100;},levelReq:0,killAch:true,killCls:'ranger'},
-  {id:'g_skull',cls:'general',tier:0,name:'Deathless',desc:'Win 200 PvP matches total - Skull Helmet unlocked',icon:'\uD83D\uDC80',req:function(){return getTotalPvPWins()>=200;},levelReq:0,skullAch:true},
+  {id:'skw',cls:'warrior',tier:0,name:'Skull Crusher',desc:'Kill 200 players as Warrior - Skull Helmet unlocked',icon:'\uD83D\uDC80',req:function(){return getPvPKills('warrior')>=200;},levelReq:0,skullAch:true,skullCls:'warrior'},
+  {id:'skm',cls:'mage',tier:0,name:'Bone Mage',desc:'Kill 200 players as Mage - Skull Helmet unlocked',icon:'\uD83D\uDC80',req:function(){return getPvPKills('mage')>=200;},levelReq:0,skullAch:true,skullCls:'mage'},
+  {id:'skr',cls:'ranger',tier:0,name:'Grim Reaper',desc:'Kill 200 players as Rogue - Skull Helmet unlocked',icon:'\uD83D\uDC80',req:function(){return getPvPKills('ranger')>=200;},levelReq:0,skullAch:true,skullCls:'ranger'},
   // GENERAL
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
   {id:'g_gm_kill',cls:'general',tier:0,name:'I Killed a GM!',desc:'There is no way I will get banned now, right?',icon:'\uD83D\uDC51',hidden:true,
@@ -6837,8 +6868,8 @@ function buildAchCard(ach){
     }
   }
   if(ach.skullAch&&!earned){
-    var totalW=getTotalPvPWins();
-    progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+totalW+' / 200 PvP wins</div>';
+    var skKills=getPvPKills(ach.skullCls);
+    progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+skKills+' / 200 PvP kills</div>';
   }
   var wearBtn='';
   if(ach.killAch&&earned){
@@ -6846,8 +6877,8 @@ function buildAchCard(ach){
     wearBtn='<button class="wear-eyes-btn" data-cls="'+ach.killCls+'" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearing?'#e74c3c':'var(--gold)')+';color:'+(wearing?'#e74c3c':'var(--gold)')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearing?'TAKE OFF':'WEAR')+'</button>';
   }
   if(ach.skullAch&&earned){
-    var wearingSk=hasSkullHelmet();
-    wearBtn='<button class="wear-skull-btn" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearingSk?'#e74c3c':'#aaaaaa')+';color:'+(wearingSk?'#e74c3c':'#aaaaaa')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearingSk?'REMOVE HELM':'WEAR HELM')+'</button>';
+    var wearingSk=hasSkullHelmet(ach.skullCls);
+    wearBtn='<button class="wear-skull-btn" data-cls="'+ach.skullCls+'" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearingSk?'#e74c3c':'#aaaaaa')+';color:'+(wearingSk?'#e74c3c':'#aaaaaa')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearingSk?'REMOVE HELM':'WEAR HELM')+'</button>';
   }
   if(ach.isCrown&&earned){
     var wearingCrown=hasCrown();
@@ -6871,15 +6902,17 @@ function renderAchievements(tab){
     return a.cls===tab;
   });
   // Sort: armor first, weapon, kill (red eyes) last. Earned before unearned within each group.
-  var earnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&!a.killAch&&a.cls!=='general'&&a.req();}catch(e){return false;}});
-  var unearnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&!a.killAch&&a.cls!=='general'&&!a.req();}catch(e){return true;}});
+  var earnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&!a.killAch&&!a.skullAch&&a.cls!=='general'&&a.req();}catch(e){return false;}});
+  var unearnedArmor=filtered.filter(function(a){try{return !a.weaponAch&&!a.killAch&&!a.skullAch&&a.cls!=='general'&&!a.req();}catch(e){return true;}});
   var earnedWeapon=filtered.filter(function(a){try{return a.weaponAch&&a.req();}catch(e){return false;}});
   var unearnedWeapon=filtered.filter(function(a){try{return a.weaponAch&&!a.req();}catch(e){return true;}});
   var earnedKill=filtered.filter(function(a){try{return a.killAch&&a.req();}catch(e){return false;}});
   var unearnedKill=filtered.filter(function(a){try{return a.killAch&&!a.req();}catch(e){return true;}});
-  var earnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&a.req();}catch(e){return false;}});
-  var unearnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&!a.req();}catch(e){return true;}});
-  var sorted=earnedArmor.concat(unearnedArmor).concat(earnedWeapon).concat(unearnedWeapon).concat(earnedKill).concat(unearnedKill).concat(earnedGeneral).concat(unearnedGeneral);
+  var earnedSkull=filtered.filter(function(a){try{return a.skullAch&&a.req();}catch(e){return false;}});
+  var unearnedSkull=filtered.filter(function(a){try{return a.skullAch&&!a.req();}catch(e){return true;}});
+  var earnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&!a.skullAch&&a.req();}catch(e){return false;}});
+  var unearnedGeneral=filtered.filter(function(a){try{return a.cls==='general'&&!a.skullAch&&!a.req();}catch(e){return true;}});
+  var sorted=earnedArmor.concat(unearnedArmor).concat(earnedWeapon).concat(unearnedWeapon).concat(earnedKill).concat(unearnedKill).concat(earnedSkull).concat(unearnedSkull).concat(earnedGeneral).concat(unearnedGeneral);
   
   sorted.forEach(function(ach){
     var result=buildAchCard(ach);
@@ -6893,7 +6926,7 @@ function renderAchievements(tab){
     });
   });
   list.querySelectorAll('.wear-skull-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){toggleSkullHelmet();});
+    btn.addEventListener('click',function(){toggleSkullHelmet(btn.dataset.cls);});
   });
   list.querySelectorAll('.wear-crown-btn').forEach(function(btn){
     btn.addEventListener('click',function(){toggleCrown();});
