@@ -160,6 +160,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 #profile-badge{position:absolute;bottom:60px;right:12px;font-size:8px;letter-spacing:1px;color:var(--dim);pointer-events:none;z-index:61;text-align:right}
 #conn-bar{position:absolute;top:8px;left:8px;top:8px;left:8px;font-size:8px;letter-spacing:2px;padding:3px 7px;border:1px solid var(--border);color:var(--dim);z-index:60;pointer-events:none}
 #conn-bar.online{border-color:var(--green);color:var(--green)}
+/* Achievements responsive grid */
+#ach-list{display:grid;gap:10px;grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){#ach-list{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){#ach-list{grid-template-columns:1fr}}
 
 
 </style>
@@ -246,7 +250,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
       <button class="ach-tab" data-tab="ranger" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">ROGUE</button>
       <button class="ach-tab" data-tab="general" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">GENERAL</button>
     </div>
-    <div id="ach-list" style="flex:1;overflow-y:auto;padding:20px 28px;display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+    <div id="ach-list" style="flex:1;overflow-y:auto;padding:20px 28px"></div>
   </div>
   <!-- Settings overlay -->
   <!-- Leaderboard Overlay -->
@@ -260,31 +264,43 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     </div>
   </div>
 </div>
-<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:90;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:Courier New,monospace">
-    <div style="background:rgba(10,8,20,0.97);border:1px solid var(--border);padding:32px 40px;display:flex;flex-direction:column;gap:14px;width:360px">
-      <div style="font-size:15px;letter-spacing:3px;color:var(--gold);margin-bottom:4px">SETTINGS</div>
-      <div style="font-size:11px;color:var(--dim);letter-spacing:1px">DISPLAY NAME</div>
-      <div style="font-size:13px;color:var(--text)" id="settings-curname">-</div>
-      <input id="settings-name-inp" placeholder="New display name" maxlength="14" style="background:#0a0a0f;border:1px solid var(--border);color:var(--text);font-family:Courier New,monospace;font-size:14px;padding:10px 12px;outline:none;text-transform:uppercase;width:100%">
-      <div style="font-size:10px;color:var(--dim)" id="settings-changes-left">Loading...</div>
-      <div style="font-size:10px;color:#e74c3c;min-height:12px" id="settings-err"></div>
-      <div style="display:flex;gap:10px">
-        <button id="settings-save" style="flex:1;padding:11px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">SAVE NAME</button>
-        <button id="settings-close" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border);color:rgba(255,255,255,0.7);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">CANCEL</button>
-      </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
-        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:6px">YOUR RATING</div>
-        <div id="my-rank-display" style="font-size:11px;color:var(--text);letter-spacing:1px;margin-bottom:4px">—</div>
-        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin:10px 0 6px">PVP STREAK</div>
-        <div style="font-size:10px;color:var(--text)">Current: <span id="streak-display">0</span> &nbsp;·&nbsp; Best: <span id="best-streak-display">0</span></div>
-      </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px">
-        <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:8px">MATCH HISTORY</div>
-        <div id="match-history-list" style="max-height:180px;overflow-y:auto;font-size:9px"></div>
-      </div>
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:90;flex-direction:column;font-family:Courier New,monospace">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border)">
+    <div style="font-size:18px;letter-spacing:5px;color:var(--gold)">SETTINGS</div>
+    <button id="settings-close" style="background:transparent;border:1px solid var(--border);color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;padding:6px 14px;cursor:pointer">CLOSE</button>
+  </div>
+  <!-- Tabs -->
+  <div style="display:flex;border-bottom:1px solid var(--border)">
+    <button class="settings-tab active" data-stab="profile" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">PROFILE</button>
+    <button class="settings-tab" data-stab="stats" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">STATS</button>
+    <button class="settings-tab" data-stab="history" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">MATCH HISTORY</button>
+  </div>
+  <!-- Tab content -->
+  <div style="flex:1;overflow-y:auto;padding:28px 40px;max-width:600px;width:100%;align-self:center;box-sizing:border-box">
+    <!-- PROFILE tab -->
+    <div id="stab-profile" class="settings-section">
+      <div style="font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:6px">DISPLAY NAME</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:16px" id="settings-curname">-</div>
+      <input id="settings-name-inp" placeholder="New display name" maxlength="14" style="background:#0a0a0f;border:1px solid var(--border);color:var(--text);font-family:Courier New,monospace;font-size:14px;padding:10px 12px;outline:none;text-transform:uppercase;width:100%;box-sizing:border-box;margin-bottom:8px">
+      <div style="font-size:10px;color:var(--dim);margin-bottom:6px" id="settings-changes-left">Loading...</div>
+      <div style="font-size:10px;color:#e74c3c;min-height:14px;margin-bottom:12px" id="settings-err"></div>
+      <button id="settings-save" style="width:100%;padding:12px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">SAVE NAME</button>
+    </div>
+    <!-- STATS tab -->
+    <div id="stab-stats" class="settings-section" style="display:none">
+      <div style="font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:10px">YOUR RATING</div>
+      <div id="my-rank-display" style="font-size:13px;color:var(--text);letter-spacing:1px;margin-bottom:24px">—</div>
+      <div style="font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:10px">PVP STREAK</div>
+      <div style="font-size:12px;color:var(--text);margin-bottom:24px">Current: <span id="streak-display">0</span> &nbsp;·&nbsp; Best: <span id="best-streak-display">0</span></div>
+    </div>
+    <!-- MATCH HISTORY tab -->
+    <div id="stab-history" class="settings-section" style="display:none">
+      <div style="font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:12px">RECENT MATCHES</div>
+      <div id="match-history-list" style="font-size:9px"></div>
     </div>
   </div>
-  <!-- Name change confirm overlay -->
+  <!-- Name change confirm overlay (nested) -->
   <div id="name-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:Courier New,monospace">
     <div style="background:rgba(10,8,20,0.98);border:1px solid var(--border);padding:32px 40px;display:flex;flex-direction:column;gap:14px;width:360px;text-align:center">
       <div style="font-size:14px;letter-spacing:3px;color:var(--gold)">RENAME?</div>
@@ -2148,22 +2164,28 @@ function drawArena(ctx, arena, tick, noSlabs) {
           if((tx+ty)%2===0){ctx.fillStyle='#302010';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
           ctx.strokeStyle='#251808';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
         } else if(isVolcano){
-          // Basalt rock - near-black with dark red-brown veins
-          ctx.fillStyle='#100806';ctx.fillRect(px2,py2,TILE,TILE);
-          ctx.fillStyle='#1c0e08';ctx.fillRect(px2,py2,TILE,6);
-          ctx.fillStyle='#160a04';ctx.fillRect(px2,py2+6,TILE,TILE-12);
-          ctx.fillStyle='#0e0602';ctx.fillRect(px2,py2+TILE-6,TILE,6);
-          if((tx+ty)%2===0){ctx.fillStyle='rgba(80,20,0,0.4)';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
-          // Lava crack glow seeping through
-          if((tx*5+ty*3)%4===0){ctx.fillStyle='rgba(120,30,0,0.25)';ctx.fillRect(px2+10,py2+10,TILE-20,TILE-20);}
-          ctx.strokeStyle='rgba(60,15,0,0.6)';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
+          // Basalt rock - lighter top face, darker sides, more contrast
+          ctx.fillStyle='#2a1610';ctx.fillRect(px2,py2,TILE,TILE);       // base - lighter
+          ctx.fillStyle='#3a2018';ctx.fillRect(px2,py2,TILE,6);           // top edge highlight
+          ctx.fillStyle='#281410';ctx.fillRect(px2,py2+6,TILE,TILE-12);   // mid face
+          ctx.fillStyle='#180a06';ctx.fillRect(px2,py2+TILE-6,TILE,6);    // bottom shadow
+          // Lava vein - brighter red-orange crack
+          if((tx+ty)%2===0){ctx.fillStyle='rgba(160,50,10,0.55)';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
+          // Lava crack glow - more visible
+          if((tx*5+ty*3)%4===0){ctx.fillStyle='rgba(180,60,10,0.35)';ctx.fillRect(px2+10,py2+10,TILE-20,TILE-20);}
+          // Bright edge highlight on top
+          ctx.fillStyle='rgba(80,40,20,0.5)';ctx.fillRect(px2+2,py2,TILE-4,2);
+          ctx.strokeStyle='rgba(100,35,10,0.7)';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
         } else {
-          ctx.fillStyle='#0a0a14';ctx.fillRect(px2,py2,TILE,TILE);
-          ctx.fillStyle='#22223a';ctx.fillRect(px2,py2,TILE,6);
-          ctx.fillStyle='#1a1a2e';ctx.fillRect(px2,py2+6,TILE,TILE-12);
-          ctx.fillStyle='#0e0e1a';ctx.fillRect(px2,py2+TILE-6,TILE,6);
-          if((tx+ty)%2===0){ctx.fillStyle='#14142a';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
-          ctx.strokeStyle='#0c0c18';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
+          // Temple - stone block walls, lighter than floor for contrast
+          ctx.fillStyle='#252030';ctx.fillRect(px2,py2,TILE,TILE);        // base - much lighter
+          ctx.fillStyle='#342e48';ctx.fillRect(px2,py2,TILE,6);           // top edge - brightest
+          ctx.fillStyle='#2a2440';ctx.fillRect(px2,py2+6,TILE,TILE-12);  // mid face
+          ctx.fillStyle='#181424';ctx.fillRect(px2,py2+TILE-6,TILE,6);   // bottom shadow
+          if((tx+ty)%2===0){ctx.fillStyle='#302848';ctx.fillRect(px2+TILE/2,py2+6,1,TILE-12);}
+          // Subtle mortar line / stone highlight
+          ctx.fillStyle='rgba(80,68,110,0.35)';ctx.fillRect(px2+2,py2,TILE-4,2);
+          ctx.strokeStyle='#1e1830';ctx.lineWidth=1;ctx.strokeRect(px2+1,py2+1,TILE-2,TILE-2);
         }
       } else if(t===0){
         if(isDesert){
@@ -3681,26 +3703,60 @@ function draw(gs) {
       if(p.dir!==2) gctx.scale(-1,1);
       var sx=-1, sy=-17;
       var R=11;
-      var c1='rgba(195,180,140,1)';
-      var c3='rgba(100,85,60,1)';
+      // Muted aged bone colours
+      var cBase='rgba(165,152,118,1)';   // main bone - more grey/muted
+      var cMid ='rgba(138,124,94,1)';    // mid tone
+      var cDark='rgba(88,76,52,1)';      // dark shadow
+      var cDirt='rgba(60,52,38,0.55)';   // grime/age overlay
+      // Cranium
       gctx.save();
       gctx.translate(sx,sy);
-      gctx.rotate(0.2); // tilts right
+      gctx.rotate(0.2);
       gctx.scale(1,0.82);
-      gctx.fillStyle=c1;
+      gctx.fillStyle=cBase;
       gctx.beginPath();gctx.arc(0,0,R,0,Math.PI*2);gctx.fill();
-      gctx.fillStyle=c3;
-      gctx.beginPath();gctx.arc(3,-3,R*0.38,0,Math.PI*2);gctx.fill();
+      // Forehead shading - darker top half gives depth
+      gctx.fillStyle='rgba(0,0,0,0.18)';
+      gctx.beginPath();gctx.arc(0,0,R,Math.PI,0);gctx.closePath();gctx.fill();
+      // Brow ridge - slightly raised, darker strip
+      gctx.fillStyle=cMid;
+      gctx.fillRect(-R*0.8,1,R*1.6,2.5);
+      // Cheekbone hint (right side, 3/4 view)
+      gctx.fillStyle=cMid;
+      gctx.beginPath();gctx.ellipse(R*0.55,R*0.28,3.5,2,0.3,0,Math.PI*2);gctx.fill();
+      // Temple shadow (left)
+      gctx.fillStyle='rgba(0,0,0,0.22)';
+      gctx.beginPath();gctx.ellipse(-R*0.65,0,3,5,0,0,Math.PI*2);gctx.fill();
+      // Cranium highlight
+      gctx.fillStyle='rgba(210,200,168,0.55)';
+      gctx.beginPath();gctx.arc(2.5,-3.5,R*0.32,0,Math.PI*2);gctx.fill();
+      // Dirt/age grime
+      gctx.fillStyle=cDirt;
+      gctx.beginPath();gctx.arc(-2,3,R*0.35,0,Math.PI*2);gctx.fill();
+      // Crack across top
+      gctx.strokeStyle='rgba(50,40,28,0.7)';gctx.lineWidth=0.8;
+      gctx.beginPath();gctx.moveTo(-3,-R*0.65);gctx.lineTo(1,-R*0.1);gctx.stroke();
+      gctx.beginPath();gctx.moveTo(1,-R*0.1);gctx.lineTo(3,R*0.2);gctx.stroke();
       gctx.restore();
-      gctx.fillStyle='rgba(15,10,8,0.95)';
-      gctx.beginPath();gctx.arc(sx-4,sy+2,4,0,Math.PI*2);gctx.fill();
-      gctx.beginPath();gctx.arc(sx+5,sy+3,2.6,0,Math.PI*2);gctx.fill();
-      var rePulse=0.75+Math.sin(Date.now()*0.0018)*0.25;
-      gctx.fillStyle='rgba(255,0,0,'+rePulse+')';
-      gctx.beginPath();gctx.arc(sx-4,sy+2,2,0,Math.PI*2);gctx.fill();
-      gctx.beginPath();gctx.arc(sx+5,sy+3,1.3,0,Math.PI*2);gctx.fill();
-      gctx.fillStyle='rgba(40,30,20,0.9)';
-      gctx.beginPath();gctx.arc(sx+1,sy+6,1.8,0,Math.PI*2);gctx.fill();
+      // Brow ridge above eye sockets (world space)
+      gctx.fillStyle=cDark;
+      gctx.fillRect(sx-8,sy-1,13,2);
+      // Eye sockets - 3/4 view, near eye bigger, slightly oval
+      gctx.fillStyle='rgba(12,8,6,0.97)';
+      gctx.beginPath();gctx.ellipse(sx-4,sy+3,4,3.2,0.1,0,Math.PI*2);gctx.fill();
+      gctx.beginPath();gctx.ellipse(sx+5,sy+3.5,2.5,2,0.1,0,Math.PI*2);gctx.fill();
+      // Subtle socket rim
+      gctx.strokeStyle='rgba(88,76,52,0.6)';gctx.lineWidth=0.8;
+      gctx.beginPath();gctx.ellipse(sx-4,sy+3,4,3.2,0.1,0,Math.PI*2);gctx.stroke();
+      gctx.beginPath();gctx.ellipse(sx+5,sy+3.5,2.5,2,0.1,0,Math.PI*2);gctx.stroke();
+      // Red pupils - muted, not too bright
+      var rePulse=0.55+Math.sin(Date.now()*0.0018)*0.2;
+      gctx.fillStyle='rgba(200,0,0,'+rePulse+')';
+      gctx.beginPath();gctx.arc(sx-4,sy+3,1.8,0,Math.PI*2);gctx.fill();
+      gctx.beginPath();gctx.arc(sx+5,sy+3.5,1.1,0,Math.PI*2);gctx.fill();
+      // Nose cavity - slightly oval
+      gctx.fillStyle='rgba(30,22,14,0.88)';
+      gctx.beginPath();gctx.ellipse(sx+1,sy+7,2,1.4,0,0,Math.PI*2);gctx.fill();
       gctx.restore();
     }
     // Red eyes cosmetic - pulsing pixels only, no circles
@@ -4008,12 +4064,7 @@ function draw(gs) {
         gctx.beginPath();gctx.arc(p.x+Math.cos(cpa)*cpr,p.y+Math.sin(cpa)*cpr,3+Math.random()*3,0,Math.PI*2);gctx.fill();
       }
     }
-    // Movecooldown indicator - small icon above name tag
-    if(p.isMe&&p.moveCd>0&&!p.dead){
-      var mvPct=1-Math.min(1,p.moveCd/CLS[p.cls].move.cd);
-      gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(p.x-6,p.y-78,12,4);
-      gctx.fillStyle='#e8b84b';gctx.fillRect(p.x-6,p.y-78,12*mvPct,4);
-    }
+    // moveCd indicator removed - shown in skill bar only
   }
   for(var ri=0;ri<gs.projs.length;ri++) {
     var pr2=gs.projs[ri],angle=Math.atan2(pr2.vy,pr2.vx);
@@ -6626,13 +6677,17 @@ document.getElementById('btn-settings').addEventListener('click',function(){
     document.getElementById('settings-save').disabled=left<=0;
     document.getElementById('settings-save').style.opacity=left<=0?'0.4':'1';
   });
-  // Populate rating, streak, match history
-  buildMatchHistory();
-  loadLeaderboard();
+  // Populate rating, streak (stats tab loads on demand)
   var sdel=document.getElementById('streak-display');if(sdel)sdel.textContent=pvpWinStreak;
   var sbdel=document.getElementById('best-streak-display');if(sbdel)sbdel.textContent=pvpBestStreak;
   var rnk=document.getElementById('my-rank-display');
   if(rnk){var t=getRatingTier(myRating);rnk.innerHTML='<span style="color:'+t.color+'">'+t.icon+' '+t.name+'</span> &nbsp;'+myRating+' pts';}
+  // Reset to profile tab
+  document.querySelectorAll('.settings-tab').forEach(function(b){b.style.borderBottomColor='transparent';b.style.color='var(--dim)';});
+  var profileTab=document.querySelector('.settings-tab[data-stab="profile"]');
+  if(profileTab){profileTab.style.borderBottomColor='var(--gold)';profileTab.style.color='var(--gold)';}
+  document.querySelectorAll('.settings-section').forEach(function(s){s.style.display='none';});
+  var profSec=document.getElementById('stab-profile');if(profSec)profSec.style.display='block';
 });
 // -- MATCH HISTORY PANEL --
 function buildMatchHistory(){
@@ -6660,6 +6715,18 @@ function buildMatchHistory(){
 
 document.getElementById('settings-close').addEventListener('click',function(){
   document.getElementById('settings-overlay').style.display='none';
+});
+// Settings tabs
+document.querySelectorAll('.settings-tab').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.settings-tab').forEach(function(b){
+      b.style.borderBottomColor='transparent';b.style.color='var(--dim)';
+    });
+    btn.style.borderBottomColor='var(--gold)';btn.style.color='var(--gold)';
+    document.querySelectorAll('.settings-section').forEach(function(s){s.style.display='none';});
+    document.getElementById('stab-'+btn.dataset.stab).style.display='block';
+    if(btn.dataset.stab==='history')buildMatchHistory();
+  });
 });
 var _pendingNameChange=null,_pendingNameUsed=0;
 document.getElementById('settings-save').addEventListener('click',function(){
