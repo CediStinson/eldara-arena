@@ -578,6 +578,8 @@ function loadUserProfile() {
     if(ld){ld.style.opacity='0';document.body.classList.remove('loading');setTimeout(function(){ld.style.display='none';},650);}
     loadPvpPlayed();
     loadQuests();loadRating();loadLeaderboard();
+    // Load season reward flags
+    fbGet('/users/'+authUid+'/eternal').then(function(v){if(v===true)_hasEternal=true;}).catch(function(){});
     try{_ghostKills=parseInt(localStorage.getItem('eldara_ghost_kills')||'0');}catch(e){}
     // Purge stale rooms - only if abandoned (both players gone for 10+ min)
     fbGet('/rooms').then(function(rooms){
@@ -1802,72 +1804,72 @@ var ARENA_KEYS = ['volcano','desert','temple'];
 
 var QUEST_POOL = {
   warrior: [
-    {id:'w_wins',name:'Iron Will',desc:'Win 3 matches as Warrior',xp:60,
-     check:function(d){return(d.wins||0)>=3;},
+    {id:'w_wins',name:'Iron Will',desc:'Win 5 matches as Warrior',xp:60,
+     check:function(d){return(d.wins||0)>=5;},
      track:function(d,evt,val){if(evt==='win'&&val==='warrior')d.wins=(d.wins||0)+1;}},
-    {id:'w_kills',name:'Blood & Iron',desc:'Kill 3 opponents as Warrior',xp:60,
-     check:function(d){return(d.kills||0)>=3;},
+    {id:'w_kills',name:'Blood & Iron',desc:'Kill 5 opponents as Warrior',xp:60,
+     check:function(d){return(d.kills||0)>=5;},
      track:function(d,evt,val){if(evt==='kill'&&val==='warrior')d.kills=(d.kills||0)+1;}},
-    {id:'w_warcry',name:'Battle Cry',desc:'Use War Cry 8 times',xp:45,
-     check:function(d){return(d.uses||0)>=8;},
+    {id:'w_warcry',name:'Battle Cry',desc:'Use War Cry 15 times',xp:45,
+     check:function(d){return(d.uses||0)>=15;},
      track:function(d,evt,val){if(evt==='skill_j'&&val==='warrior')d.uses=(d.uses||0)+1;}},
-    {id:'w_charge',name:'Rampage',desc:'Perform 5 War Charges',xp:45,
-     check:function(d){return(d.uses||0)>=5;},
+    {id:'w_charge',name:'Rampage',desc:'Perform 8 War Charges',xp:45,
+     check:function(d){return(d.uses||0)>=8;},
      track:function(d,evt,val){if(evt==='skill_space'&&val==='warrior')d.uses=(d.uses||0)+1;}},
-    {id:'w_stun',name:'Stunlock',desc:'Kill an opponent while they are stunned',xp:80,
-     check:function(d){return(d.done||0)>=1;},
-     track:function(d,evt,val){if(evt==='kill_stunned'&&val==='warrior')d.done=1;}},
-    {id:'w_shield',name:'Shield Wall',desc:'Block 3 hits with Shield Bash in a single match',xp:55,
+    {id:'w_stun',name:'Stunlock',desc:'Kill 2 opponents while they are stunned',xp:80,
+     check:function(d){return(d.done||0)>=2;},
+     track:function(d,evt,val){if(evt==='kill_stunned'&&val==='warrior')d.done=(d.done||0)+1;}},
+    {id:'w_shield',name:'Shield Wall',desc:'Block 5 hits with Shield Bash in a single match',xp:55,
      check:function(d){return(d.done||0)>=1;},
      track:function(d,evt,val){if(evt==='shield_triple'&&val==='warrior')d.done=1;}},
-    {id:'w_pvp',name:'Arena Champion',desc:'Win 2 PvP matches as Warrior',xp:90,
-     check:function(d){return(d.wins||0)>=2;},
+    {id:'w_pvp',name:'Arena Champion',desc:'Win 3 PvP matches as Warrior',xp:90,
+     check:function(d){return(d.wins||0)>=3;},
      track:function(d,evt,val){if(evt==='pvp_win'&&val==='warrior')d.wins=(d.wins||0)+1;}},
   ],
   mage: [
-    {id:'m_wins',name:'Arcane Scholar',desc:'Win 3 matches as Mage',xp:60,
-     check:function(d){return(d.wins||0)>=3;},
+    {id:'m_wins',name:'Arcane Scholar',desc:'Win 5 matches as Mage',xp:60,
+     check:function(d){return(d.wins||0)>=5;},
      track:function(d,evt,val){if(evt==='win'&&val==='mage')d.wins=(d.wins||0)+1;}},
-    {id:'m_fireball',name:'Full Charge',desc:'Hit an opponent with a fully charged Fireball 3 times',xp:75,
-     check:function(d){return(d.hits||0)>=3;},
-     track:function(d,evt,val){if(evt==='full_fireball'&&val==='mage')d.hits=(d.hits||0)+1;}},
-    {id:'m_blink',name:'Phase Walk',desc:'Blink 10 times',xp:40,
-     check:function(d){return(d.uses||0)>=10;},
-     track:function(d,evt,val){if(evt==='blink'&&val==='mage')d.uses=(d.uses||0)+1;}},
-    {id:'m_frost',name:'Frozen Solid',desc:'Freeze 5 opponents with Frost Shield reflection',xp:65,
+    {id:'m_fireball',name:'Full Charge',desc:'Hit an opponent with a fully charged Fireball 5 times',xp:75,
      check:function(d){return(d.hits||0)>=5;},
+     track:function(d,evt,val){if(evt==='full_fireball'&&val==='mage')d.hits=(d.hits||0)+1;}},
+    {id:'m_blink',name:'Phase Walk',desc:'Blink 18 times',xp:40,
+     check:function(d){return(d.uses||0)>=18;},
+     track:function(d,evt,val){if(evt==='blink'&&val==='mage')d.uses=(d.uses||0)+1;}},
+    {id:'m_frost',name:'Frozen Solid',desc:'Freeze 8 opponents with Frost Shield reflection',xp:65,
+     check:function(d){return(d.hits||0)>=8;},
      track:function(d,evt,val){if(evt==='frost_reflect'&&val==='mage')d.hits=(d.hits||0)+1;}},
-    {id:'m_pvp',name:'Spellblade',desc:'Win 2 PvP matches as Mage',xp:90,
-     check:function(d){return(d.wins||0)>=2;},
+    {id:'m_pvp',name:'Spellblade',desc:'Win 3 PvP matches as Mage',xp:90,
+     check:function(d){return(d.wins||0)>=3;},
      track:function(d,evt,val){if(evt==='pvp_win'&&val==='mage')d.wins=(d.wins||0)+1;}},
-    {id:'m_iceshard',name:'Frost Barrage',desc:'Hit with 20 Ice Shards',xp:45,
-     check:function(d){return(d.hits||0)>=20;},
+    {id:'m_iceshard',name:'Frost Barrage',desc:'Hit with 35 Ice Shards',xp:45,
+     check:function(d){return(d.hits||0)>=35;},
      track:function(d,evt,val){if(evt==='proj_hit'&&val==='mage')d.hits=(d.hits||0)+1;}},
-    {id:'m_kill',name:'Arcane Execution',desc:'Kill 3 opponents as Mage',xp:60,
-     check:function(d){return(d.kills||0)>=3;},
+    {id:'m_kill',name:'Arcane Execution',desc:'Kill 5 opponents as Mage',xp:60,
+     check:function(d){return(d.kills||0)>=5;},
      track:function(d,evt,val){if(evt==='kill'&&val==='mage')d.kills=(d.kills||0)+1;}},
   ],
   ranger: [
-    {id:'r_wins',name:'Shadow Kin',desc:'Win 3 matches as Rogue',xp:60,
-     check:function(d){return(d.wins||0)>=3;},
+    {id:'r_wins',name:'Shadow Kin',desc:'Win 5 matches as Rogue',xp:60,
+     check:function(d){return(d.wins||0)>=5;},
      track:function(d,evt,val){if(evt==='win'&&val==='ranger')d.wins=(d.wins||0)+1;}},
-    {id:'r_stealth',name:'Phantom Strike',desc:'Use Shadow Step out of Stealth 5 times',xp:70,
-     check:function(d){return(d.uses||0)>=5;},
+    {id:'r_stealth',name:'Phantom Strike',desc:'Use Shadow Step out of Stealth 8 times',xp:70,
+     check:function(d){return(d.uses||0)>=8;},
      track:function(d,evt,val){if(evt==='shadow_step_stealth'&&val==='ranger')d.uses=(d.uses||0)+1;}},
-    {id:'r_sneak',name:'Backstabber',desc:'Land 5 Stealth first-hit attacks',xp:65,
-     check:function(d){return(d.hits||0)>=5;},
+    {id:'r_sneak',name:'Backstabber',desc:'Land 8 Stealth first-hit attacks',xp:65,
+     check:function(d){return(d.hits||0)>=8;},
      track:function(d,evt,val){if(evt==='sneak_hit'&&val==='ranger')d.hits=(d.hits||0)+1;}},
-    {id:'r_pvp',name:'Death From Shadows',desc:'Win 2 PvP matches as Rogue',xp:90,
-     check:function(d){return(d.wins||0)>=2;},
+    {id:'r_pvp',name:'Death From Shadows',desc:'Win 3 PvP matches as Rogue',xp:90,
+     check:function(d){return(d.wins||0)>=3;},
      track:function(d,evt,val){if(evt==='pvp_win'&&val==='ranger')d.wins=(d.wins||0)+1;}},
-    {id:'r_headbutt',name:'Hard Head',desc:'Stun opponents with Headbutt 6 times',xp:50,
-     check:function(d){return(d.uses||0)>=6;},
+    {id:'r_headbutt',name:'Hard Head',desc:'Stun opponents with Headbutt 10 times',xp:50,
+     check:function(d){return(d.uses||0)>=10;},
      track:function(d,evt,val){if(evt==='headbutt_stun'&&val==='ranger')d.uses=(d.uses||0)+1;}},
-    {id:'r_kill',name:'Contract Fulfilled',desc:'Kill 3 opponents as Rogue',xp:60,
-     check:function(d){return(d.kills||0)>=3;},
+    {id:'r_kill',name:'Contract Fulfilled',desc:'Kill 5 opponents as Rogue',xp:60,
+     check:function(d){return(d.kills||0)>=5;},
      track:function(d,evt,val){if(evt==='kill'&&val==='ranger')d.kills=(d.kills||0)+1;}},
-    {id:'r_invis',name:'Ghost',desc:'Spend 30 seconds total in Stealth',xp:55,
-     check:function(d){return(d.secs||0)>=30;},
+    {id:'r_invis',name:'Ghost',desc:'Spend 60 seconds total in Stealth',xp:55,
+     check:function(d){return(d.secs||0)>=60;},
      track:function(d,evt,val){if(evt==='stealth_sec'&&val==='ranger')d.secs=(d.secs||0)+1;}},
   ]
 };
@@ -2666,6 +2668,7 @@ var myId='p_'+Math.random().toString(36).slice(2,9);
 var myName='HERO', myClass='warrior';
 var setupMode='host', gameMode='training';
 var _fromQueue=false;
+var _hasEternal=false; // Set via Firebase by admin at season end
 var roomCode=null, isHost=false;
 var gameState=null;
 var canvas, gctx, CW, CH;
@@ -2942,6 +2945,8 @@ function applyFrost(gs, target) {
     target.stunned = 1000;
     target.frost = 0;
     target.frostTimer = 0;
+    // Interrupt fireball charge
+    if(target.cls==='mage'){target.fireballCharging=false;target.fireballCharge=0;}
     gs.effects.push({type:'frost_burst',x:target.x,y:target.y,life:900,max:900,anim:0});
     sidelog('\u2744', target.name + ' FROZEN!');
     // Push state if this is us
@@ -3107,7 +3112,8 @@ function doSkill(gs,user,target,num) {
     spawnEfx(gs,'blink',user.x,user.y);
     sidelog('**',user.name+' enters stealth!');
   } else if(sk.arcaneShield) {
-    // Frost Shield - same as blink shield but via J key
+    // Frost Shield - also cancels own charging fireball
+    if(user.cls==='mage'){user.fireballCharging=false;user.fireballCharge=0;}
     user.arcaneShield=sk.arcaneShieldDur;
     user.arcaneShieldHits=sk.arcaneShieldHits||3;
     spawnEfx(gs,'arcane_block',user.x,user.y);
@@ -3426,6 +3432,7 @@ function lerpRemote(en) {
   if(remoteState.stealthed!=null) en.stealthed=!!remoteState.stealthed;
   if(remoteState.shieldHp!=null) en.shieldHp=remoteState.shieldHp;
   if(remoteState.redEyes!=null) en.redEyes=remoteState.redEyes;
+  if(remoteState.skullHelmet!=null) en.skullHelmet=remoteState.skullHelmet;
   if(remoteState.shieldTimer!=null) en.shieldTimer=remoteState.shieldTimer;
   if(remoteState.arcaneShield!=null) en.arcaneShield=remoteState.arcaneShield;
   if(remoteState.arcaneShieldHits!=null) en.arcaneShieldHits=remoteState.arcaneShieldHits;
@@ -3712,7 +3719,52 @@ function draw(gs) {
       });
       gctx.restore();
     }
-    // War Cry buff - glowing red head and eyes
+    // Skull helmet cosmetic (200 PvP wins reward)
+    if(p.isMe&&hasSkullHelmet()||(!p.isMe&&p.skullHelmet)){
+      var skPulse=0.7+Math.sin(Date.now()*0.009)*0.3;
+      gctx.save();
+      gctx.translate(p.x,p.y-24);
+      if(p.dir!==2)gctx.scale(-1,1);
+      var SK=S; // use same scale as sprite
+      // Skull cap - bone white base
+      gctx.fillStyle='#d8d0c0';
+      gctx.fillRect(-4*SK,-8*SK,8*SK,6*SK); // top of skull
+      gctx.fillRect(-3*SK,-9*SK,6*SK,SK);   // crown
+      gctx.fillRect(-5*SK,-6*SK,SK,4*SK);   // left side
+      gctx.fillRect(4*SK,-6*SK,SK,4*SK);    // right side
+      // Jaw/cheekbones
+      gctx.fillStyle='#c8c0b0';
+      gctx.fillRect(-4*SK,-3*SK,8*SK,2*SK); // jaw base
+      gctx.fillRect(-5*SK,-7*SK,SK,2*SK);   // left cheek
+      gctx.fillRect(4*SK,-7*SK,SK,2*SK);    // right cheek
+      // Dark eye sockets
+      gctx.fillStyle='#1a0505';
+      gctx.fillRect(-4*SK,-7*SK,3*SK,3*SK); // left socket
+      gctx.fillRect(SK,-7*SK,3*SK,3*SK);    // right socket
+      // Glowing red eyes in sockets
+      gctx.fillStyle='rgba(255,0,0,'+skPulse+')';
+      gctx.fillRect(-3*SK,-6*SK,SK,SK);     // left eye
+      gctx.fillRect(2*SK,-6*SK,SK,SK);      // right eye
+      // Eye glow
+      gctx.fillStyle='rgba(255,60,0,'+(skPulse*0.4)+')';
+      gctx.fillRect(-4*SK,-7*SK,3*SK,3*SK);
+      gctx.fillRect(SK,-7*SK,3*SK,3*SK);
+      // Nose cavity
+      gctx.fillStyle='#2a1010';
+      gctx.fillRect(-SK,-5*SK,2*SK,SK);
+      // Teeth
+      gctx.fillStyle='#d0c8b8';
+      gctx.fillRect(-3*SK,-3*SK,SK,2*SK);
+      gctx.fillRect(-SK,-3*SK,SK,2*SK);
+      gctx.fillRect(SK,-3*SK,SK,2*SK);
+      gctx.fillRect(3*SK,-3*SK,SK,2*SK);
+      // Tooth gaps (dark)
+      gctx.fillStyle='#111';
+      gctx.fillRect(-2*SK,-3*SK,SK,2*SK);
+      gctx.fillRect(0,-3*SK,SK,2*SK);
+      gctx.fillRect(2*SK,-3*SK,SK,2*SK);
+      gctx.restore();
+    }
     if(p.cls==='warrior'&&p.warCryBuff>0){
       var wcRatio=Math.min(1,p.warCryBuff/3000);
       var wcPulse=0.5+Math.sin(Date.now()*0.012)*0.5;
@@ -3744,7 +3796,7 @@ function draw(gs) {
       var stealthMax=(CLS.ranger.s2&&CLS.ranger.s2.stealthDur)||7000;
       stealthRatio=Math.min(1,stealthRatio);
       var stealthRatio=Math.min(1,p.stealthTimer/stealthMax);
-      var sbW=48,sbX=p.x-24,sbY=p.y-72;
+      var sbW=48,sbX=p.x-24,sbY=p.y-88;
       gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(sbX,sbY,sbW,5);
       // Color shifts red as timer drains
       var sr=Math.floor(80+175*(1-stealthRatio)),sg2=Math.floor(200*stealthRatio),sb2=Math.floor(80+120*stealthRatio);
@@ -3760,7 +3812,7 @@ function draw(gs) {
     if(p.cls==='mage'&&p.fireballCharging&&p.fireballCharge>0){
       gctx.globalAlpha=1;
       var chargeRatio=p.fireballCharge/1500;
-      var barW=48,barX=p.x-24,barY=p.y-72;
+      var barW=48,barX=p.x-24,barY=p.y-88;
       gctx.fillStyle='rgba(0,0,0,0.5)';gctx.fillRect(barX,barY,barW,5);
       var segW=14,segGap=3;
       for(var ci=0;ci<3;ci++){
@@ -4358,7 +4410,7 @@ function pushState(me) {
     moving:me.moving,hp:Math.round(me.hp),attacking:me.attacking>0?1:0,
     stunned:Math.round(Math.max(0,me.stunned)),
     hitFlash:me.hitFlash>0?1:0,dead:me.dead,wins:me.wins,
-    stealthed:me.stealthed||false,redEyes:hasRedEyes(me.cls),shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
+    stealthed:me.stealthed||false,redEyes:hasRedEyes(me.cls),skullHelmet:hasSkullHelmet(),shieldHp:Math.round(me.shieldHp||0),shieldTimer:Math.round(me.shieldTimer||0),arcaneShield:Math.round(me.arcaneShield||0),arcaneShieldHits:me.arcaneShieldHits||0,frostSlow:Math.round(me.frostSlow||0),
     moveCd:Math.round(me.moveCd||0),level:me.level||1,cls:me.cls,
     warCryBuff:Math.round(me.warCryBuff||0),warCryShake:Math.round(me.warCryShake||0),
     fireballCharging:me.fireballCharging||false,fireballCharge:Math.round(me.fireballCharge||0),
@@ -5413,7 +5465,7 @@ document.getElementById('setup-confirm').addEventListener('click',function(){
       esGuest=fbListen('/rooms/'+roomCode+'/guest',function(data){
         if(!data)return;
         enemyNamePvp=data.name;enemyClsPvp=data.cls;enemyIdPvp=data.id;
-        if(gameState){var enP=gameState.players.find(function(p){return !p.isMe;});if(enP){enP.redEyes=data.redEyes||false;}}
+        if(gameState){var enP=gameState.players.find(function(p){return !p.isMe;});if(enP){enP.redEyes=data.redEyes||false;enP.skullHelmet=data.skullHelmet||false;}}
         document.getElementById('lob-status').textContent=data.name+' joined! Start when ready.';
         updateLobbyPlayers([{name:myName,you:true},{name:data.name}]);
         document.getElementById('lob-start').style.display='block';
@@ -5520,8 +5572,7 @@ function launchTraining(continuing) {
   var aiClass=aiCls[Math.floor(Math.random()*aiCls.length)];
   // Random armor level for AI (0-99 so we see different tiers)
   var aiLevel=Math.floor(Math.random()*100)+1;
-  var aiNames=['Shadow','Specter','Shade','Ghost','Phantom','Wraith'];
-  var aiName=aiNames[Math.floor(Math.random()*aiNames.length)];
+  var aiName='SHADOW';
   var en=mkPlayer('ai',aiClass,aiName,trainSwap?arena.sp1:arena.sp2,false);
   en.level=aiLevel; // random tier appearance
   gameState=mkGS(ak,me,en);gameMode='training';
@@ -6238,6 +6289,24 @@ function getGamesPlayed(cls){var d=getClassData(cls);return d.games||0;}
 function incrementGamesPlayed(cls){var d=getClassData(cls);d.games=(d.games||0)+1;saveClassData(cls,d);return d.games;}
 function getGamesWon(cls){var d=getClassData(cls);return d.wins||0;}
 function incrementGamesWon(cls){var d=getClassData(cls);d.wins=(d.wins||0)+1;saveClassData(cls,d);return d.wins;}
+// Total PvP wins across all classes
+function getTotalPvPWins(){
+  return getGamesWon('warrior')+getGamesWon('mage')+getGamesWon('ranger');
+}
+function hasSkullHelmet(){
+  try{return localStorage.getItem('eldara_skull_helmet')==='true';}catch(e){return false;}
+}
+function setSkullHelmet(val){
+  try{localStorage.setItem('eldara_skull_helmet',val?'true':'false');}catch(e){}
+  if(authUid&&!isGuest)fbSet('/users/'+authUid+'/skullHelmet',val);
+}
+function toggleSkullHelmet(){
+  var next=!hasSkullHelmet();
+  setSkullHelmet(next);
+  // Mutually exclusive with red eyes - unequip red eyes when wearing skull helmet
+  if(next){['warrior','mage','ranger'].forEach(function(c){setRedEyes(c,false);});}
+  renderAchievements(currentAchTab||'all');
+}
 function getRedEyePos(cls,level){
   // Returns array of [gridX,gridY] for eye pixels (relative to sprite center)
   if(cls==='warrior'){
@@ -6283,7 +6352,13 @@ function hasRedEyes(cls){
   return d.redEyes===true;
 }
 var currentAchTab='all';
-function toggleRedEyes(cls){setRedEyes(cls,!hasRedEyes(cls));renderAchievements(currentAchTab||'all');}
+function toggleRedEyes(cls){
+  var next=!hasRedEyes(cls);
+  setRedEyes(cls,next);
+  // Mutually exclusive with skull helmet
+  if(next){setSkullHelmet(false);}
+  renderAchievements(currentAchTab||'all');
+}
 function setRedEyes(cls,val){
   var d=getClassData(cls);
   d.redEyes=val;
@@ -6711,6 +6786,7 @@ var ACHIEVEMENTS = [
   {id:'kw',cls:'warrior',tier:0,name:'Warlord Fury',desc:'Kill 100 players as Warrior - Red Eyes unlocked',icon:'\u2694',req:function(){return getPvPKills('warrior')>=100;},levelReq:0,killAch:true,killCls:'warrior'},
   {id:'km',cls:'mage',tier:0,name:'Blood Mage',desc:'Kill 100 players as Mage - Red Eyes unlocked',icon:'\u2728',req:function(){return getPvPKills('mage')>=100;},levelReq:0,killAch:true,killCls:'mage'},
   {id:'kr',cls:'ranger',tier:0,name:'Phantom Reaper',desc:'Kill 100 players as Rogue - Red Eyes unlocked',icon:'\u2020',req:function(){return getPvPKills('ranger')>=100;},levelReq:0,killAch:true,killCls:'ranger'},
+  {id:'g_skull',cls:'general',tier:0,name:'Deathless',desc:'Win 200 PvP matches total - Skull Helmet unlocked',icon:'\uD83D\uDC80',req:function(){return getTotalPvPWins()>=200;},levelReq:0,skullAch:true},
   // GENERAL
   {id:'g_first',cls:'general',tier:0,name:'First Blood',desc:'Win your first match',icon:'\u2605',req:function(){var d=getClassData('warrior');var d2=getClassData('mage');var d3=getClassData('ranger');return (d.xp||0)+(d2.xp||0)+(d3.xp||0)>0||getLevel('warrior')>1||getLevel('mage')>1||getLevel('ranger')>1;},levelReq:0},
   {id:'g_gm_kill',cls:'general',tier:0,name:'I Killed a GM!',desc:'There is no way I will get banned now, right?',icon:'\uD83D\uDC51',hidden:true,
@@ -6723,7 +6799,8 @@ var ACHIEVEMENTS = [
   {id:'t_ghost',cls:'general',tier:0,name:'Ghost',desc:'Win 20 PvP matches as Rogue where every kill was a Stealth first-hit',icon:'\uD83D\uDC7B',req:function(){return _ghostKills>=20;},levelReq:0,isTitle:true},
   {id:'t_master',cls:'general',tier:0,name:'Master',desc:'Reach 1600 rating in PvP',icon:'\u2694',req:function(){return myRating>=1600;},levelReq:0,isTitle:true},
   {id:'t_legend',cls:'general',tier:0,name:'Grandmaster',desc:'Reach 2000 rating in PvP',icon:'\uD83C\uDF1F',req:function(){return myRating>=2000;},levelReq:0,isTitle:true},
-  {id:'t_eternal',cls:'general',tier:0,name:'The Eternal',desc:'Hold #1 on the PvP leaderboard',icon:'\uD83D\uDC51',req:function(){return leaderboardData.length>0&&leaderboardData[0].uid===authUid;},levelReq:0,isTitle:true,hidden:false},
+  // t_eternal removed - will return at season end
+  {id:'t_eternal',cls:'general',tier:0,name:'The Eternal',desc:'Awarded to the #1 PvP leaderboard holder at the end of the season.',icon:'\uD83D\uDC51',req:function(){return _hasEternal===true;},levelReq:0,isTitle:true,hidden:false},
   {id:'g_pvp',cls:'general',tier:0,name:'Challenger',desc:'Play your first PvP match',icon:'\u2605',req:function(){var s=localStorage.getItem('eldara_pvp_played');return (s&&parseInt(s)>0)||(_pvpPlayedFirebase>0);},levelReq:0},
   {id:'g_veteran',cls:'general',tier:0,name:'Veteran',desc:'Reach Lv.30 on any class',icon:'\u2605',req:function(){return getLevel('warrior')>=30||getLevel('mage')>=30||getLevel('ranger')>=30;},levelReq:0},
   {id:'g_master',cls:'general',tier:0,name:'Master of Arms',desc:'Reach Lv.30 on all three classes',icon:'\u2605',req:function(){return getLevel('warrior')>=30&&getLevel('mage')>=30&&getLevel('ranger')>=30;},levelReq:0},
@@ -6759,10 +6836,18 @@ function buildAchCard(ach){
       progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+kills+' / 100 PvP kills</div>';
     }
   }
+  if(ach.skullAch&&!earned){
+    var totalW=getTotalPvPWins();
+    progressStr='<div style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px">'+totalW+' / 200 PvP wins</div>';
+  }
   var wearBtn='';
   if(ach.killAch&&earned){
     var wearing=hasRedEyes(ach.killCls);
     wearBtn='<button class="wear-eyes-btn" data-cls="'+ach.killCls+'" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearing?'#e74c3c':'var(--gold)')+';color:'+(wearing?'#e74c3c':'var(--gold)')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearing?'TAKE OFF':'WEAR')+'</button>';
+  }
+  if(ach.skullAch&&earned){
+    var wearingSk=hasSkullHelmet();
+    wearBtn='<button class="wear-skull-btn" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid '+(wearingSk?'#e74c3c':'#aaaaaa')+';color:'+(wearingSk?'#e74c3c':'#aaaaaa')+';font-family:Courier New,monospace;font-size:10px;letter-spacing:1px;cursor:pointer">'+(wearingSk?'REMOVE HELM':'WEAR HELM')+'</button>';
   }
   if(ach.isCrown&&earned){
     var wearingCrown=hasCrown();
@@ -6806,6 +6891,9 @@ function renderAchievements(tab){
     btn.addEventListener('click',function(){
       toggleRedEyes(btn.dataset.cls);
     });
+  });
+  list.querySelectorAll('.wear-skull-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){toggleSkullHelmet();});
   });
   list.querySelectorAll('.wear-crown-btn').forEach(function(btn){
     btn.addEventListener('click',function(){toggleCrown();});
