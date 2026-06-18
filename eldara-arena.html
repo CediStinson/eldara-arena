@@ -471,6 +471,8 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 
 <div id="debug-panel" style="display:none">DEBUG</div>
 </div>
+<!-- debug-log outside all screens so it always shows errors -->
+<div id="debug-log" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(180,0,0,0.92);color:#fff;font-family:'Courier New',monospace;font-size:11px;padding:8px 14px;z-index:99999;max-width:90vw;word-break:break-all;border-radius:3px;text-align:center"></div>
 
 <script>
 (function(){
@@ -4735,6 +4737,13 @@ function cleanupFB() {
 
 function genCode(){return Math.random().toString(36).substring(2,8).toUpperCase();}
 
+var _loopId=null;
+function startMainLoop(){
+  if(_loopId)cancelAnimationFrame(_loopId);
+  lastTs=performance.now();
+  _loopId=requestAnimationFrame(mainLoop);
+}
+
 // ===========================================
 // MAIN LOOP
 // ===========================================
@@ -4750,7 +4759,7 @@ function mainLoop(ts) {
       if(dbg2){dbg2.style.display='block';dbg2.textContent='DRAW ERR: '+e.message;}
     }
   }
-  requestAnimationFrame(mainLoop);
+  _loopId=requestAnimationFrame(mainLoop);
 }
 
 // ===========================================
@@ -5625,13 +5634,21 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('sp-myname').textContent=myName||'Player';
   document.getElementById('sp-enname').textContent=enName||'Opponent';
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
-  showScreen('game-screen');hideOverlay();
-  resizeCanvas();
-  setTimeout(function(){resizeCanvas();},50);
+  // Force all screens hidden, show game-screen directly
+  document.querySelectorAll('.screen').forEach(function(s){s.style.display='none';s.classList.remove('active');});
+  var gsEl2=document.getElementById('game-screen');
+  gsEl2.style.display='flex';gsEl2.classList.add('active');
+  ['loading-screen','setup-screen','train-overlay','ach-overlay','settings-overlay','leaderboard-overlay'].forEach(function(oid){var oe=document.getElementById(oid);if(oe)oe.style.display='none';});
+  hideOverlay();
+  canvas=document.getElementById('arena-canvas');
+  CW=window.innerWidth||800;CH=window.innerHeight||600;
+  canvas.width=CW;canvas.height=CH;
+  gctx=canvas.getContext('2d');gctx.imageSmoothingEnabled=false;
   startListeningEnemy(enId);startListeningActions();
 
   updateProfileBadge();
   updateHUD(gameState);showBanner('Get Ready!');
+  startMainLoop(); // ensure animation loop is running
   // Track PvP games played
   try{var pvpN=parseInt(localStorage.getItem('eldara_pvp_played')||'0')+1;localStorage.setItem('eldara_pvp_played',pvpN);}catch(e){}
   // Also save to Firebase so it persists across devices
@@ -5658,10 +5675,21 @@ function launchTraining(continuing) {
   gameState=mkGS(ak,me,en);gameMode='training';
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   document.getElementById('conn-bar').textContent='TRAINING';
-  showScreen('game-screen');hideOverlay();
-  resizeCanvas();
-  setTimeout(function(){resizeCanvas();updateHUD(gameState);},50);
+  // Force all screens hidden, then directly show game-screen
+  document.querySelectorAll('.screen').forEach(function(s){s.style.display='none';s.classList.remove('active');});
+  var gsEl=document.getElementById('game-screen');
+  gsEl.style.display='flex';gsEl.classList.add('active');
+  // Hide all overlays
+  ['loading-screen','setup-screen','train-overlay','ach-overlay','settings-overlay','leaderboard-overlay'].forEach(function(oid){var oe=document.getElementById(oid);if(oe)oe.style.display='none';});
+  hideOverlay();
+  // Ensure canvas has valid dimensions
+  canvas=document.getElementById('arena-canvas');
+  CW=window.innerWidth||800;CH=window.innerHeight||600;
+  canvas.width=CW;canvas.height=CH;
+  gctx=canvas.getContext('2d');gctx.imageSmoothingEnabled=false;
+  updateHUD(gameState);
   var xpW2=document.getElementById('ingame-xp-wrap');if(xpW2)xpW2.style.display='flex';
+  startMainLoop(); // ensure animation loop is running
   // First game gets pregame timer; subsequent games start immediately
   if(continuing){
     gameState.phase='fighting';
@@ -7284,7 +7312,7 @@ showScreen = function(id) {
 })();
 
 resizeCanvas();
-requestAnimationFrame(mainLoop);
+startMainLoop();
 
 })();
 </script>
