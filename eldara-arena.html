@@ -637,7 +637,10 @@ function loadUserProfile() {
       }
       checkNewAchievements();
     },500);
-  }).catch(function() {
+  }).catch(function(reason) {
+    var ld=document.getElementById('loading-screen');
+    if(ld){ld.style.opacity='0';document.body.classList.remove('loading');setTimeout(function(){ld.style.display='none';},650);}
+    if(reason==='invalid_token')return; // already navigated to auth-screen
     if(!gameState)showScreen('title-screen');
     registerOnline();
   });
