@@ -236,7 +236,10 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   </div>
   <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
   <button id="btn-settings" style="position:absolute;top:46px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Settings">SETTINGS</button>
-  <!-- Achievements overlay -->
+</div>
+<!-- END title-screen -->
+
+<!-- Achievements overlay -->
   <div id="ach-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:85;flex-direction:column;font-family:Courier New,monospace">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border)">
       <div style="font-size:18px;letter-spacing:5px;color:var(--gold)">ACHIEVEMENTS</div>
@@ -4884,14 +4887,7 @@ document.addEventListener('keyup',function(e){
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
-  // Hide all fixed overlays when navigating
-  ['setup-screen','train-overlay','ach-overlay','settings-overlay','leaderboard-overlay'].forEach(function(oid){
-    var oel=document.getElementById(oid);if(oel)oel.style.display='none';
-  });
-  // Always hide loading screen when entering any screen
-  var ld=document.getElementById('loading-screen');
-  if(ld&&ld.style.display!=='none'){ld.style.opacity='0';ld.style.display='none';}
-  // Mobile controls
+  document.getElementById('setup-screen').style.display='none';
   showMobileControls(id==='game-screen'&&_isMobile);
   if(id==='title-screen'){
     footDust=[];hitNumbers=[];_footStepCounter=0;
@@ -5634,21 +5630,14 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('sp-myname').textContent=myName||'Player';
   document.getElementById('sp-enname').textContent=enName||'Opponent';
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
-  // Force all screens hidden, show game-screen directly
-  document.querySelectorAll('.screen').forEach(function(s){s.style.display='none';s.classList.remove('active');});
-  var gsEl2=document.getElementById('game-screen');
-  gsEl2.style.display='flex';gsEl2.classList.add('active');
-  ['loading-screen','setup-screen','train-overlay','ach-overlay','settings-overlay','leaderboard-overlay'].forEach(function(oid){var oe=document.getElementById(oid);if(oe)oe.style.display='none';});
-  hideOverlay();
-  canvas=document.getElementById('arena-canvas');
-  CW=window.innerWidth||800;CH=window.innerHeight||600;
-  canvas.width=CW;canvas.height=CH;
-  gctx=canvas.getContext('2d');gctx.imageSmoothingEnabled=false;
+  showScreen('game-screen');hideOverlay();resizeCanvas();
   startListeningEnemy(enId);startListeningActions();
 
   updateProfileBadge();
   updateHUD(gameState);showBanner('Get Ready!');
-  startMainLoop(); // ensure animation loop is running
+  startMainLoop();
+  // Hide loading screen in case it's still showing
+  var ld2=document.getElementById('loading-screen');if(ld2)ld2.style.display='none';
   // Track PvP games played
   try{var pvpN=parseInt(localStorage.getItem('eldara_pvp_played')||'0')+1;localStorage.setItem('eldara_pvp_played',pvpN);}catch(e){}
   // Also save to Firebase so it persists across devices
@@ -5675,21 +5664,11 @@ function launchTraining(continuing) {
   gameState=mkGS(ak,me,en);gameMode='training';
   myName=(!isGuest&&displayName)?displayName:CLS[myClass].name.toUpperCase();
   document.getElementById('conn-bar').textContent='TRAINING';
-  // Force all screens hidden, then directly show game-screen
-  document.querySelectorAll('.screen').forEach(function(s){s.style.display='none';s.classList.remove('active');});
-  var gsEl=document.getElementById('game-screen');
-  gsEl.style.display='flex';gsEl.classList.add('active');
-  // Hide all overlays
-  ['loading-screen','setup-screen','train-overlay','ach-overlay','settings-overlay','leaderboard-overlay'].forEach(function(oid){var oe=document.getElementById(oid);if(oe)oe.style.display='none';});
-  hideOverlay();
-  // Ensure canvas has valid dimensions
-  canvas=document.getElementById('arena-canvas');
-  CW=window.innerWidth||800;CH=window.innerHeight||600;
-  canvas.width=CW;canvas.height=CH;
-  gctx=canvas.getContext('2d');gctx.imageSmoothingEnabled=false;
-  updateHUD(gameState);
+  showScreen('game-screen');hideOverlay();resizeCanvas();updateHUD(gameState);
   var xpW2=document.getElementById('ingame-xp-wrap');if(xpW2)xpW2.style.display='flex';
-  startMainLoop(); // ensure animation loop is running
+  startMainLoop();
+  // Hide loading screen in case it's still showing
+  var ld2=document.getElementById('loading-screen');if(ld2)ld2.style.display='none';
   // First game gets pregame timer; subsequent games start immediately
   if(continuing){
     gameState.phase='fighting';
