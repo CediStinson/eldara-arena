@@ -4514,23 +4514,101 @@ function pushState(me) {
 function pushAction(type,data) {
   dbg('SEND '+type+' to '+enemyIdPvp.slice(0,8));
   if(!enemyIdPvp){dbg('ERROR: enemyIdPvp empty!');return;}
-  fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:type,from:myId,data:data||{},ts:Date.now()});
+  var msg={type:type,from:myId,data:data||{},ts:Date.now()};
+  if(_ws&&_wsReady&&_ws.readyState===WebSocket.OPEN){
+    _ws.send(JSON.stringify({type:'action',data:msg}));
+  } else {
+    fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,msg);
+  }
 }
 
 
 function startListeningEnemy(enemyId) {
   esEnemy=fbListen('/rooms/'+roomCode+'/players/'+enemyId,function(data){
     if(!data)return;
-    remoteState=data;
-    // Push position snapshot to interpolation buffer
-    if(data.x!=null&&data.y!=null){
-      var now=Date.now();
-      _enPosBuffer.push({t:now,x:data.x,y:data.y,dir:data.dir,anim:data.anim,moving:data.moving});
-      // Keep only last 600ms of snapshots
-      var cutoff=now-600;
-      while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
+    // Firebase state: apply non-position fields only (position comes from WS)
+    if(!_wsReady){
+      remoteState=data;
+      if(data.x!=null&&data.y!=null){
+        var now=Date.now();
+        _enPosBuffer.push({t:now,x:data.x,y:data.y,dir:data.dir,anim:data.anim,moving:data.moving});
+        var cutoff=now-600;
+        while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
+      }
+    } else {
+      // WS is handling position - only copy non-position fields from Firebase
+      if(data.hp!=null&&remoteState)remoteState.hp=data.hp;
     }
   });
+}
+
+// === WebSocket layer ===
+function connectGameWS(){
+  if(!roomCode||!myId)return;
+  var role=iAmHost?'host':'guest';
+  try{ _ws=new WebSocket(WS_SERVER); }
+  catch(e){ console.warn('WS unavailable, using Firebase only'); return; }
+
+  _ws.onopen=function(){
+    _ws.send(JSON.stringify({type:'join',roomCode:roomCode,playerId:myId,role:role}));
+    _wsPingTimer=setInterval(function(){
+      if(_ws&&_ws.readyState===WebSocket.OPEN)
+        _ws.send(JSON.stringify({type:'ping',ts:Date.now()}));
+    },25000);
+  };
+
+  _ws.onmessage=function(e){
+    try{
+      var msg=JSON.parse(e.data);
+      if(msg.type==='ready'){
+        _wsReady=true;
+        sidelog('WS','Connected — high-frequency sync active');
+      } else if(msg.type==='state'){
+        if(!msg.data)return;
+        // Merge into remoteState (WS handles position; Firebase handles events)
+        if(!remoteState)remoteState={};
+        Object.assign(remoteState,msg.data);
+        if(msg.data.x!=null&&msg.data.y!=null){
+          var now=Date.now();
+          _enPosBuffer.push({t:now,x:msg.data.x,y:msg.data.y,
+            dir:msg.data.dir,anim:msg.data.anim,moving:msg.data.moving});
+          var cutoff=now-600;
+          while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
+        }
+      } else if(msg.type==='action'){
+        if(gameState){
+          var meW=gameState.players.find(function(p){return p.isMe;});
+          var enW=gameState.players.find(function(p){return !p.isMe;});
+          if(meW&&enW)processAction(msg.data,gameState,meW,enW);
+        }
+      } else if(msg.type==='opponent_left'){
+        _wsOpponentLeft();
+      }
+    }catch(ex){}
+  };
+
+  _ws.onclose=function(){
+    _wsReady=false;
+    clearInterval(_wsPingTimer);_wsPingTimer=null;
+    _wsOpponentLeft();
+  };
+  _ws.onerror=function(){ _wsReady=false; };
+}
+
+function _wsOpponentLeft(){
+  if(!gameState||gameMode!=='pvp')return;
+  var meW2=gameState.players.find(function(p){return p.isMe;});
+  if(meW2&&gameState.phase!=='gameOver')awardMatchXP(meW2.cls,true,true);
+  pvpRematchReady=false;opponentRematchReady=false;
+  hideOverlay();gameState=null;cleanupFB();
+  showScreen('title-screen');
+}
+
+function disconnectGameWS(){
+  _wsReady=false;
+  clearInterval(_wsPingTimer);_wsPingTimer=null;
+  _enPosBuffer=[];
+  if(_ws){try{_ws.close();}catch(e){}_ws=null;}
 }
 
 function dbg(msg) {}
@@ -4774,6 +4852,7 @@ function startListeningLobbyChat() {
 
 function cleanupFB() {
   _enPosBuffer=[];remoteState=null;
+  disconnectGameWS();
   footDust=[];hitNumbers=[];_footStepCounter=0;
   if(actionPollInterval){clearInterval(actionPollInterval);actionPollInterval=null;}
   if(esEnemy){try{esEnemy();}catch(e){}esEnemy=null;}
@@ -4789,6 +4868,8 @@ function cleanupFB() {
 function genCode(){return Math.random().toString(36).substring(2,8).toUpperCase();}
 
 var _loopId=null;
+var _ws=null,_wsReady=false,_wsPingTimer=null,_wsStateTick=0;
+var WS_SERVER='wss://eldara-arena-production.up.railway.app'; // Railway WS server
 function startMainLoop(){
   if(_loopId)cancelAnimationFrame(_loopId);
   lastTs=performance.now();
@@ -4808,6 +4889,26 @@ function mainLoop(ts) {
     try{draw(gameState);}catch(e){
       var dbg2=document.getElementById('debug-log');
       if(dbg2){dbg2.style.display='block';dbg2.textContent='DRAW ERR: '+e.message;}
+    }
+    // High-frequency position push over WebSocket (30fps = every 2 frames)
+    if(gameMode==='pvp'&&_ws&&_wsReady&&_ws.readyState===WebSocket.OPEN){
+      _wsStateTick++;
+      if(_wsStateTick%2===0){
+        var meWS=gameState.players.find(function(p){return p.isMe;});
+        if(meWS){
+          _ws.send(JSON.stringify({type:'state',data:{
+            x:Math.round(meWS.x),y:Math.round(meWS.y),
+            dir:meWS.dir,anim:Math.round(meWS.anim*10)/10,
+            moving:!!meWS.moving,hp:Math.round(meWS.hp),
+            dead:!!meWS.dead,stealthed:!!meWS.stealthed,
+            attacking:meWS.attacking||0,stunned:meWS.stunned||0,
+            warCryBuff:meWS.warCryBuff||0,
+            fireballCharging:!!meWS.fireballCharging,
+            fireballCharge:Math.round(meWS.fireballCharge||0),
+            frosted:!!meWS.frosted,frostSlow:meWS.frostSlow||0
+          }}));
+        }
+      }
     }
   }
   _loopId=requestAnimationFrame(mainLoop);
@@ -5679,6 +5780,7 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('sp-enname').textContent=enName||'Opponent';
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
   showScreen('game-screen');hideOverlay();resizeCanvas();
+  connectGameWS(); // high-frequency position sync over WebSocket
   startListeningEnemy(enId);startListeningActions();
 
   updateProfileBadge();
