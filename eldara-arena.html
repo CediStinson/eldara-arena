@@ -4545,58 +4545,81 @@ function startListeningEnemy(enemyId) {
 // === WebSocket layer ===
 function connectGameWS(){
   if(!roomCode||!myId)return;
+  // Close any existing connection first
+  disconnectGameWS();
   var role=iAmHost?'host':'guest';
-  try{ _ws=new WebSocket(WS_SERVER); }
-  catch(e){ console.warn('WS unavailable, using Firebase only'); return; }
+  var attempts=0;
+  var maxAttempts=3;
 
-  _ws.onopen=function(){
-    _ws.send(JSON.stringify({type:'join',roomCode:roomCode,playerId:myId,role:role}));
-    _wsPingTimer=setInterval(function(){
-      if(_ws&&_ws.readyState===WebSocket.OPEN)
-        _ws.send(JSON.stringify({type:'ping',ts:Date.now()}));
-    },25000);
-  };
+  function tryConnect(){
+    if(attempts>=maxAttempts){
+      sidelog('WS','Using Firebase only');
+      return;
+    }
+    attempts++;
+    try{ _ws=new WebSocket(WS_SERVER); }
+    catch(e){ return; }
 
-  _ws.onmessage=function(e){
-    try{
-      var msg=JSON.parse(e.data);
-      if(msg.type==='ready'){
-        _wsReady=true;
-        sidelog('WS','Connected — high-frequency sync active');
-      } else if(msg.type==='state'){
-        if(!msg.data)return;
-        // Merge into remoteState (WS handles position; Firebase handles events)
-        if(!remoteState)remoteState={};
-        Object.assign(remoteState,msg.data);
-        if(msg.data.x!=null&&msg.data.y!=null){
-          var now=Date.now();
-          _enPosBuffer.push({t:now,x:msg.data.x,y:msg.data.y,
-            dir:msg.data.dir,anim:msg.data.anim,moving:msg.data.moving});
-          var cutoff=now-600;
-          while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
+    var connectTimeout=setTimeout(function(){
+      if(!_wsReady&&_ws){try{_ws.close();}catch(e){}}
+    },5000); // give up after 5s per attempt
+
+    _ws.onopen=function(){
+      clearTimeout(connectTimeout);
+      _ws.send(JSON.stringify({type:'join',roomCode:roomCode,playerId:myId,role:role}));
+      _wsPingTimer=setInterval(function(){
+        if(_ws&&_ws.readyState===WebSocket.OPEN)
+          _ws.send(JSON.stringify({type:'ping',ts:Date.now()}));
+      },25000);
+    };
+
+    _ws.onmessage=function(e){
+      try{
+        var msg=JSON.parse(e.data);
+        if(msg.type==='ready'){
+          _wsReady=true;
+          attempts=0; // reset for future reconnects
+          sidelog('WS','Connected — high-frequency sync active');
+        } else if(msg.type==='state'){
+          if(!msg.data)return;
+          if(!remoteState)remoteState={};
+          Object.assign(remoteState,msg.data);
+          if(msg.data.x!=null&&msg.data.y!=null){
+            var now=Date.now();
+            _enPosBuffer.push({t:now,x:msg.data.x,y:msg.data.y,
+              dir:msg.data.dir,anim:msg.data.anim,moving:msg.data.moving});
+            var cutoff=now-600;
+            while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
+          }
+        } else if(msg.type==='action'){
+          if(gameState){
+            var meW=gameState.players.find(function(p){return p.isMe;});
+            var enW=gameState.players.find(function(p){return !p.isMe;});
+            if(meW&&enW)processAction(msg.data,gameState,meW,enW);
+          }
+        } else if(msg.type==='opponent_left'){
+          _wsOpponentLeft();
         }
-      } else if(msg.type==='action'){
-        if(gameState){
-          var meW=gameState.players.find(function(p){return p.isMe;});
-          var enW=gameState.players.find(function(p){return !p.isMe;});
-          if(meW&&enW)processAction(msg.data,gameState,meW,enW);
-        }
-      } else if(msg.type==='opponent_left'){
-        // Only treat as opponent leaving if explicitly told so by server
-        _wsOpponentLeft();
+      }catch(ex){}
+    };
+
+    _ws.onclose=function(){
+      clearTimeout(connectTimeout);
+      _wsReady=false;
+      clearInterval(_wsPingTimer);_wsPingTimer=null;
+      if(!gameState||gameMode!=='pvp')return;
+      // Retry connection if game still running and under max attempts
+      if(attempts<maxAttempts){
+        sidelog('WS','Retrying connection... ('+attempts+'/'+maxAttempts+')');
+        setTimeout(tryConnect,2000);
+      } else {
+        sidelog('WS','Using Firebase only');
       }
-    }catch(ex){}
-  };
+    };
+    _ws.onerror=function(){ _wsReady=false; };
+  }
 
-  _ws.onclose=function(){
-    // WS closed - just disable WS, fall back to Firebase. Don't kick back to title.
-    _wsReady=false;
-    clearInterval(_wsPingTimer);_wsPingTimer=null;
-    // Only handle as disconnect if game isn't running
-    if(!gameState||gameMode!=='pvp') return;
-    sidelog('WS','Connection lost — falling back to Firebase');
-  };
-  _ws.onerror=function(){ _wsReady=false; };
+  tryConnect();
 }
 
 function _wsOpponentLeft(){
