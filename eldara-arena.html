@@ -782,15 +782,18 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
 
   // -- CAPE (tier 2+) --
   if(wT===2){
-    px(ctx,-4,2+bob,'#4a0404',8,11);
-    px(ctx,-4,2+bob,'#620606',7,9);
-    px(ctx,-3,10+bob,'#3a0404',6,4);
-    px(ctx,-5,6+bob,'#380404',2,6);
-    px(ctx,3,6+bob,'#380404',2,5);
-    // Cape edge highlight & fold detail
-    f(-4*S,(2+bob)*S,1,9*S,'#7a0808'); // left-edge lit fold
-    f(3*S+S-1,(6+bob)*S,1,5*S,'#250202'); // right-edge deep shadow
-    f(-3*S,(10+bob)*S,6*S,1,'#4a0606'); // lower cape crease line
+    // Simple dark fabric cloak — less imposing than tier 3's animal hide
+    px(ctx,-4,1+bob,'#1e1c1a',8,13);
+    px(ctx,-3,2+bob,'#282420',6,11);
+    px(ctx,-4,1+bob,'#141210',1,12);  // left deep shadow
+    px(ctx,3,2+bob,'#181614',1,10);   // right shadow
+    // Fabric fold lines
+    f(-4*S,(4+bob)*S,7*S,1,'#1c1a18');
+    f(-4*S,(8+bob)*S,7*S,1,'#1a1816');
+    f(-4*S,(12+bob)*S,6*S,1,'#181614');
+    // Bottom edge
+    f(-4*S,(13+bob)*S,7*S,1,'#141210');
+    f(-3*S,(14+bob)*S,5*S,1,'#1c1a18');
   } else if(wT>=3){
     // Animal-hide battle cloak — very dark so legs read clearly
     px(ctx,-5,-2+bob,'#1e1810',10,20);
@@ -823,58 +826,45 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
 
   // -- BODY --
   if(wT===0){
+    // Bare chest — colours consistent with face
     px(ctx,-3,0+bob,'#c09050',6,9);
-    px(ctx,-2,0+bob,'#d4a76a',4,8);
-    px(ctx,-1,2+bob,'#dab878',2,5);
-    px(ctx,-3,0+bob,'#a07030',1,9);
-    px(ctx,2,0+bob,'#a07030',1,9);
-    px(ctx,-3,8+bob,'#1a1006',6,2);
-    px(ctx,-1,8+bob,'#505050',2,1);
-    px(ctx,-3,0+bob,'#5a3a18',1,9);
-    px(ctx,-2,3+bob,'#5a3a18',1,1);
-    px(ctx,-1,5+bob,'#5a3a18',1,1);
-    px(ctx,0,7+bob,'#5a3a18',1,1);
-    px(ctx,2,0+bob,'#4a2e10',1,9);
-    px(ctx,1,3+bob,'#4a2e10',1,1);
-    px(ctx,0,5+bob,'#4a2e10',1,1);
-    px(ctx,-1,7+bob,'#4a2e10',1,1);
-    px(ctx,-3,1+bob,'#6a4a28',1,2);
-    px(ctx,2,1+bob,'#6a4a28',1,2);
-    // 1px body detail: left-edge torchlight highlight, right-edge shadow
-    f(-3*S+1,(0+bob)*S,1,9*S,'#e8c080'); // left inner-edge bright
-    f(3*S-1,(0+bob)*S,1,9*S,'#7a4820'); // right inner-edge shadow
-    // Round body top corners (shoulders)
-    f(-3*S,(0+bob)*S,2,3,'#0a0a0f'); // top-left shoulder corner
-    f(3*S-2,(0+bob)*S,2,3,'#0a0a0f'); // top-right shoulder corner
-    // Muscle definition lines
-    f(-2*S,(3+bob)*S,4*S,1,'#b88050'); // pec crease
-    f(-2*S,(5+bob)*S,4*S,1,'#b07840'); // ab crease
-    // Belt buckle glint
-    f(-1*S,(8+bob)*S,1,1,'#a0a0a0');
+    px(ctx,-2,0+bob,'#c89060',4,8);
+    px(ctx,-1,2+bob,'#c89060',2,5);   // centre highlight — same tone, not yellower
+    px(ctx,-3,0+bob,'#a06030',1,9);   // left shadow
+    px(ctx,2,0+bob,'#986030',1,9);    // right shadow
+    // Round top corners
+    f(-3*S,(0+bob)*S,2,3,'#0a0a0f');
+    f(3*S-2,(0+bob)*S,2,3,'#0a0a0f');
+    // Edge detail
+    f(-3*S+1,(0+bob)*S,1,9*S,'#c89060');
+    f(3*S-1,(0+bob)*S,1,9*S,'#906030');
+    // Muscle lines
+    f(-2*S,(3+bob)*S,4*S,1,'#b07040');
+    f(-2*S,(6+bob)*S,4*S,1,'#a86838');
+    // Two horizontal leather chest bands
+    px(ctx,-3,1+bob,'#5a3010',6,1);
+    f(-3*S+1,(1+bob)*S,1,S,'#7a4818');
+    f(2*S+S-1,(1+bob)*S,1,S,'#3a1e08');
+    px(ctx,-3,5+bob,'#5a3010',6,1);
+    f(-3*S+1,(5+bob)*S,1,S,'#7a4818');
+    f(2*S+S-1,(5+bob)*S,1,S,'#3a1e08');
+    // Belt — simple leather strap, no buckle
+    px(ctx,-3,8+bob,'#3a1c08',6,2);
+    f(-3*S,(8+bob)*S,6*S,1,'#4a2810'); // top edge slightly lighter
   } else if(wT===1){
-    px(ctx,-3,0+bob,'#585c64',6,9);
-    px(ctx,-2,0+bob,'#686c74',4,8);
-    px(ctx,-2,1+bob,'#787c84',2,5);
-    px(ctx,-3,0+bob,'#484c54',1,9);
-    px(ctx,2,0+bob,'#404450',1,9);
-    px(ctx,-3,2+bob,'#404450',6,1);
-    px(ctx,-3,4+bob,'#404450',6,1);
-    px(ctx,-3,6+bob,'#404450',6,1);
-    px(ctx,-3,8+bob,'#2a2010',6,1);
-    px(ctx,-2,8+bob,'#909090',2,1);
-    px(ctx,-3,-1+bob,'#505868',5,2);
-    px(ctx,-2,-1+bob,'#606878',3,1);
-    px(ctx,-3,-1+bob,'#404858',1,2);
-    // 1px chainmail detail: edge highlight + shadow
-    f(-3*S+1,(0+bob)*S,1,8*S,'#848890'); // left-edge gleam
-    f(3*S-1,(0+bob)*S,1,8*S,'#343840'); // right-edge dark
-    // Chain ring dots (alternating, between existing ring rows)
-    f(-3*S,(1+bob)*S,6*S,1,'#505458'); // ring row 1
-    f(-3*S,(3+bob)*S,6*S,1,'#505458'); // ring row 2
-    f(-3*S,(5+bob)*S,6*S,1,'#505458'); // ring row 3
-    f(-3*S,(7+bob)*S,6*S,1,'#505458'); // ring row 4
-    // Gorget top highlight
-    f(-3*S,(-1+bob)*S,5*S,1,'#707888');
+    // Padded leather armor — more protection than bare chest, less than plate
+    px(ctx,-3,0+bob,'#4a3010',6,9);
+    px(ctx,-2,0+bob,'#5a3c18',4,8);
+    px(ctx,-1,1+bob,'#6a4c28',2,5);
+    px(ctx,-3,0+bob,'#382008',1,9);
+    px(ctx,2,0+bob,'#301808',1,9);
+    // Leather panel seams
+    f(-3*S,(2+bob)*S,6*S,1,'#382008');
+    f(-3*S,(5+bob)*S,6*S,1,'#382008');
+    f(-3*S,(7+bob)*S,6*S,1,'#302008');
+    // Belt — matches tier 2 dark plate belt
+    px(ctx,-3,8+bob,'#1a1008',6,2);
+    px(ctx,-1,8+bob,'#606060',2,1);
   } else if(wT===2){
     px(ctx,-3,0+bob,'#2a2e36',6,9);
     px(ctx,-2,0+bob,'#3a4050',4,8);
@@ -905,105 +895,114 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-1,1+bob,'#8090a0',2,5);
     px(ctx,-3,0+bob,'#485868',1,9);
     px(ctx,2,0+bob,'#405060',1,9);
-    // Wide fur collar (overlaps shoulder, below hood)
-    px(ctx,-4,-2+bob,'#b0a090',8,3);
-    px(ctx,-3,-2+bob,'#c0b0a0',6,2);
-    px(ctx,-4,-2+bob,'#887868',1,3);
-    px(ctx,3,-2+bob,'#807060',1,2);
+    // Wide fur collar — darkened to match cloak
+    px(ctx,-4,-2+bob,'#302820',8,3);
+    px(ctx,-3,-2+bob,'#3a3028',6,2);
+    px(ctx,-4,-2+bob,'#201810',1,3);
+    px(ctx,3,-2+bob,'#1e1810',1,2);
     // Leather belt with dark outlines so upper/lower body reads clearly
     f(-3*S,(8+bob)*S-1,6*S,1,'#0a0806');  // outline ABOVE belt
     px(ctx,-3,8+bob,'#6a4820',6,2);
     px(ctx,-1,8+bob,'#c09040',2,1);
     f(-3*S,(10+bob)*S,6*S,1,'#0a0806');   // outline BELOW belt
     // Plate details
-    f(0,(1+bob)*S,1,6*S,'#90a0b0');       // center ridge
-    f(-3*S+1,(0+bob)*S,1,8*S,'#8090a0');  // left gleam
-    f(3*S-1,(0+bob)*S,1,8*S,'#384858');   // right shadow
-    // Fur collar texture
-    f(-4*S,(-2+bob)*S,8*S,1,'#c8b8a8');
-    f(-4*S,(-1+bob)*S,8*S,1,'#987868');
+    f(0,(1+bob)*S,1,6*S,'#90a0b0');
+    f(-3*S+1,(0+bob)*S,1,8*S,'#8090a0');
+    f(3*S-1,(0+bob)*S,1,8*S,'#384858');
+    // Collar texture (dark)
+    f(-4*S,(-2+bob)*S,8*S,1,'#3e3428');
+    f(-4*S,(-1+bob)*S,8*S,1,'#282018');
     // Belt buckle
     f(-1*S,(8+bob)*S,2*S,1,'#d0a040');
-    // Two horizontal leather chest bands (readable at this scale)
-    px(ctx,-3,1+bob,'#5a3010',6,1);     // upper chest band
-    f(-3*S+1,(1+bob)*S,1,S,'#7a4818');  // left highlight
-    f(2*S+S-1,(1+bob)*S,1,S,'#3a1e08'); // right shadow
-    px(ctx,-3,5+bob,'#5a3010',6,1);     // lower chest band
+    // Two horizontal leather chest bands
+    px(ctx,-3,1+bob,'#5a3010',6,1);
+    f(-3*S+1,(1+bob)*S,1,S,'#7a4818');
+    f(2*S+S-1,(1+bob)*S,1,S,'#3a1e08');
+    px(ctx,-3,5+bob,'#5a3010',6,1);
     f(-3*S+1,(5+bob)*S,1,S,'#7a4818');
     f(2*S+S-1,(5+bob)*S,1,S,'#3a1e08');
-    // Gold belt disc (simple, readable)
-    f(-1*S+1,(8+bob)*S,S+1,S,'#b88020');  // disc base
-    f(-1*S+2,(8+bob)*S+1,S-1,1,'#e0b030'); // bright centre
+    // Gold belt disc
+    f(-1*S+1,(8+bob)*S,S+1,S,'#b88020');
+    f(-1*S+2,(8+bob)*S+1,S-1,1,'#e0b030');
     // ── GRIME & SHADOW LAYER ──
-    // Armpit shadows (where arms meet body)
     f(-3*S,(0+bob)*S,1,4,'#283040');
     f(2*S+S-1,(0+bob)*S,1,4,'#202830');
-    // Vertical grime streak down armour
-    f(-2*S,(1+bob)*S,1,5*S,'#485870');  // left wear groove
-    f(1*S+S-1,(2+bob)*S,1,4*S,'#384858'); // right wear groove
-    // Horizontal grime bands (battle wear)
+    f(-2*S,(1+bob)*S,1,5*S,'#485870');
+    f(1*S+S-1,(2+bob)*S,1,4*S,'#384858');
     f(-3*S,(3+bob)*S,6*S,1,'#404e60');
-    f(-3*S,(7+bob)*S,6*S,1,'#384858');
-    // Shadow cast by belt onto lower breastplate
     f(-3*S,(7+bob)*S,6*S,2,'#283040');
-    // Dirt on collar/neck
-    f(-4*S,(-2+bob)*S,8*S,1,'#887060');  // collar grime top
-    // Fur-trimmed pauldrons
+    f(-4*S,(-2+bob)*S,8*S,1,'#201810');  // collar grime top (dark)
+    // Fur-trimmed pauldrons — darkened
     px(ctx,-5,-1+bob,'#607080',2,4);px(ctx,3,-1+bob,'#607080',2,4);
-    f(-6*S,(-1+bob)*S,S,4*S,'#b0a090');
-    f(5*S,(-1+bob)*S,S,4*S,'#b0a090');
+    f(-6*S,(-1+bob)*S,S,4*S,'#302820');
+    f(5*S,(-1+bob)*S,S,4*S,'#302820');
     f(-5*S+1,(-1+bob)*S,1,4*S,'#8090a0');
     f(4*S+S-1,(-1+bob)*S,1,4*S,'#8090a0');
   }
 
   // -- ARMS --
   if(wT===0){
-    px(ctx,-5,1+bob,'#d4a76a',2,6);px(ctx,3,1+bob,'#d4a76a',2,6);
-    px(ctx,-5,1+bob,'#c09050',1,5);px(ctx,4,1+bob,'#c09050',1,5);
-    // Arm highlight (1px inner-left edge)
-    f(-5*S+1,(1+bob)*S,1,6*S,'#e8c090'); // left arm lit
-    f(3*S+1,(1+bob)*S,1,6*S,'#e8c090'); // right arm lit
-    // Arm shadow (1px right edge)
-    f(-4*S-1,(1+bob)*S,1,6*S,'#906030'); // left arm shadow
-    f(5*S-1,(1+bob)*S,1,6*S,'#906030'); // right arm shadow
+    // Arm + visible skin hand at bottom (y=7-9 shows below sword grip)
+    px(ctx,-5,1+bob,'#a87040',2,9);px(ctx,3,1+bob,'#a87040',2,9);
+    px(ctx,-5,1+bob,'#906030',1,8);px(ctx,4,1+bob,'#906030',1,8);
+    // Knuckles/fist highlight at hand area
+    f(-5*S,(7+bob)*S,2*S,S,'#c09050');  // left hand skin
+    f(3*S,(7+bob)*S,2*S,S,'#c09050');   // right hand skin
+    f(-5*S+1,(7+bob)*S,1,S,'#d09060'); // left hand lit
+    f(3*S+1,(7+bob)*S,1,S,'#d09060'); // right hand lit
+    f(-5*S+1,(1+bob)*S,1,6*S,'#b88050');
+    f(3*S+1,(1+bob)*S,1,6*S,'#b88050');
+    f(-4*S-1,(1+bob)*S,1,9*S,'#7a4020');
+    f(5*S-1,(1+bob)*S,1,9*S,'#7a4020');
   } else if(wT===1){
-    px(ctx,-5,1+bob,'#585c64',2,7);px(ctx,3,1+bob,'#585c64',2,7);
-    px(ctx,-5,1+bob,'#686c74',1,5);
-    px(ctx,-5,4+bob,'#484c54',2,1);px(ctx,3,4+bob,'#484c54',2,1);
-    px(ctx,-5,7+bob,'#d4a76a',2,2);px(ctx,3,7+bob,'#d4a76a',2,2);
-    // Mail arm highlight
-    f(-5*S+1,(1+bob)*S,1,6*S,'#787c84');
-    f(3*S+1,(1+bob)*S,1,6*S,'#787c84');
+    // Leather bracers + bare skin hand
+    px(ctx,-5,1+bob,'#4a3010',2,7);px(ctx,3,1+bob,'#4a3010',2,7);
+    px(ctx,-5,1+bob,'#5a3c18',1,5);
+    px(ctx,-5,4+bob,'#301808',2,1);px(ctx,3,4+bob,'#301808',2,1);
+    // Skin hand visible below bracer
+    px(ctx,-5,7+bob,'#c09050',2,3);px(ctx,3,7+bob,'#c09050',2,3);
+    f(-5*S+1,(7+bob)*S,1,2*S,'#d09060'); // hand highlight
+    f(3*S+1,(7+bob)*S,1,2*S,'#d09060');
+    f(-5*S+1,(1+bob)*S,1,6*S,'#6a4828');
+    f(3*S+1,(1+bob)*S,1,6*S,'#6a4828');
   } else {
-    // Steel vambraces
+    // Steel vambraces + gauntlet hand
     px(ctx,-5,1+bob,'#607080',2,7);px(ctx,3,1+bob,'#607080',2,7);
     px(ctx,-5,1+bob,'#708090',1,5);
     px(ctx,-5,4+bob,'#485868',2,1);px(ctx,3,4+bob,'#485868',2,1);
-    // Fur cuffs at wrist
-    px(ctx,-5,7+bob,'#b0a090',2,2);px(ctx,3,7+bob,'#b0a090',2,2);
+    // Gauntlet hand — slightly lighter than vambrace so it reads
+    px(ctx,-5,7+bob,'#6a7888',2,3);px(ctx,3,7+bob,'#6a7888',2,3);
+    f(-5*S,(7+bob)*S,2*S,1,'#8090a0');  // gauntlet knuckle highlight
+    f(3*S,(7+bob)*S,2*S,1,'#8090a0');
     f(-5*S+1,(1+bob)*S,1,6*S,'#8090a0');
     f(3*S+1,(1+bob)*S,1,6*S,'#8090a0');
-    f(-5*S,(7+bob)*S,2*S,1,'#c0b0a0');
-    f(3*S,(7+bob)*S,2*S,1,'#c0b0a0');
   }
 
   // -- LEGS --
   if(wT===0){
-    px(ctx,-3,10+bob+leg,'#4a3828',2,6);px(ctx,1,10+bob-leg,'#4a3828',2,6);
-    px(ctx,-3,10+bob+leg,'#3a2818',1,5);px(ctx,2,10+bob-leg,'#3a2818',1,5);
-    // Leg crease + highlight
-    f(-3*S+1,(10+bob+leg)*S,1,5*S,'#5a4838'); // front leg left-edge lit
-    f(1*S+1,(10+bob-leg)*S,1,5*S,'#5a4838'); // back leg lit
-    f(-2*S-1,(12+bob+leg)*S,1,1,'#2e2010'); // front knee crease
-    f(2*S-1,(12+bob-leg)*S,1,1,'#2e2010'); // back knee crease
+    // Hip caps
+    f(-3*S,(10+bob)*S,2*S,2,'#2e2c30');
+    f(1*S,(10+bob)*S,2*S,2,'#2e2c30');
+    px(ctx,-3,10+bob+leg,'#2e2c30',2,6);px(ctx,1,10+bob-leg,'#2e2c30',2,6);
+    px(ctx,-3,10+bob+leg,'#262428',1,5);px(ctx,2,10+bob-leg,'#262428',1,5);
+    f(-3*S+1,(10+bob+leg)*S,1,5*S,'#3a3840');
+    f(1*S+1,(10+bob-leg)*S,1,5*S,'#3a3840');
+    f(-2*S-1,(12+bob+leg)*S,1,1,'#1e1c20');
+    f(2*S-1,(12+bob-leg)*S,1,1,'#1e1c20');
   } else if(wT===1){
-    px(ctx,-3,10+bob+leg,'#585c64',2,6);px(ctx,1,10+bob-leg,'#585c64',2,6);
-    px(ctx,-3,10+bob+leg,'#686c74',1,4);
-    px(ctx,-3,12+bob+leg,'#484c54',2,1);px(ctx,1,12+bob-leg,'#484c54',2,1);
-    f(-3*S+1,(10+bob+leg)*S,1,5*S,'#787c84');
-    f(1*S+1,(10+bob-leg)*S,1,5*S,'#787c84');
+    // Hip caps
+    f(-3*S,(10+bob)*S,2*S,2,'#3a2010');
+    f(1*S,(10+bob)*S,2*S,2,'#3a2010');
+    px(ctx,-3,10+bob+leg,'#3a2010',2,6);px(ctx,1,10+bob-leg,'#3a2010',2,6);
+    px(ctx,-3,10+bob+leg,'#4a2c18',1,4);
+    px(ctx,-3,12+bob+leg,'#281408',2,1);px(ctx,1,12+bob-leg,'#281408',2,1);
+    f(-3*S+1,(10+bob+leg)*S,1,5*S,'#5a3820');
+    f(1*S+1,(10+bob-leg)*S,1,5*S,'#5a3820');
   } else {
     // Steel plate greaves with plate kneecaps
+    // Hip caps — follow bob only (no leg offset) so legs never disconnect from body
+    f(-3*S,(10+bob)*S,2*S,2,'#607080');
+    f(1*S,(10+bob)*S,2*S,2,'#607080');
     px(ctx,-3,10+bob+leg,'#607080',2,6);px(ctx,1,10+bob-leg,'#607080',2,6);
     px(ctx,-3,10+bob+leg,'#708090',1,4);
     // Plate kneecap
@@ -1029,27 +1028,31 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     f(-1*S,(10+bob)*S,S,5*S,'#1e2430');
   }
   if(wT===0){
+    // 3 wide throughout (matches tier 2-3)
     px(ctx,-4,15+bob+leg,'#4a3828',3,3);px(ctx,1,15+bob-leg,'#4a3828',3,3);
     px(ctx,-4,17+bob+leg,'#3a2818',3,1);px(ctx,1,17+bob-leg,'#3a2818',3,1);
-    px(ctx,-4,17+bob+leg,'#1a1006',4,1);px(ctx,1,17+bob-leg,'#2a1808',4,1);
-    // Boot detail: top crease, toe highlight
-    f(-4*S,(15+bob+leg)*S,3*S,1,'#5a4030'); // boot top crease
+    px(ctx,-4,17+bob+leg,'#1a1006',3,1);px(ctx,1,17+bob-leg,'#2a1808',3,1);
+    f(-4*S,(15+bob+leg)*S,3*S,1,'#5a4030');
     f(1*S,(15+bob-leg)*S,3*S,1,'#5a4030');
-    f(-4*S+1,(17+bob+leg)*S,1,1,'#6a5040'); // left toe glint
-    f(1*S+1,(17+bob-leg)*S,1,1,'#6a5040'); // right toe glint
-    // Round boot toe corners (less blocky rectangle)
-    f(-4*S,(17+bob+leg)*S+S-2,2,2,'#0a0a0f'); // front-left toe corner
-    f(-4*S+3*S-2,(17+bob+leg)*S+S-2,2,2,'#0a0a0f'); // front-right toe corner
-    f(1*S,(17+bob-leg)*S+S-2,2,2,'#0a0a0f'); // back-left toe corner
-    f(1*S+3*S-2,(17+bob-leg)*S+S-2,2,2,'#0a0a0f'); // back-right toe corner
+    f(-4*S+1,(17+bob+leg)*S,1,1,'#6a5040');
+    f(1*S+1,(17+bob-leg)*S,1,1,'#6a5040');
+    f(-4*S,(17+bob+leg)*S+S-2,2,2,'#0a0a0f');
+    f(-4*S+3*S-2,(17+bob+leg)*S+S-2,2,2,'#0a0a0f');
+    f(1*S,(17+bob-leg)*S+S-2,2,2,'#0a0a0f');
+    f(1*S+3*S-2,(17+bob-leg)*S+S-2,2,2,'#0a0a0f');
   } else if(wT===1){
-    px(ctx,-4,15+bob+leg,'#3a2010',4,3);px(ctx,1,15+bob-leg,'#3a2010',4,3);
-    px(ctx,-3,15+bob+leg,'#4a3020',2,2);
-    px(ctx,-4,17+bob+leg,'#1e1008',4,1);px(ctx,1,17+bob-leg,'#1e1008',4,1);
-    f(-4*S,(15+bob+leg)*S,4*S,1,'#5a3828');
-    f(1*S,(15+bob-leg)*S,4*S,1,'#5a3828');
-    f(-3*S+1,(17+bob+leg)*S,1,1,'#5a4030');
-    f(1*S+1,(17+bob-leg)*S,1,1,'#5a4030');
+    // 3 wide to match tier 2-3
+    px(ctx,-4,15+bob+leg,'#3a2010',3,3);px(ctx,1,15+bob-leg,'#3a2010',3,3);
+    px(ctx,-3,15+bob+leg,'#4a3020',1,2);
+    px(ctx,-4,17+bob+leg,'#1e1008',3,1);px(ctx,1,17+bob-leg,'#1e1008',3,1);
+    f(-4*S,(15+bob+leg)*S,3*S,1,'#5a3828');
+    f(1*S,(15+bob-leg)*S,3*S,1,'#5a3828');
+    f(-4*S+1,(15+bob+leg)*S,1,3*S,'#6a4838');
+    f(1*S+1,(15+bob-leg)*S,1,3*S,'#6a4838');
+    f(-4*S,(17+bob+leg)*S+S-2,2,2,'#0a0a0f');
+    f(-4*S+3*S-2,(17+bob+leg)*S+S-2,2,2,'#0a0a0f');
+    f(1*S,(17+bob-leg)*S+S-2,2,2,'#0a0a0f');
+    f(1*S+3*S-2,(17+bob-leg)*S+S-2,2,2,'#0a0a0f');
   } else {
     // Sabatons — 3 wide (same as tier 0), plate top, no fur
     px(ctx,-4,15+bob+leg,'#607080',3,3);px(ctx,1,15+bob-leg,'#607080',3,3);
@@ -1073,177 +1076,27 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   }
 
   // -- HELM --
-  if(wT===0){
-    // ── HAIR ──
-    px(ctx,-2,-9+bob,'#261a08',5,3);   // main hair mass
-    px(ctx,-3,-8+bob,'#261a08',1,3);   // left side hair
-    px(ctx,2,-8+bob,'#2a1808',1,2);    // right side hair shadow
-    px(ctx,-2,-7+bob,'#302410',4,1);   // hairline
-    // Round hair top: cut corners with bg color
-    f(-2*S,(-9+bob)*S,2,2,'#0a0a0f'); // top-left corner cut
-    f(3*S-2,(-9+bob)*S,2,2,'#0a0a0f'); // top-right corner cut
-    // Hair highlights and strands
-    f(-1*S,(-9+bob)*S,2*S,1,'#3a2810'); // lit top strip (from above)
-    f(-2*S,(-9+bob)*S,1,3*S,'#1c1006'); // left strand
-    f(1*S,(-8+bob)*S,1,2*S,'#1e1208'); // right strand
-    f(0*S,(-9+bob)*S,1,1,'#321e0a'); // center highlight
-
-    // ── HEADBAND ──
-    px(ctx,-3,-7+bob,'#8b1010',6,1);
-    px(ctx,-3,-7+bob,'#aa1818',3,1);
-    px(ctx,2,-7+bob,'#6a0808',1,1);
-    px(ctx,2,-7+bob,'#8b1010',1,2);
-    px(ctx,3,-6+bob,'#8b1010',1,3);
-    // Band edge highlights
-    f(-3*S,(-7+bob)*S,3*S,1,'#c82020'); // left lit portion
-    f(0*S,(-7+bob)*S,2*S,1,'#901010'); // right darker
-    f(-3*S,(-7+bob)*S+S-1,6*S,1,'#5a0606'); // bottom shadow strip of band
-
-    // ── FACE BASE (rounded rect: cut corner px with hair/shadow) ──
-    px(ctx,-2,-6+bob,'#d4a76a',4,4);   // base skin rectangle
-    // Round the corners using hair/shadow colors
-    f(-2*S,(-6+bob)*S,2,2,'#2a1c0a'); // top-left (hairline corner)
-    f(2*S-2,(-6+bob)*S,2,2,'#221408'); // top-right
-    f(-2*S,(-3+bob)*S+S-2,2,2,'#9a6030'); // bottom-left jaw
-    f(2*S-2,(-3+bob)*S+S-2,2,2,'#9a6030'); // bottom-right jaw
-
-    // ── FACE SHADING (3/4 lighting: left bright, right in shadow) ──
-    px(ctx,-2,-6+bob,'#c09050',1,3);   // left cheek shadow strip
-    px(ctx,1,-6+bob,'#b07040',1,3);    // right cheek deeper shadow
-    // Forehead highlight
-    f(-1*S,(-6+bob)*S,2*S,2,'#e2c898'); // forehead lit area
-    f(-1*S,(-6+bob)*S+2,2*S,1,'#dab878'); // sub-forehead
-    // Temple shadows
-    f(-2*S,(-6+bob)*S+2,2,2*S,'#c09050'); // left temple
-    f(2*S-2,(-6+bob)*S+2,2,2*S,'#a87040'); // right temple deeper
-
-    // ── BROW RIDGE (sits at eye row top, eyes 2px below it) ──
-    f(-2*S,(-5+bob)*S,S+2,2,'#7a4820'); // left brow
-    f(0*S-2,(-5+bob)*S,S+2,2,'#7a4820'); // right brow
-    f(-2*S+1,(-5+bob)*S,S,1,'#c09050'); // lit top of left brow bone
-    f(0*S-1,(-5+bob)*S,S,1,'#c09050');  // lit top of right brow bone
-
-    // ── EYES (2px below brow, clearly open) ──
-    // Left eye
-    f(-2*S,(-5+bob)*S+2,S,S,'#dcd8c4');       // sclera (warm white)
-    f(-2*S,(-5+bob)*S+2,S,1,'#2a1808');       // upper eyelid line
-    f(-2*S+1,(-5+bob)*S+3,1,1,'#0a0808');   // pupil
-    f(-2*S+2,(-5+bob)*S+3,1,1,'#b0a888');   // sclera highlight
-    f(-2*S,(-5+bob)*S+2+S-1,S,1,'#c09050'); // lower eyelid skin
-    // Right eye
-    f(0*S,(-5+bob)*S+2,S,S,'#dcd8c4');        // sclera
-    f(0*S,(-5+bob)*S+2,S,1,'#2a1808');        // upper eyelid
-    f(0*S+1,(-5+bob)*S+3,1,1,'#0a0808');   // pupil
-    f(0*S+2,(-5+bob)*S+3,1,1,'#b0a888');   // sclera highlight
-    f(0*S,(-5+bob)*S+2+S-1,S,1,'#c09050');  // lower eyelid skin
-    // Skin bridge between eyes
-    f(-1*S,(-5+bob)*S,S,S+2,'#d4a76a');
-    // Under-eye shadow
-    f(-2*S+1,(-5+bob)*S+2+S,2,1,'#b88050');
-    f(0*S+1,(-5+bob)*S+2+S,2,1,'#b88050');
-
-    // ── NOSE ──
-    f(-1*S+1,(-4+bob)*S,2,2*S,'#c89060'); // nose bridge lit center
-    f(-1*S,(-4+bob)*S,1,2,'#a87040');     // left nostril shadow
-    f(0*S+2,(-4+bob)*S,1,2,'#9a6030');    // right nostril shadow (deeper)
-    f(-1*S,(-4+bob)*S+S,S,1,'#b07040');   // nose base shadow
-    // Nostril dots
-    f(-1*S+1,(-3+bob)*S+1,1,1,'#6a3818'); // left nostril
-    f(0*S+1,(-3+bob)*S+1,1,1,'#5a2e10');  // right nostril (more shadow)
-
-    // ── MOUTH ──
-    px(ctx,-1,-2+bob,'#b08040',2,1);         // mouth base (moved down one row)
-    f(-1*S,(-2+bob)*S,S,1,'#5a3010');        // upper lip line
-    f(-1*S+1,(-2+bob)*S+1,S-1,1,'#c87050'); // lower lip
-    f(-1*S,(-2+bob)*S+S-1,S,1,'#8a5030');   // chin shadow
-
-    // ── JAW + CHIN ──
-    px(ctx,-2,-2+bob,'#c09050',4,1);
-    f(-2*S,(-2+bob)*S,4*S,1,'#b88050'); // jaw mid-tone
-    f(-2*S,(-2+bob)*S,2,1,'#906030');   // left jaw corner shadow
-    f(2*S-2,(-2+bob)*S,2,1,'#906030');  // right jaw corner shadow
-    // Light 5-o'clock shadow: just a slight darkening, no solid blocks
-    f(-1*S+1,(-2+bob)*S,1,1,'#9a6838');
-    f(0*S,(-2+bob)*S,1,1,'#9a6838');
-    f(-2*S+1,(-2+bob)*S,1,1,'#a07040');
-    f(1*S+1,(-2+bob)*S,1,1,'#a07040');
-
-    // ── NECK ──
-    px(ctx,-1,-1+bob,'#c09050',2,2);
-    f(-1*S,(-1+bob)*S,2*S,1,'#b07040'); // neck top shadow (head cast)
-    f(-1*S,(-1+bob)*S,1,2*S,'#a86030'); // neck left shadow
-  } else if(wT===1){
-    px(ctx,-3,-7+bob,'#585c64',5,7);px(ctx,-2,-6+bob,'#686c74',3,6);
-    px(ctx,-3,-7+bob,'#484c54',1,6);
-    // Face in coif: TWO separate eyes (not one bar)
-    px(ctx,-2,-5+bob,'#d4a76a',2,2);   // face skin in coif opening
-    // Left eye + skin gap + right eye using 1px precision
-    f(-2*S,(-4+bob)*S,2,S,'#181010');  // left eye (2px wide)
-    f(-2*S+2,(-4+bob)*S,2,S,'#c09050'); // skin bridge (2px)
-    f(-2*S+4,(-4+bob)*S,2,S,'#181010'); // right eye (2px wide)
-    // Eye glints
-    f(-2*S+1,(-4+bob)*S,1,1,'#2a2010'); // left eye iris
-    f(-2*S+5,(-4+bob)*S,1,1,'#2a2010'); // right eye iris
-    px(ctx,-3,-7+bob,'#484c54',5,1);
-    px(ctx,-2,-9+bob,'#707478',4,3);px(ctx,-1,-10+bob,'#808488',2,2);
-    px(ctx,-3,-8+bob,'#606468',6,1);
-    px(ctx,-2,-9+bob,'#909498',1,1);
-    px(ctx,1,-9+bob,'#585c60',1,2);
-    // Iron cap detail: top specular, rim gleam, coif shading
-    f(-2*S,(-10+bob)*S,2*S,1,'#a0a4ac'); // cap top bright strip
-    f(-1*S,(-10+bob)*S,1,1,'#c0c4cc'); // cap specular point
-    f(-3*S,(-8+bob)*S,6*S,1,'#707478'); // cap rim highlight
-    f(1*S,(-9+bob)*S,1,3*S,'#505458'); // cap right-side shadow
-    f(-3*S,(-7+bob)*S,1,6*S,'#585c64'); // coif left-edge
-    // Round cap top corners
-    f(-2*S,(-10+bob)*S,2,2,'#0a0a0f');
-    f(2*S-2,(-10+bob)*S,2,2,'#0a0a0f');
-  } else if(wT===2){
-    px(ctx,-3,-7+bob,'#2a2e36',6,6);px(ctx,-2,-6+bob,'#3a4050',4,5);
-    px(ctx,-3,-7+bob,'#1e2228',1,5);
-    px(ctx,1,-6+bob,'#50606e',1,4);
-    px(ctx,-2,-4+bob,'#080c10',4,2);
-    px(ctx,-2,-4+bob,'rgba(60,140,220,0.9)',1,1);px(ctx,0,-4+bob,'rgba(60,140,220,0.9)',1,1);
-    px(ctx,-1,-10+bob,'#8b1010',2,4);px(ctx,-1,-9+bob,'#aa2020',2,3);
-    px(ctx,-1,-10+bob,'#cc3030',1,3);
-    px(ctx,-3,-7+bob,'#484c54',6,1);
-    // Helm detail: top edge gleam, left specular, visor shadow, plume highlight
-    f(-3*S,(-7+bob)*S,6*S,1,'#5a6474'); // helm top-edge bright
-    f(-3*S+1,(-7+bob)*S,1,5*S,'#4a5464'); // left-edge plate gleam
-    f(2*S+S-1,(-6+bob)*S,1,4*S,'#181e24'); // right-edge shadow
-    f(-2*S,(-4+bob)*S,4*S,1,'#04080e'); // visor top shadow line
-    // Plume highlight strand
-    f(-1*S,(-10+bob)*S,1,4*S,'#dd4040'); // plume left highlight strand
-    f(0*S,(-9+bob)*S,1,3*S,'#ff5050'); // plume bright strip
-    // Eye glow halo pixels
-    f(-2*S+1,(-4+bob)*S,2,1,'rgba(100,180,255,0.5)');
-    f(0*S+1,(-4+bob)*S,2,1,'rgba(100,180,255,0.5)');
-  } else {
-    // ── HOOD — constant 6-wide, frames face cleanly ──
-    px(ctx,-3,-8+bob,'#b0a090',6,3);    // hood body (constant 6 wide, 3 tall)
-    px(ctx,-3,-8+bob,'#706050',1,3);    // left edge shadow
-    px(ctx,2,-8+bob,'#685848',1,3);     // right edge shadow
-    // Inner lining shadow (frames face opening)
-    px(ctx,-3,-6+bob,'#302018',1,2);    // left inner dark
-    px(ctx,2,-6+bob,'#281810',1,2);     // right inner dark
-    // Fur highlights and texture on hood
-    f(-3*S,(-8+bob)*S,6*S,1,'#d0c0b0'); // top bright fold
-    f(-3*S,(-7+bob)*S,6*S,1,'#c0b0a0'); // mid fold
-    f(-3*S,(-6+bob)*S,6*S,1,'#a89880'); // lower fold, connects to collar
-    // Corner cuts (round the top)
-    f(-3*S,(-8+bob)*S,2,2,'#0a0a0f');
-    f(3*S-2,(-8+bob)*S,2,2,'#0a0a0f');
-    // Grime/shadow on hood sides
-    f(-3*S,(-8+bob)*S,1,3*S,'#504030');
-    f(2*S+S-1,(-8+bob)*S,1,3*S,'#403020');
-
-    // ── FACE in hood opening (y=-5 to y=-3) ──
+  if(wT===0||wT===1||wT===2||wT===3){
+    // Orange hair (short sides), starting beard — consistent across all tiers
+    // Crown
+    px(ctx,-2,-7+bob,'#a06010',4,1);
+    f(-2*S,(-7+bob)*S,4*S,1,'#c07818');
+    f(-2*S,(-7+bob)*S,1,1,'#602808');
+    f(1*S+S-1,(-7+bob)*S,1,1,'#582408');
+    // Spread row
+    px(ctx,-3,-6+bob,'#a06010',6,1);
+    f(-3*S,(-6+bob)*S,6*S,1,'#b06818');
+    f(-3*S,(-6+bob)*S,1,1,'#602808');
+    f(2*S+S-1,(-6+bob)*S,1,1,'#582408');
+    // Short sides y=-5 to y=-2
+    px(ctx,-3,-5+bob,'#904010',1,4);
+    px(ctx,2,-5+bob,'#904010',1,4);
+    // Face
     px(ctx,-2,-5+bob,'#c09050',4,3);
     px(ctx,-2,-5+bob,'#b08040',1,2);
     px(ctx,1,-5+bob,'#a07030',1,2);
-    // Grime shadow above brow
     f(-2*S,(-5+bob)*S,4*S,1,'#5a3810');
-    // Eyes at y=-4
+    // Eyes at x=-2 and x=0
     f(-2*S,(-4+bob)*S,S,S,'#d0ccc0');
     f(-2*S,(-4+bob)*S,S,1,'#2a1808');
     f(-2*S+1,(-4+bob)*S+1,1,1,'#0a0808');
@@ -1252,22 +1105,15 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     f(0*S+1,(-4+bob)*S+1,1,1,'#0a0808');
     f(-1*S,(-4+bob)*S,S,S,'#c09050');
     f(-1*S+1,(-3+bob)*S,2,S,'#c89060');
-
-    // ── BEARD — tapers to a point (4→3→2→1 wide) ──
-    px(ctx,-2,-3+bob,'#c07818',4,1);
-    px(ctx,-2,-2+bob,'#c07818',4,1);
-    px(ctx,-2,-2+bob,'#d08828',3,1);
-    px(ctx,-2,-1+bob,'#c07818',3,1);
-    px(ctx,-1,-1+bob,'#d08828',2,1);
-    px(ctx,-2,0+bob,'#b06818',2,1);
-    px(ctx,-1,0+bob,'#d08828',1,1);
-    px(ctx,-1,1+bob,'#904010',1,1);
-    px(ctx,-2,-2+bob,'#904010',1,3);
-    px(ctx,1,-2+bob,'#8a3c10',1,2);
-    f(-2*S,(-2+bob)*S,1,4*S,'#a05010');
-    f(1*S+S-1,(-1+bob)*S,1,2*S,'#904010');
-    f(-1*S,(0+bob)*S,1,2*S,'#e09030');
-    f(-2*S,(-3+bob)*S+S-1,4*S,1,'#904010');
+    // Short starter beard
+    px(ctx,-1,-3+bob,'#c07818',3,1);
+    f(-1*S,(-3+bob)*S,3*S,1,'#d08828');
+    px(ctx,-2,-2+bob,'#c07818',3,1);
+    px(ctx,-2,-2+bob,'#d08828',2,1);
+    px(ctx,-1,-1+bob,'#904010',2,1);
+    px(ctx,-2,-2+bob,'#904010',1,2);
+    px(ctx,0,-2+bob,'#8a3c10',1,1);
+    f(-1*S,(-3+bob)*S+S-1,3*S,1,'#904010');
   }
 
   // -- SWORD --
@@ -1324,23 +1170,22 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
   }
 
   // -- SHIELD --
-  px(ctx,-6,2+bob,wT===0?'#d4a76a':'#2a2e36',1,6);
+  px(ctx,-6,2+bob,wT===0?'#c09050':'#2a2e36',1,6);
   if(wpT===0){
     px(ctx,-8,1+bob,'#6a4820',3,7);px(ctx,-7,1+bob,'#7a5828',2,6);
     px(ctx,-8,1+bob,'#4a3010',1,6);px(ctx,-8,1+bob,'#4a3010',3,1);
     px(ctx,-8,7+bob,'#4a3010',3,1);px(ctx,-7,4+bob,'#a07830',1,1);
-    // Wood grain + edge
-    f(-8*S,(1+bob)*S,1,7*S,'#8a6030'); // left bright edge
-    f(-6*S-1,(1+bob)*S,1,7*S,'#3a2010'); // right shadow edge
-    f(-8*S,(4+bob)*S,3*S,1,'#5a3818'); // wood grain line
+    f(-8*S,(1+bob)*S,1,7*S,'#8a6030');
+    f(-6*S-1,(1+bob)*S,1,7*S,'#3a2010');
+    f(-8*S,(4+bob)*S,3*S,1,'#5a3818');
   } else if(wpT===1){
     px(ctx,-8,0+bob,'#3a3830',3,9);px(ctx,-7,1+bob,'#6a4820',2,7);
     px(ctx,-8,0+bob,'#6a6860',1,2);
     px(ctx,-7,4+bob,'#909090',2,1);px(ctx,-8,4+bob,'#484848',1,1);
-    f(-8*S,(0+bob)*S,1,9*S,'#848280'); // iron rim left gleam
-    f(-6*S-1,(0+bob)*S,1,9*S,'#282826'); // iron rim right shadow
-    f(-8*S,(0+bob)*S,3*S,1,'#707070'); // top rim
-    f(-8*S,(9+bob)*S-1,3*S,1,'#282828'); // bottom rim shadow
+    f(-8*S,(0+bob)*S,1,9*S,'#848280');
+    f(-6*S-1,(0+bob)*S,1,9*S,'#282826');
+    f(-8*S,(0+bob)*S,3*S,1,'#707070');
+    f(-8*S,(9+bob)*S-1,3*S,1,'#282828');
   } else if(wpT===2){
     px(ctx,-8,0+bob,'#2a2e36',3,9);px(ctx,-8,0+bob,'#3a4050',2,8);
     px(ctx,-8,0+bob,'#1e2228',1,8);
@@ -1348,11 +1193,10 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-8,0+bob,'#c8a030',1,1);px(ctx,-7,4+bob,'#c8a030',2,1);
     px(ctx,-8,8+bob,'#c8a030',3,1);
     px(ctx,-8,3+bob,'#404858',3,1);px(ctx,-8,6+bob,'#404858',3,1);
-    // Kite shield gleam + cross highlight
-    f(-8*S+1,(0+bob)*S,1,9*S,'#4a5060'); // left-edge plate gleam
-    f(-8*S,(0+bob)*S,3*S,1,'#c8a030'); // gold top
-    f(-8*S,(9+bob)*S-1,3*S,1,'#a08020'); // gold bottom
-    f(-7*S,(1+bob)*S,1,6*S,'#cc2020'); // red stripe bright
+    f(-8*S+1,(0+bob)*S,1,9*S,'#4a5060');
+    f(-8*S,(0+bob)*S,3*S,1,'#c8a030');
+    f(-8*S,(9+bob)*S-1,3*S,1,'#a08020');
+    f(-7*S,(1+bob)*S,1,6*S,'#cc2020');
   } else {
     px(ctx,-8,0+bob,'#2a2e36',3,9);px(ctx,-8,0+bob,'#3a4050',2,8);
     px(ctx,-8,0+bob,'#c8a030',1,9);
@@ -1360,14 +1204,11 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-8,0+bob,'#c8a030',3,1);px(ctx,-8,8+bob,'#c8a030',3,1);
     px(ctx,-7,4+bob,'#907828',2,1);px(ctx,-9,0+bob,'#e0b840',1,3);
     px(ctx,-8,3+bob,'#c8a030',3,1);px(ctx,-8,6+bob,'#c8a030',3,1);
-    // Warlord shield: gold gleam, blood red
-    f(-8*S+1,(0+bob)*S,1,9*S,'#e0b840'); // gold left gleam
-    f(-8*S,(0+bob)*S,3*S,1,'#f0c850'); // top gold bright
-    f(-7*S,(1+bob)*S,1,6*S,'#ee2020'); // blood red bright
-    f(-9*S,(0+bob)*S,1,3*S,'#f0c840'); // spike gold
+    f(-8*S+1,(0+bob)*S,1,9*S,'#e0b840');
+    f(-8*S,(0+bob)*S,3*S,1,'#f0c850');
+    f(-7*S,(1+bob)*S,1,6*S,'#ee2020');
+    f(-9*S,(0+bob)*S,1,3*S,'#f0c840');
   }
-
-  if(flash){ctx.fillStyle='rgba(255,80,80,0.4)';ctx.fillRect(-9*S,-11*S,20*S,32*S);}
   ctx.restore();
 }
 // -- Mage (ancient arcane scholar) --
@@ -1621,415 +1462,359 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
   if(dir!==2) ctx.scale(-1,1);
   var bob=Math.sin(anim*0.18)*0.5, leg=Math.sin(anim*0.35)*1.2;
   var sw=Math.sin(anim*0.25)*1.5;
+  function f(fx,fy,fw,fh,fc){ctx.fillStyle=fc;ctx.fillRect(fx,fy,fw,fh);}
 
-  // === CLOAK (tier 3 only, drawn first behind body) ===
-  // No full cloak - just shoulder drapes for T3
-
-  // === HAIR behind ===
-  px(ctx,2,-4+bob,'#d45010',1,14);
-  px(ctx,3,-3+bob,'#b83a08',1,12);
-  px(ctx,-3,-3+bob,'#e06018',1,11);
-  px(ctx,4,-2+bob,'#a03008',1,8);
-
-  // === FACE ===
-  if(rT<2){
-    // Full face visible
-    px(ctx,-2,-6+bob,'#e8a878',4,5);
-    px(ctx,-2,-5+bob,'rgba(60,140,50,0.95)',1,1);
-    px(ctx,0,-5+bob,'rgba(60,140,50,0.95)',1,1);
-    px(ctx,-2,-6+bob,'#0a0400',1,1);
-    px(ctx,0,-6+bob,'#0a0400',1,1);
-    px(ctx,1,-6+bob,'#0a0400',1,1);
-    px(ctx,-1,-3+bob,'#c88060',1,1);  // nose
-    px(ctx,-1,-2+bob,'#c05040',2,1);  // lips
-  } else if(rT===2){
-    // Only upper face visible (scarf covers mouth/nose)
-    px(ctx,-2,-6+bob,'#e8a878',4,4);  // forehead + cheeks (4px tall now, no gap)
-    px(ctx,-2,-5+bob,'rgba(60,140,50,0.95)',1,1); // left eye
-    px(ctx,0,-5+bob,'rgba(60,140,50,0.95)',1,1);  // right eye
-    px(ctx,-2,-6+bob,'#0a0400',1,1);
-    px(ctx,0,-6+bob,'#0a0400',1,1);
-    px(ctx,1,-6+bob,'#0a0400',1,1);
-    px(ctx,-1,-4+bob,'#c88060',1,1);  // nose
-    px(ctx,-2,-3+bob,'#d09060',4,1);  // chin/bridge row touching scarf top
-  } else {
-    // Face in hood shadow - darker skin, subtle green eye glow
-    px(ctx,-2,-7+bob,'#c08058',4,5);  // face - darkened by hood shadow
-    px(ctx,-2,-6+bob,'#a06040',1,4);  // left shadow deep
-    px(ctx,1,-6+bob,'#906030',1,4);   // right shadow deeper
-    px(ctx,-2,-7+bob,'#a06840',1,3);  // far left shadow
-    // Green glowing eyes - main visual focal point
-    ctx.fillStyle='rgba(40,220,40,0.45)';
-    ctx.fillRect(-3*S,-6*S,5*S,3*S); // stronger glow behind eyes
-    px(ctx,-3,-5+bob,'rgba(40,200,40,0.3)',1,1); // outer left glow
-    px(ctx,1,-5+bob,'rgba(40,200,40,0.3)',1,1);  // outer right glow
-    px(ctx,-2,-5+bob,'rgba(80,255,60,1.0)',1,1); // left eye - vivid
-    px(ctx,0,-5+bob,'rgba(80,255,60,1.0)',1,1);  // right eye - vivid
-    px(ctx,-2,-6+bob,'#0a0400',1,1);  // brow
-    px(ctx,0,-6+bob,'#0a0400',1,1);
-    px(ctx,-1,-4+bob,'#906030',1,1);  // nose
-    px(ctx,-2,-3+bob,'#a06040',4,1);  // chin strip - flush with scarf top
+  // === CAPE (tier 3 only — teal/navy asymmetric, flows right) ===
+  if(rT===3){
+    px(ctx,0,-3+bob,'#1e4870',6,16);    // cape main — clearly teal
+    px(ctx,1,-2+bob,'#265a88',4,14);    // cape inner lighter
+    px(ctx,2,-1+bob,'#2e6a9c',2,12);    // cape bright core
+    px(ctx,0,-3+bob,'#162e4a',1,15);    // left shadow
+    f(5*S,(-3+bob)*S,1,14*S,'#12263e'); // right edge
+    // Fold lines — lighter so they read
+    f(0*S,(2+bob)*S,5*S,1,'#1a3e60');
+    f(0*S,(6+bob)*S,5*S,1,'#183858');
+    f(0*S,(10+bob)*S,4*S,1,'#162e4a');
+    // Highlight on cape face
+    f(1*S,(-2+bob)*S,1,12*S,'#306090'); // bright left-face gleam
+    // Top corner cut
+    f(0*S,(-3+bob)*S,2,2,'#0a0a0f');
   }
 
-  // === HAIR on head (hidden by hood on tier 2-3) ===
-  if(rT<2){
-    px(ctx,-2,-8+bob,'#d45010',4,3);
-    px(ctx,-3,-7+bob,'#b83a08',1,3);
-    px(ctx,2,-7+bob,'#b83a08',1,2);
-    px(ctx,-1,-9+bob,'#e06018',2,1);
-    if(rT>=1){px(ctx,-2,-8+bob,'#e06018',1,2);}
+  // === HAIR behind (all tiers — auburn flowing to right) ===
+  px(ctx,2,-5+bob,'#c03c0c',1,12);
+  px(ctx,3,-4+bob,'#b03008',1,10);
+  px(ctx,4,-3+bob,'#a02a06',1,7);
+  if(rT>=2){
+    // More dramatic flow at higher tiers
+    px(ctx,3,-5+bob,'#d44010',1,13);
+    px(ctx,5,-2+bob,'#a02a06',1,6);
+  }
+
+  // === FACE (same for all tiers — green eyes, auburn hair around) ===
+  px(ctx,-2,-6+bob,'#e8a878',4,5);   // face
+  px(ctx,-2,-6+bob,'#d09060',1,4);   // left shadow
+  px(ctx,1,-6+bob,'#c88050',1,4);    // right shadow deeper
+  f(-1*S,(-6+bob)*S,2*S,2,'#f0b888'); // forehead bright
+  // Green eyes
+  f(-2*S,(-5+bob)*S,S,S,'#d8e8c8');  // left sclera
+  f(-2*S,(-5+bob)*S,S,1,'#2a1808');  // left eyelid
+  px(ctx,-2,-5+bob,'rgba(60,180,50,0.9)',1,1); // left green iris
+  f(-2*S+1,(-5+bob)*S+1,1,1,'#006010'); // left pupil
+  f(0*S,(-5+bob)*S,S,S,'#d8e8c8');   // right sclera
+  f(0*S,(-5+bob)*S,S,1,'#2a1808');   // right eyelid
+  px(ctx,0,-5+bob,'rgba(60,180,50,0.9)',1,1);  // right green iris
+  f(0*S+1,(-5+bob)*S+1,1,1,'#006010'); // right pupil
+  f(-1*S,(-5+bob)*S,S,S,'#e8a878'); // skin bridge
+  // Nose + lips
+  f(-1*S+1,(-4+bob)*S,2,S,'#c88868'); // nose bridge
+  px(ctx,-1,-3+bob,'#c85848',2,1);   // lips
+  f(-1*S,(-3+bob)*S,S,1,'#a83828');  // upper lip shadow
+  f(-1*S+1,(-3+bob)*S+1,S-1,1,'#e07060'); // lower lip
+  // Jaw
+  px(ctx,-2,-2+bob,'#e8a878',4,1);
+  f(-2*S,(-2+bob)*S,4*S,1,'#d09060');
+
+  // === HAIR on head ===
+  if(rT===0){
+    // Short, simple
+    px(ctx,-2,-8+bob,'#c03c0c',4,2);
+    px(ctx,-1,-9+bob,'#d44010',2,1);
+    f(-2*S,(-8+bob)*S,4*S,1,'#d85010'); // top highlight
+    f(-2*S,(-8+bob)*S,1,1,'#0a0a0f'); // left corner
+    f(1*S+S-1,(-8+bob)*S,1,1,'#0a0a0f'); // right corner
+  } else if(rT===1){
+    // Medium length
+    px(ctx,-2,-8+bob,'#c03c0c',4,2);
+    px(ctx,-1,-9+bob,'#d44010',2,1);
+    px(ctx,-3,-7+bob,'#b03008',1,2);
+    px(ctx,2,-7+bob,'#b03008',1,2);
+    f(-2*S,(-8+bob)*S,4*S,1,'#d85010');
+    f(-2*S,(-8+bob)*S,1,1,'#0a0a0f');
+    f(1*S+S-1,(-8+bob)*S,1,1,'#0a0a0f');
   } else if(rT===2){
-    // Partial hood - hair still visible at sides
-    px(ctx,-3,-7+bob,'#b83a08',1,4);  // auburn side hair left
-    px(ctx,2,-7+bob,'#b83a08',1,3);   // auburn side hair right
-    px(ctx,3,-5+bob,'#d45010',1,5);   // long strand escaping hood
+    // Long, partial hood over top
+    px(ctx,-2,-8+bob,'#c03c0c',4,2);
+    px(ctx,-3,-7+bob,'#b03008',1,3);
+    px(ctx,2,-7+bob,'#b03008',1,3);
+    px(ctx,-3,-5+bob,'#c03c0c',1,4); // side strand
+    // Simple hood cap over crown
+    px(ctx,-3,-9+bob,'#181420',5,2);
+    px(ctx,-2,-9+bob,'#201828',3,1);
+    f(-3*S,(-9+bob)*S,5*S,1,'#242030');
+    f(-3*S,(-9+bob)*S,1,1,'#0a0a0f');
+    f(1*S+S-1,(-9+bob)*S,1,1,'#0a0a0f');
   } else {
-    // Full hood - just side strands escaping
-    px(ctx,-3,-6+bob,'#d45010',1,3);
-    px(ctx,3,-5+bob,'#b83a08',1,6);   // long strand
+    // Tier 3 — long flowing auburn hair, no hood
+    px(ctx,-2,-8+bob,'#c03c0c',4,2);
+    px(ctx,-1,-9+bob,'#d44010',2,1);
+    px(ctx,-3,-7+bob,'#b03008',1,3);
+    px(ctx,2,-7+bob,'#b03008',1,3);
+    px(ctx,-3,-5+bob,'#c03c0c',1,5); // left side flow
+    f(-2*S,(-8+bob)*S,4*S,1,'#d85010'); // crown highlight
+    f(-2*S,(-8+bob)*S,1,1,'#0a0a0f');
+    f(1*S+S-1,(-8+bob)*S,1,1,'#0a0a0f');
   }
 
   // === BODY ===
   if(rT===0){
-    // Simple dark shirt - plain, worn
+    // Simple dark shirt
     px(ctx,-2,0+bob,'#1e1c24',4,7);
     px(ctx,-1,0+bob,'#2a2834',2,6);
     px(ctx,-2,0+bob,'#141218',1,7);px(ctx,1,0+bob,'#141218',1,7);
-    px(ctx,-1,0+bob,'#e8a878',1,1); // tiny neckline
+    f(-2*S+1,(0+bob)*S,1,7*S,'#2a2830'); // left gleam
+    // Tiny V neck
+    px(ctx,-1,-1+bob,'#e8a878',2,2);
     // Simple belt
     px(ctx,-3,7+bob,'#2a1c10',5,1);
-    px(ctx,0,7+bob,'#706040',1,1); // buckle
+    f(-1*S,(7+bob)*S,1,1,'#706040'); // buckle
   } else if(rT===1){
-    // Leather corset top - tight fit, visible boning, V neck deep
-    px(ctx,-2,0+bob,'#221408',4,7);  // dark leather base
-    px(ctx,-1,0+bob,'#2e1c10',2,6);  // center panel lighter
-    px(ctx,-2,0+bob,'#180e04',1,7);px(ctx,1,0+bob,'#180e04',1,7); // side shadow
-    // Corset boning lines
-    px(ctx,-1,1+bob,'#221608',1,5);  // left bone
-    px(ctx,0,1+bob,'#3a2410',1,5);   // right bone
-    // V neck - deep
-    px(ctx,-1,0+bob,'#e8a878',1,3);
-    px(ctx,0,0+bob,'#d09060',1,2);
-    // 3 brass buckles on side
-    px(ctx,1,1+bob,'#8a6820',1,1);
-    px(ctx,1,3+bob,'#8a6820',1,1);
-    px(ctx,1,5+bob,'#8a6820',1,1);
-    // Midriff skin strip below corset
-    px(ctx,-1,6+bob,'#e8a878',3,1);px(ctx,-2,6+bob,'#d09060',1,1);
-    // Belt
-    px(ctx,-3,7+bob,'#1c1208',5,1);px(ctx,0,7+bob,'#9a7030',1,1);
-    // Mouth scarf - dark cloth covering lower face
-    px(ctx,-2,-2+bob,'#181420',4,2);  // scarf body
-    px(ctx,-3,-2+bob,'#201828',1,2);  // left edge
-    px(ctx,1,-2+bob,'#100e18',1,2);   // right edge
-    px(ctx,-2,-2+bob,'#282030',4,1);  // scarf top edge
-  } else if(rT===2){
-    // Structured dark corset - laced, midriff bare, shoulderless
-    px(ctx,-2,0+bob,'#1c1008',4,6);   // corset base
-    px(ctx,-1,0+bob,'#281606',2,5);   // center lighter
-    px(ctx,-2,0+bob,'#100804',1,6);px(ctx,1,0+bob,'#100804',1,6); // edges
-    // Lacing down center
-    px(ctx,-1,0+bob,'#7a5820',1,6);   // lace left
-    px(ctx,0,0+bob,'#7a5820',1,6);    // lace right
-    px(ctx,-1,1+bob,'#9a7830',1,1);px(ctx,-1,3+bob,'#9a7830',1,1);px(ctx,-1,5+bob,'#9a7830',1,1); // lace ties
-    // Deep neckline
+    // Leather corset - dark, fitted
+    px(ctx,-2,0+bob,'#221408',4,7);
+    px(ctx,-1,0+bob,'#2e1c10',2,6);
+    px(ctx,-2,0+bob,'#180e04',1,7);px(ctx,1,0+bob,'#180e04',1,7);
+    // Center lacing
+    f(-1*S,(1+bob)*S,1,5*S,'#3a2010');
+    f(0*S,(1+bob)*S,1,5*S,'#3a2010');
+    f(-1*S,(1+bob)*S,S,1,'#5a3818'); f(-1*S,(3+bob)*S,S,1,'#5a3818'); f(-1*S,(5+bob)*S,S,1,'#5a3818');
+    // V neck
     px(ctx,-1,-1+bob,'#e8a878',2,2);px(ctx,0,-1+bob,'#d09060',1,2);
-    // Side buckles x4
-    px(ctx,1,0+bob,'#7a5820',1,1);px(ctx,1,2+bob,'#7a5820',1,1);
-    px(ctx,1,4+bob,'#7a5820',1,1);px(ctx,-2,2+bob,'#7a5820',1,1);
-    // Midriff skin strip below corset
-    // No midriff gap - corset extends to panty
-    px(ctx,-2,6+bob,'#1c1008',4,2);px(ctx,-1,6+bob,'#281606',2,1);
-    // Thin strap belt only
-    px(ctx,-3,7+bob,'#2a1808',5,1);px(ctx,0,7+bob,'#7a5820',1,1);
-    // Half hood - smooth rounded shape over hair
-    px(ctx,-3,-9+bob,'#181420',5,2);  // hood top curve
-    px(ctx,-4,-8+bob,'#181420',6,3);  // hood wide body
-    px(ctx,-3,-8+bob,'#201828',4,2);  // hood inner lighter
-    px(ctx,-4,-6+bob,'#181420',6,1);  // hood brim over forehead
-    px(ctx,-4,-8+bob,'#141018',1,3);  // left shadow
-    px(ctx,2,-8+bob,'#0e0c14',1,3);   // right shadow
-    // Scarf - sits flush against face (no gap)
-    px(ctx,-2,-3+bob,'#201828',4,3);  // scarf multi-layer (moved up 1px)
-    px(ctx,-3,-3+bob,'#181420',1,2);  // left wrap
-    px(ctx,1,-3+bob,'#181420',1,2);   // right wrap
-    px(ctx,-2,-3+bob,'#282030',4,1);  // scarf top fold
-    // Eyes still visible through hood gap
-  } else {
-    // Phantom - sleek black corset with black sleeves, toned down details
-    // Black sleeves (drawn as part of body)
-    px(ctx,-4,0+bob,'#0e0c12',2,8);   // left sleeve
-    px(ctx,2,0+bob,'#0e0c12',2,8);    // right sleeve
-    px(ctx,-4,0+bob,'#141018',1,7);   // left sleeve highlight
-    px(ctx,3,0+bob,'#0a0810',1,7);    // right sleeve shadow
-    // Spiked shoulder pieces - dark metal with clear edge highlight
-    px(ctx,-5,-1+bob,'#282830',3,5);  // left pauldron base (grey-dark)
-    px(ctx,2,-1+bob,'#282830',3,5);   // right pauldron base
-    px(ctx,-5,-1+bob,'#383840',1,4);  // left highlight edge
-    px(ctx,4,-1+bob,'#181820',1,4);   // right shadow edge
-    px(ctx,-4,-2+bob,'#303038',2,3);  // left plate face
-    px(ctx,2,-2+bob,'#303038',2,3);   // right plate face
-    // Spikes - bright tip so they read clearly
-    px(ctx,-5,-5+bob,'#303038',1,5);  // left spike body
-    px(ctx,-5,-8+bob,'#484850',1,3);  // left spike tip - brighter
-    px(ctx,4,-5+bob,'#303038',1,5);   // right spike body
-    px(ctx,4,-8+bob,'#484850',1,3);   // right spike tip - brighter
-    // Red accent line on pauldron
-    px(ctx,-5,-1+bob,'#8b1010',3,1);  // left red top
-    px(ctx,2,-1+bob,'#8b1010',3,1);   // right red top
-    // Corset body - dark, simple lacing (toned down)
-    px(ctx,-2,0+bob,'#0e0804',4,7);
-    px(ctx,-1,0+bob,'#181008',2,6);
-    px(ctx,-2,0+bob,'#080402',1,7);px(ctx,1,0+bob,'#080402',1,7);
-    // Subtle dark lacing - not gold
-    px(ctx,-1,1+bob,'#2a1808',1,5);
-    px(ctx,0,1+bob,'#2a1808',1,5);
-    px(ctx,-1,2+bob,'#3a2410',1,1);px(ctx,-1,4+bob,'#3a2410',1,1);
-    // High neck - no skin showing on chest
-    px(ctx,-1,-1+bob,'#0e0c12',2,2); // black collar covering neck
-    // 2 small iron buckles only (not gold)
-    px(ctx,1,1+bob,'#484848',1,1);px(ctx,1,4+bob,'#484848',1,1);
-    // Corset extended to cover belly - no midriff
-    px(ctx,-2,5+bob,'#0e0804',4,3);   // lower corset extension
-    px(ctx,-1,5+bob,'#181008',2,3);   // center lighter
-    px(ctx,-1,6+bob,'#2a1808',1,3);   // subtle lacing lower
-    px(ctx,0,6+bob,'#2a1808',1,3);
-    // Hood - wider and deeper, covers all hair, drapes to shoulders
-    px(ctx,-4,-10+bob,'#0e0c18',6,3);  // hood top wide
-    px(ctx,-5,-9+bob,'#0a0810',1,4);   // far left edge
-    px(ctx,4,-9+bob,'#060408',1,3);    // far right edge
-    px(ctx,-4,-8+bob,'#0e0c18',7,3);   // hood body very wide
-    px(ctx,-3,-8+bob,'#141020',5,2);   // hood inner lighter
-    px(ctx,-5,-7+bob,'#0e0c18',7,1);   // wide brim covering forehead
-    px(ctx,-5,-6+bob,'#0e0c18',7,1);   // second brim row
-    px(ctx,-5,-8+bob,'#080610',1,4);   // left deep shadow
-    px(ctx,3,-8+bob,'#060408',1,3);    // right deep shadow
-    // Hood shoulder drapes - cover where hair would show
-    px(ctx,-5,-4+bob,'#0a0810',2,6);   // left drape over shoulder
-    px(ctx,3,-4+bob,'#080610',2,5);    // right drape over shoulder
-    // Scarf - flush against face bottom (y=-3)
-    px(ctx,-2,-3+bob,'#181420',4,2);
-    px(ctx,-3,-3+bob,'#141018',1,2);px(ctx,2,-3+bob,'#141018',1,2);
-    px(ctx,-2,-3+bob,'#8b1010',4,1); // red top edge on scarf
-  }
-
-  // === ARMS ===
-  if(rT===0){
-    px(ctx,-4,1+bob,'#1e1c24',2,4);
-    px(ctx,2,1+bob,'#1e1c24',2,4);
-    px(ctx,-4,5+bob,'#e8a878',2,3);
-    px(ctx,2,5+bob,'#e8a878',2,3);
-  } else if(rT===1){
-    px(ctx,-4,1+bob,'#1a1620',2,3);
-    px(ctx,2,1+bob,'#1a1620',2,3);
-    px(ctx,-4,4+bob,'#e8a878',2,4);
-    px(ctx,2,4+bob,'#e8a878',2,4);
+    // Small brass buckles on side
+    f(1*S+S-1,(1+bob)*S,1,1,'#8a6820'); f(1*S+S-1,(3+bob)*S,1,1,'#8a6820'); f(1*S+S-1,(5+bob)*S,1,1,'#8a6820');
+    f(-2*S+1,(0+bob)*S,1,7*S,'#301a0c');
+    // Belt
+    px(ctx,-3,7+bob,'#1c1208',5,1);f(0*S,(7+bob)*S,1,1,'#9a7030');
   } else if(rT===2){
-    px(ctx,-4,1+bob,'#1a1620',2,2);
-    px(ctx,2,1+bob,'#1a1620',2,2);
-    px(ctx,-4,3+bob,'#e8a878',2,5); // bare arms T2
-    px(ctx,2,3+bob,'#e8a878',2,5);
+    // Better corset with hood elements
+    px(ctx,-2,0+bob,'#1c1008',4,7);
+    px(ctx,-1,0+bob,'#281606',2,6);
+    px(ctx,-2,0+bob,'#100804',1,7);px(ctx,1,0+bob,'#100804',1,7);
+    // Lacing
+    f(-1*S,(0+bob)*S,1,7*S,'#5a3818');
+    f(0*S,(0+bob)*S,1,7*S,'#5a3818');
+    f(-1*S,(1+bob)*S,S,1,'#7a5028');f(-1*S,(3+bob)*S,S,1,'#7a5028');f(-1*S,(5+bob)*S,S,1,'#7a5028');
+    // V neck
+    px(ctx,-1,-1+bob,'#e8a878',2,2);px(ctx,0,-1+bob,'#d09060',1,2);
+    f(-2*S+1,(0+bob)*S,1,7*S,'#281408');
+    // Belt + buckle
+    px(ctx,-3,7+bob,'#2a1808',5,1);f(0*S,(7+bob)*S,1,1,'#7a5820');
+    // Scarf covers lower face
+    px(ctx,-3,-2+bob,'#181420',5,2);
+    px(ctx,-2,-2+bob,'#201828',3,1);
+    f(-3*S,(-2+bob)*S,5*S,1,'#242030');
   } else {
-    // T3: black sleeves full length - hands only at bottom
-    px(ctx,-4,1+bob,'#0e0c12',2,8);  // left sleeve
-    px(ctx,2,1+bob,'#0e0c12',2,8);   // right sleeve
-    px(ctx,-4,1+bob,'#141018',1,6);  // highlight
-  }
-  // Hands
-  if(rT<3){px(ctx,-4,8+bob,'#e8a878',2,1);px(ctx,2,8+bob,'#e8a878',2,1);}
-  else{px(ctx,-4,8+bob,'#e8a878',2,1);px(ctx,2,8+bob,'#e8a878',2,1);}
-
-  // === UPPER LEGS ===
-  if(rT<2){
-    // Bare skin thighs for T0 and T1
-    px(ctx,-3,10+bob+leg,'#e8a878',3,7);
-    px(ctx,1,10+bob-leg,'#e8a878',3,7);
-    px(ctx,-3,10+bob+leg,'#d09060',1,6);
-    px(ctx,3,10+bob-leg,'#d09060',1,5);
-    px(ctx,-2,11+bob+leg,'#f0b888',1,4);
-    px(ctx,2,11+bob-leg,'#f0b888',1,4);
-  } else {
-    // Dark mesh tights - skin underneath with dark net pattern
-    // Base skin tone showing through
-    px(ctx,-3,10+bob+leg,'#c07848',3,7);  // left thigh - muted skin through mesh
-    px(ctx,1,10+bob-leg,'#c07848',3,7);   // right thigh
-    px(ctx,-3,10+bob+leg,'#a05830',1,6);  // left shadow
-    px(ctx,3,10+bob-leg,'#a05830',1,5);   // right shadow
-    // Mesh pattern - dark diagonal dots/crosses
-    var ml=Math.round(bob+leg);
-    var mr=Math.round(bob-leg);
-    // Left leg mesh
-    px(ctx,-3,10+ml,'#1a1020',1,1);px(ctx,-1,10+ml,'#1a1020',1,1);px(ctx,1,10+ml,'#1a1020',1,1);  // even rows left
-    px(ctx,-2,11+ml,'#1a1020',1,1);px(ctx,0,11+ml,'#1a1020',1,1);               // odd rows
-    px(ctx,-3,12+ml,'#1a1020',1,1);px(ctx,-1,12+ml,'#1a1020',1,1);px(ctx,1,12+ml,'#1a1020',1,1);
-    px(ctx,-2,13+ml,'#1a1020',1,1);px(ctx,0,13+ml,'#1a1020',1,1);
-    px(ctx,-3,14+ml,'#1a1020',1,1);px(ctx,-1,14+ml,'#1a1020',1,1);px(ctx,1,14+ml,'#1a1020',1,1);
-    px(ctx,-2,15+ml,'#1a1020',1,1);px(ctx,0,15+ml,'#1a1020',1,1);
-    px(ctx,-3,16+ml,'#1a1020',1,1);px(ctx,-1,16+ml,'#1a1020',1,1);
-    // Right leg mesh
-    px(ctx,1,10+mr,'#1a1020',1,1);px(ctx,3,10+mr,'#1a1020',1,1);px(ctx,5,10+mr,'#1a1020',1,1);
-    px(ctx,2,11+mr,'#1a1020',1,1);px(ctx,4,11+mr,'#1a1020',1,1);
-    px(ctx,1,12+mr,'#1a1020',1,1);px(ctx,3,12+mr,'#1a1020',1,1);px(ctx,5,12+mr,'#1a1020',1,1);
-    px(ctx,2,13+mr,'#1a1020',1,1);px(ctx,4,13+mr,'#1a1020',1,1);
-    px(ctx,1,14+mr,'#1a1020',1,1);px(ctx,3,14+mr,'#1a1020',1,1);px(ctx,5,14+mr,'#1a1020',1,1);
-    px(ctx,2,15+mr,'#1a1020',1,1);px(ctx,4,15+mr,'#1a1020',1,1);
-    px(ctx,1,16+mr,'#1a1020',1,1);px(ctx,3,16+mr,'#1a1020',1,1);
+    // === TIER 3: Reference image — single pauldron, dark corset, belt straps ===
+    // Single LEFT pauldron — clearly visible silver-grey
+    px(ctx,-4,-1+bob,'#707888',3,4);
+    px(ctx,-4,-1+bob,'#8898aa',1,3);    // bright left edge highlight
+    px(ctx,-3,-2+bob,'#606878',2,1);    // shoulder cap
+    f(-4*S,(-1+bob)*S,1,4*S,'#90a0b2'); // strong left gleam
+    f(-2*S+S-1,(-1+bob)*S,1,3*S,'#484e5a'); // right shadow
+    f(-4*S,(-2+bob)*S,2*S,1,'#8090a0'); // top edge highlight
+    // Dark charcoal corset — slightly lighter than before for readability
+    px(ctx,-2,0+bob,'#252330',4,7);
+    px(ctx,-1,0+bob,'#30303e',2,6);
+    px(ctx,-2,0+bob,'#18161e',1,7);px(ctx,1,0+bob,'#18161e',1,7);
+    // Center lacing — warm brown, clearly readable
+    f(-1*S,(0+bob)*S,1,7*S,'#6a4a20');
+    f(0*S,(0+bob)*S,1,7*S,'#6a4a20');
+    // Lace crossings (brighter)
+    f(-1*S,(1+bob)*S,S,1,'#8a6430');f(-1*S,(3+bob)*S,S,1,'#8a6430');f(-1*S,(5+bob)*S,S,1,'#8a6430');
+    // V neckline showing skin
+    px(ctx,-1,-1+bob,'#e8a878',2,2);px(ctx,0,-1+bob,'#d09060',1,2);
+    // Corset edge gleams
+    f(-2*S+1,(0+bob)*S,1,7*S,'#343240');
+    f(1*S+S-1,(0+bob)*S,1,7*S,'#141220');
+    // TWO belt straps — warm brown, clearly visible against dark corset
+    px(ctx,-3,5+bob,'#5a3a18',5,1);
+    f(-3*S,(5+bob)*S,5*S,1,'#6a4a28');
+    f(-1*S,(5+bob)*S,1,1,'#a07838'); // buckle 1
+    px(ctx,-3,7+bob,'#4a2e0c',5,1);
+    f(-3*S,(7+bob)*S,5*S,1,'#5a3e1c');
+    f(0*S,(7+bob)*S,1,1,'#a07838');  // buckle 2
+    // Small pouch hint on right hip
+    f(2*S,(5+bob)*S,S,2*S,'#3a2810');
+    f(2*S,(5+bob)*S,S,1,'#4a3820');  // pouch top
   }
 
-  // === LEATHER BOTTOM (tier-based tiny leather piece) ===
+  // === ARMS / SLEEVES ===
   if(rT===0){
-    // Plain dark cloth bottoms - basic but still short
-    px(ctx,-3,8+bob,'#181420',5,3);   // shorts waistband
+    // Bare arms — skin visible on sides
+    px(ctx,-4,0+bob,'#c88060',2,8);px(ctx,2,0+bob,'#c88060',2,8);
+    px(ctx,-4,0+bob,'#b87050',1,7);px(ctx,3,0+bob,'#b87050',1,7);
+    f(-4*S+1,(0+bob)*S,1,8*S,'#d89070');
+    f(3*S-1,(0+bob)*S,1,8*S,'#a86040');
+  } else if(rT===1){
+    // Bare arms with leather bracer at wrist
+    px(ctx,-4,0+bob,'#c88060',2,6);px(ctx,2,0+bob,'#c88060',2,6);
+    px(ctx,-4,6+bob,'#3a2010',2,2);px(ctx,2,6+bob,'#3a2010',2,2); // bracer
+    f(-4*S+1,(0+bob)*S,1,6*S,'#d89070');
+    f(3*S-1,(0+bob)*S,1,6*S,'#a86040');
+    f(-4*S,(6+bob)*S,2*S,1,'#4a3018'); // bracer top
+    f(2*S,(6+bob)*S,2*S,1,'#4a3018');
+  } else if(rT===2){
+    // Dark sleeves
+    px(ctx,-4,0+bob,'#181420',2,8);px(ctx,2,0+bob,'#181420',2,8);
+    px(ctx,-4,0+bob,'#201828',1,7);px(ctx,3,0+bob,'#141018',1,7);
+    f(-4*S+1,(0+bob)*S,1,8*S,'#242030');
+    // Skin hands peeking at wrist
+    px(ctx,-4,7+bob,'#c88060',2,2);px(ctx,2,7+bob,'#c88060',2,2);
+    f(-4*S,(7+bob)*S,2*S,1,'#d89070');
+    f(2*S,(7+bob)*S,2*S,1,'#d89070');
+  } else {
+    // Tier 3 — dark sleeves matching corset, bare hands at wrist
+    px(ctx,-4,0+bob,'#1e1c28',2,7);px(ctx,2,0+bob,'#1e1c28',2,7);
+    px(ctx,-4,0+bob,'#282636',1,6);px(ctx,3,0+bob,'#14121e',1,6);
+    f(-4*S+1,(0+bob)*S,1,7*S,'#2e2c3a');
+    // Fingerless gloves / bare skin hands
+    px(ctx,-4,7+bob,'#c88060',2,2);px(ctx,2,7+bob,'#c88060',2,2);
+    f(-4*S,(7+bob)*S,2*S,1,'#d89070');
+    f(2*S,(7+bob)*S,2*S,1,'#d89070');
+  }
+
+  // === LEATHER BOTTOM ===
+  if(rT===0){
+    px(ctx,-3,8+bob,'#181420',5,3);
     px(ctx,-2,9+bob,'#201828',3,2);
-    px(ctx,-3,8+bob,'#2a1c10',5,1);   // top edge belt
+    px(ctx,-3,8+bob,'#2a1c10',5,1);
   } else if(rT===1){
-    // Leather shorts - small, belted, shows upper thigh
-    px(ctx,-3,8+bob,'#2a1c0e',5,3);   // leather shorts
-    px(ctx,-2,8+bob,'#3a2814',3,2);   // lighter center
-    px(ctx,-3,8+bob,'#4a3018',5,1);   // top highlight
-    px(ctx,-3,10+bob,'#1e1208',5,1);  // bottom hem
-    px(ctx,0,8+bob,'#7a5a20',1,1);    // brass rivet center
-    px(ctx,-3,8+bob,'#6a4a18',1,1);   // left rivet
-    px(ctx,2,8+bob,'#6a4a18',1,1);    // right rivet
+    px(ctx,-3,8+bob,'#2a1c0e',5,3);
+    px(ctx,-2,8+bob,'#3a2814',3,2);
+    px(ctx,-3,8+bob,'#4a3018',5,1);
+    px(ctx,-3,10+bob,'#1e1208',5,1);
+    f(0*S,(8+bob)*S,1,1,'#7a5a20');
   } else if(rT===2){
-    // Small triangle leather panty - fits snugly, no belt
-    px(ctx,-2,8+bob,'#1c1008',4,2);   // top band
-    px(ctx,-1,9+bob,'#281806',2,2);   // triangle narrowing
-    px(ctx,0,10+bob,'#1c1008',1,1);   // triangle tip
-    px(ctx,-2,8+bob,'#362210',4,1);   // top highlight
-    px(ctx,-1,9+bob,'#3a2410',2,1);   // mid highlight
+    px(ctx,-2,8+bob,'#1c1008',4,2);
+    px(ctx,-1,9+bob,'#281806',2,2);
+    px(ctx,0,10+bob,'#1c1008',1,1);
+    px(ctx,-2,8+bob,'#362210',4,1);
   } else {
-    // Phantom - tiny black triangle with gold trim
-    px(ctx,-2,8+bob,'#0e0808',4,2);   // top band
-    px(ctx,-1,9+bob,'#181010',2,2);   // triangle
-    px(ctx,0,10+bob,'#0e0808',1,1);   // tip
-    px(ctx,-2,8+bob,'#1a1010',4,1);   // dark top trim
-    px(ctx,-1,9+bob,'#8b1010',2,1);   // red mid trim
+    // Dark slim hip piece with a thigh strap
+    px(ctx,-2,8+bob,'#181420',4,2);
+    px(ctx,-2,8+bob,'#201828',3,1);
+    px(ctx,-3,10+bob,'#3a2810',5,1); // thigh strap at hip
+    f(-3*S,(10+bob)*S,5*S,1,'#4a3818');
+    f(-1*S,(10+bob)*S,1,1,'#7a5828'); // strap buckle
   }
 
-  // === LOWER LEGS / BOOTS ===
+  // === LEGS ===
+  // Hip caps — follow bob only so legs never disconnect from body
   if(rT===0){
-    // Ankle boots - very short
-    px(ctx,-3,14+bob+leg,'#e8a878',3,4); // lower leg bare skin
-    px(ctx,1,14+bob-leg,'#e8a878',3,4);
-    px(ctx,-4,17+bob+leg,'#1e1008',4,2); // ankle boot
-    px(ctx,1,17+bob-leg,'#1e1008',4,2);
-    px(ctx,-3,17+bob+leg,'#2a1810',2,1); // boot highlight
-    px(ctx,1,17+bob-leg,'#2a1810',2,1);
-    px(ctx,-4,18+bob+leg,'#100800',4,1); // sole
-    px(ctx,1,18+bob-leg,'#100800',4,1);
+    f(-3*S,(11+bob)*S,3*S,3,'#c88060');
+    f(1*S,(11+bob)*S,3*S,3,'#c88060');
+    px(ctx,-3,11+bob+leg,'#c88060',3,5);px(ctx,1,11+bob-leg,'#c88060',3,5);
+    f(-3*S+1,(11+bob+leg)*S,1,5*S,'#d89070');
+    f(1*S+1,(11+bob-leg)*S,1,5*S,'#d89070');
   } else if(rT===1){
-    // Knee-high boots with skin visible between boot top and shorts
-    px(ctx,-3,12+bob+leg,'#e8a878',3,3); // lower leg skin above boot
-    px(ctx,1,12+bob-leg,'#e8a878',3,3);
-    // Boot top cuff (at knee)
-    px(ctx,-4,14+bob+leg,'#3a2010',4,2); // cuff
-    px(ctx,1,14+bob-leg,'#3a2010',4,2);
-    px(ctx,-3,14+bob+leg,'#4a3018',2,1); // cuff highlight
-    px(ctx,1,14+bob-leg,'#4a3018',2,1);
-    // Boot body
-    px(ctx,-4,15+bob+leg,'#1a0e06',4,4);
-    px(ctx,1,15+bob-leg,'#1a0e06',4,4);
-    px(ctx,-3,15+bob+leg,'#261408',2,3); // boot highlight
-    px(ctx,1,15+bob-leg,'#261408',2,3);
-    px(ctx,-4,18+bob+leg,'#0e0600',4,1); // sole
-    px(ctx,1,18+bob-leg,'#0e0600',4,1);
+    f(-3*S,(11+bob)*S,3*S,3,'#c88060');
+    f(1*S,(11+bob)*S,3*S,3,'#c88060');
+    px(ctx,-3,11+bob+leg,'#c88060',3,3);px(ctx,1,11+bob-leg,'#c88060',3,3);
+    f(-3*S+1,(11+bob+leg)*S,1,3*S,'#d89070');
+    f(1*S+1,(11+bob-leg)*S,1,3*S,'#d89070');
   } else if(rT===2){
-    // Thigh-high boots - start at y=10 right after the leather panty
-    px(ctx,-4,11+bob+leg,'#1a0e06',4,8); // boot body full length
-    px(ctx,1,11+bob-leg,'#1a0e06',4,8);
-    px(ctx,-3,11+bob+leg,'#261408',2,7); // boot highlight
-    px(ctx,1,11+bob-leg,'#261408',2,7);
-    // Boot top cuff (top of thigh)
-    px(ctx,-4,11+bob+leg,'#2e1c0c',4,2);
-    px(ctx,1,11+bob-leg,'#2e1c0c',4,2);
-    px(ctx,-3,11+bob+leg,'#3a2410',2,1);
-    px(ctx,1,11+bob-leg,'#3a2410',2,1);
-    // Buckle strap mid-boot
-    px(ctx,-4,14+bob+leg,'#4a3010',1,1);px(ctx,3,14+bob-leg,'#4a3010',1,1);
-    px(ctx,-4,17+bob+leg,'#4a3010',1,1);px(ctx,3,17+bob-leg,'#4a3010',1,1);
-    px(ctx,-4,18+bob+leg,'#0e0600',4,1);
-    px(ctx,1,18+bob-leg,'#0e0600',4,1);
+    f(-3*S,(11+bob)*S,3*S,3,'#4a4858');
+    f(1*S,(11+bob)*S,3*S,3,'#4a4858');
+    px(ctx,-3,11+bob+leg,'#4a4858',3,5);px(ctx,1,11+bob-leg,'#4a4858',3,5);
+    f(-3*S+1,(11+bob+leg)*S,1,5*S,'#585668');
+    f(1*S+1,(11+bob-leg)*S,1,5*S,'#585668');
   } else {
-    // Thigh-high boots - start at y=12, tights visible y=10-11
-    px(ctx,-4,12+bob+leg,'#0e0804',4,7);  // boot body
-    px(ctx,1,12+bob-leg,'#0e0804',4,7);
-    px(ctx,-3,12+bob+leg,'#1a1008',2,6);  // highlight
-    px(ctx,1,12+bob-leg,'#1a1008',2,6);
-    // Dark cuff at boot top
-    px(ctx,-4,12+bob+leg,'#181008',4,2);
-    px(ctx,1,12+bob-leg,'#181008',4,2);
-    px(ctx,-3,12+bob+leg,'#241808',2,1);
-    px(ctx,1,12+bob-leg,'#241808',2,1);
-    // Red buckle straps
-    px(ctx,-4,15+bob+leg,'#8b1010',1,1);px(ctx,3,15+bob-leg,'#8b1010',1,1);
-    px(ctx,-4,17+bob+leg,'#8b1010',1,1);px(ctx,3,17+bob-leg,'#8b1010',1,1);
-    px(ctx,-4,18+bob+leg,'#060402',4,1);
-    px(ctx,1,18+bob-leg,'#060402',4,1);
+    f(-3*S,(11+bob)*S,3*S,3,'#3a3848');
+    f(1*S,(11+bob)*S,3*S,3,'#3a3848');
+    px(ctx,-3,11+bob+leg,'#3a3848',3,5);px(ctx,1,11+bob-leg,'#3a3848',3,5);
+    f(-3*S+1,(11+bob+leg)*S,1,5*S,'#484658');
+    f(1*S+1,(11+bob-leg)*S,1,5*S,'#484658');
+    // Thigh strap buckles
+    f(-4*S,(13+bob+leg)*S,4*S,1,'#4a3818');
+    f(1*S,(13+bob-leg)*S,4*S,1,'#4a3818');
+    f(-1*S,(13+bob+leg)*S,1,1,'#8a6828');
+    f(2*S,(13+bob-leg)*S,1,1,'#8a6828');
   }
 
-  // === WEAPONS (tier by games played) ===
+  // === BOOTS ===
+  if(rT===0){
+    // Short ankle boots
+    px(ctx,-3,16+bob+leg,'#1e1008',3,3);px(ctx,1,16+bob-leg,'#1e1008',3,3);
+    px(ctx,-2,16+bob+leg,'#2a1810',1,2);px(ctx,1,16+bob-leg,'#2a1810',1,2);
+    px(ctx,-3,18+bob+leg,'#100800',3,1);px(ctx,1,18+bob-leg,'#100800',3,1);
+    f(-3*S,(16+bob+leg)*S,3*S,1,'#3a2418');
+    f(1*S,(16+bob-leg)*S,3*S,1,'#3a2418');
+    f(-3*S,(18+bob+leg)*S+S-2,2,2,'#0a0a0f');
+    f(1*S,(18+bob-leg)*S+S-2,2,2,'#0a0a0f');
+  } else if(rT===1){
+    // Knee-high boots
+    px(ctx,-4,14+bob+leg,'#1a0e06',4,5);px(ctx,1,14+bob-leg,'#1a0e06',4,5);
+    px(ctx,-3,14+bob+leg,'#261408',2,4);px(ctx,1,14+bob-leg,'#261408',2,4);
+    px(ctx,-4,14+bob+leg,'#2e1c0c',4,2);px(ctx,1,14+bob-leg,'#2e1c0c',4,2); // cuff
+    px(ctx,-3,14+bob+leg,'#3a2410',2,1);px(ctx,1,14+bob-leg,'#3a2410',2,1);
+    px(ctx,-4,18+bob+leg,'#0e0600',4,1);px(ctx,1,18+bob-leg,'#0e0600',4,1);
+    f(-4*S+1,(14+bob+leg)*S,1,5*S,'#362010');
+    f(1*S+1,(14+bob-leg)*S,1,5*S,'#362010');
+    f(-4*S,(18+bob+leg)*S+S-2,2,2,'#0a0a0f');
+    f(1*S,(18+bob-leg)*S+S-2,2,2,'#0a0a0f');
+  } else if(rT===2){
+    // Thigh-high with visible lacing detail
+    px(ctx,-4,11+bob+leg,'#1a0e06',4,8);px(ctx,1,11+bob-leg,'#1a0e06',4,8);
+    px(ctx,-3,11+bob+leg,'#261408',2,7);px(ctx,1,11+bob-leg,'#261408',2,7);
+    px(ctx,-4,11+bob+leg,'#2e1c0c',4,2);px(ctx,1,11+bob-leg,'#2e1c0c',4,2); // cuff
+    // Lace detail
+    f(-4*S,(13+bob+leg)*S,1,1,'#4a3010');f(-4*S,(15+bob+leg)*S,1,1,'#4a3010');f(-4*S,(17+bob+leg)*S,1,1,'#4a3010');
+    f(4*S,(13+bob-leg)*S,1,1,'#4a3010');f(4*S,(15+bob-leg)*S,1,1,'#4a3010');f(4*S,(17+bob-leg)*S,1,1,'#4a3010');
+    px(ctx,-4,18+bob+leg,'#0e0600',4,1);px(ctx,1,18+bob-leg,'#0e0600',4,1);
+    f(-4*S+1,(11+bob+leg)*S,1,7*S,'#362010');
+    f(1*S+1,(11+bob-leg)*S,1,7*S,'#362010');
+  } else {
+    // Tier 3 — high lace-up boots, dark leather, clearly visible lacing
+    px(ctx,-4,11+bob+leg,'#1c1208',4,8);px(ctx,1,11+bob-leg,'#1c1208',4,8);
+    px(ctx,-3,11+bob+leg,'#281a0e',2,7);px(ctx,1,11+bob-leg,'#281a0e',2,7);
+    // Boot top cuff — slightly lighter
+    px(ctx,-4,11+bob+leg,'#2a1e12',4,2);px(ctx,1,11+bob-leg,'#2a1e12',4,2);
+    px(ctx,-3,11+bob+leg,'#382810',2,1);px(ctx,1,11+bob-leg,'#382810',2,1);
+    // Left edge gleam
+    f(-4*S+1,(11+bob+leg)*S,1,8*S,'#342010');
+    f(1*S+1,(11+bob-leg)*S,1,8*S,'#342010');
+    // Visible cross lacing — warm brown, readable
+    f(-4*S,(13+bob+leg)*S,1,1,'#5a3c18');f(-3*S-1,(13+bob+leg)*S,1,1,'#5a3c18');
+    f(-4*S,(15+bob+leg)*S,1,1,'#5a3c18');f(-3*S-1,(15+bob+leg)*S,1,1,'#5a3c18');
+    f(-4*S,(17+bob+leg)*S,1,1,'#5a3c18');f(-3*S-1,(17+bob+leg)*S,1,1,'#5a3c18');
+    f(4*S,(13+bob-leg)*S,1,1,'#5a3c18');f(3*S,(13+bob-leg)*S,1,1,'#5a3c18');
+    f(4*S,(15+bob-leg)*S,1,1,'#5a3c18');f(3*S,(15+bob-leg)*S,1,1,'#5a3c18');
+    f(4*S,(17+bob-leg)*S,1,1,'#5a3c18');f(3*S,(17+bob-leg)*S,1,1,'#5a3c18');
+    px(ctx,-4,18+bob+leg,'#0c0806',4,1);px(ctx,1,18+bob-leg,'#0c0806',4,1);
+    f(-4*S,(18+bob+leg)*S+S-2,2,2,'#0a0a0f');f(-4*S+4*S-2,(18+bob+leg)*S+S-2,2,2,'#0a0a0f');
+    f(1*S,(18+bob-leg)*S+S-2,2,2,'#0a0a0f');f(1*S+4*S-2,(18+bob-leg)*S+S-2,2,2,'#0a0a0f');
+  }
+
+  // === WEAPONS ===
   var rwpT=getWeaponTier('ranger');
   if(rwpT===0){
-    // Tier 0: plain short knife only
-    px(ctx,4,6+bob,'#4a3018',1,4);   // handle
-    px(ctx,3,5+bob,'#505858',2,1);   // guard
-    px(ctx,4,0+bob,'#888e8e',1,7);   // short dull blade
-    px(ctx,5,0+bob,'#9aa0a0',1,5);   // edge
-    px(ctx,4,0+bob,'#707878',1,1);   // tip
-  } else if(rwpT===1){
-    // Tier 1: plain knife + dull off-hand dagger
-    px(ctx,4,6+bob,'#4a3018',1,4);
-    px(ctx,3,5+bob,'#505858',2,1);
-    px(ctx,4,0+bob,'#888e8e',1,7);
-    px(ctx,5,0+bob,'#9aa0a0',1,5);
+    px(ctx,4,6+bob,'#4a3018',1,4);px(ctx,3,5+bob,'#505858',2,1);
+    px(ctx,4,0+bob,'#888e8e',1,7);px(ctx,5,0+bob,'#9aa0a0',1,5);
     px(ctx,4,0+bob,'#707878',1,1);
-    // Dull short dagger left hand
-    px(ctx,-5,7+bob,'#3a2410',1,3);
-    px(ctx,-6,6+bob,'#606868',2,1);
-    px(ctx,-6,10+bob,'#787e7e',1,5);
-    px(ctx,-7,10+bob,'#888e8e',1,4);
-    px(ctx,-6,10+bob,'#686e6e',1,1);
+  } else if(rwpT===1){
+    px(ctx,4,6+bob,'#4a3018',1,4);px(ctx,3,5+bob,'#505858',2,1);
+    px(ctx,4,0+bob,'#888e8e',1,7);px(ctx,5,0+bob,'#9aa0a0',1,5);px(ctx,4,0+bob,'#707878',1,1);
+    px(ctx,-5,7+bob,'#3a2410',1,3);px(ctx,-6,6+bob,'#606868',2,1);
+    px(ctx,-6,10+bob,'#787e7e',1,5);px(ctx,-7,10+bob,'#888e8e',1,4);
   } else if(rwpT===2){
-    // Tier 2: iron rapier + basic dagger (was tier 1)
-    px(ctx,4,5+bob+sw,'#5a3a10',1,4);
-    px(ctx,4,4+bob+sw,'#6a4a18',2,1);
+    px(ctx,4,5+bob+sw,'#5a3a10',1,4);px(ctx,4,4+bob+sw,'#6a4a18',2,1);
     px(ctx,3,8+bob+sw,'#8090a0',4,1);
-    px(ctx,5,-8+bob+sw,'#8898a8',1,16);
-    px(ctx,6,-8+bob+sw,'#9aaab8',1,14);
-    px(ctx,5,-9+bob+sw,'#b8c4cc',1,1);
-    px(ctx,6,-9+bob+sw,'#c0ccd4',1,1);
-    // Basic dagger
-    px(ctx,-5,6+bob,'#4a3018',1,3);
-    px(ctx,-6,5+bob,'#505858',2,1);
-    px(ctx,-6,9+bob,'#888e8e',1,5);
-    px(ctx,-7,9+bob,'#9aa0a0',1,4);
-    px(ctx,-6,9+bob,'#888e8e',1,1);
+    px(ctx,5,-8+bob+sw,'#8898a8',1,16);px(ctx,6,-8+bob+sw,'#9aaab8',1,14);
+    px(ctx,5,-9+bob+sw,'#b8c4cc',1,1);px(ctx,6,-9+bob+sw,'#c0ccd4',1,1);
+    px(ctx,-5,6+bob,'#4a3018',1,3);px(ctx,-6,5+bob,'#505858',2,1);
+    px(ctx,-6,9+bob,'#888e8e',1,5);px(ctx,-7,9+bob,'#9aa0a0',1,4);
   } else {
-    // Tier 3: fine steel rapier + ornate dagger (was tier 2)
-    px(ctx,4,5+bob+sw,'#6a4a18',1,4);
-    px(ctx,4,4+bob+sw,'#8a6020',2,1);
-    px(ctx,3,8+bob+sw,'#6a4a18',4,1);
-    px(ctx,4,7+bob+sw,'#6a4a18',1,2);
-    px(ctx,6,8+bob+sw,'#6a4a18',1,2);
-    px(ctx,5,-9+bob+sw,'#c8d0d8',1,18);
-    px(ctx,6,-9+bob+sw,'#dce4ec',1,16);
-    px(ctx,7,-8+bob+sw,'#eef4f8',1,10);
-    px(ctx,5,-10+bob+sw,'#ffffff',1,1);
-    px(ctx,6,-10+bob+sw,'#f0f8ff',1,1);
-    // Ornate dagger gold trim
-    px(ctx,-5,6+bob,'#c8a030',1,3);
-    px(ctx,-6,5+bob,'#c8a030',2,1);
-    px(ctx,-6,9+bob,'#c8d0d8',1,5);
-    px(ctx,-7,9+bob,'#dce8f0',1,4);
-    px(ctx,-6,13+bob,'#f0f8ff',1,1);
-    px(ctx,-7,13+bob,'#ffffff',1,1);
+    px(ctx,4,5+bob+sw,'#6a4a18',1,4);px(ctx,4,4+bob+sw,'#8a6020',2,1);
+    px(ctx,3,8+bob+sw,'#6a4a18',4,1);px(ctx,4,7+bob+sw,'#6a4a18',1,2);px(ctx,6,8+bob+sw,'#6a4a18',1,2);
+    px(ctx,5,-9+bob+sw,'#c8d0d8',1,18);px(ctx,6,-9+bob+sw,'#dce4ec',1,16);
+    px(ctx,7,-8+bob+sw,'#eef4f8',1,10);px(ctx,5,-10+bob+sw,'#ffffff',1,1);
+    px(ctx,-5,6+bob,'#c8a030',1,3);px(ctx,-6,5+bob,'#c8a030',2,1);
+    px(ctx,-6,9+bob,'#c8d0d8',1,5);px(ctx,-7,9+bob,'#dce8f0',1,4);
+    px(ctx,-6,13+bob,'#f0f8ff',1,1);px(ctx,-7,13+bob,'#ffffff',1,1);
   }
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.35)';ctx.fillRect(-6*S,-12*S,16*S,34*S);}
   ctx.restore();
 }
-
 var _redEyesOverride = null; // set to cls when drawing with red eyes
 var DRAW = {warrior:drawWarrior, mage:drawMage, ranger:drawRanger};
 function drawWithOpts(cls,ctx,x,y,dir,anim,flash,level){
@@ -6837,7 +6622,7 @@ function getRedEyePos(cls,level){
   if(cls==='warrior'){
     // Warrior eyes in visor: level<10 bare face, else helm
     if(level>=10){return [[-2,-4],[0,-4]];} // visor eyes
-    return [[-1,-4],[1,-4]]; // bare face
+    return [[-2,-4],[0,-4]]; // all warrior tiers same position now
   } else if(cls==='mage'){
     return [[-2,-4],[0,-4]]; // mage eye positions
   } else {
