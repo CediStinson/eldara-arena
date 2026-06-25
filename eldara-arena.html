@@ -4594,7 +4594,7 @@ function processAction(msg,gs,me,en) {
       // Melee - validate range before applying damage
       var meleeDist=Math.hypot(expos.x-me.x,expos.y-me.y);
       spawnEfx(gs,'slash',expos.x,expos.y);
-      if(!me.stealthed&&meleeDist<C5.atkRange+80){
+      if(!me.stealthed&&meleeDist<C5.atkRange+20){
         var sneakMult=atkPos.sneak?2.0:1;
         var dmg=Math.round((C5.atkDmg+Math.floor(Math.random()*4)-1)*sneakMult);
         if(me.arcaneShield>0&&me.arcaneShieldHits>0){
