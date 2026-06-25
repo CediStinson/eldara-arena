@@ -4426,10 +4426,11 @@ function pushState(me) {
   });
 }
 
+var _actionSeq=0;
 function pushAction(type,data) {
   dbg('SEND '+type+' to '+enemyIdPvp.slice(0,8));
   if(!enemyIdPvp){dbg('ERROR: enemyIdPvp empty!');return;}
-  var msg={type:type,from:myId,data:data||{},ts:Date.now()};
+  var msg={type:type,from:myId,data:data||{},ts:Date.now(),seq:_actionSeq++};
   if(_ws&&_wsReady&&_ws.readyState===WebSocket.OPEN){
     _ws.send(JSON.stringify({type:'action',data:msg}));
   } else {
@@ -4511,6 +4512,18 @@ function connectGameWS(){
             var meW=gameState.players.find(function(p){return p.isMe;});
             var enW=gameState.players.find(function(p){return !p.isMe;});
             if(meW&&enW)processAction(msg.data,gameState,meW,enW);
+          }
+        } else if(msg.type==='round_over'){
+          // Server authoritatively decided round is over
+          if(gameState&&gameState.phase!=='gameOver'){
+            var deadId=msg.deadIds&&msg.deadIds[0];
+            var meRO=gameState.players.find(function(p){return p.isMe;});
+            var enRO=gameState.players.find(function(p){return !p.isMe;});
+            if(deadId&&meRO&&enRO){
+              var deadPlayer=gameState.players.find(function(p){return p.id===deadId;});
+              if(deadPlayer&&!deadPlayer.dead){deadPlayer.dead=true;deadPlayer.hp=0;}
+            }
+            if(gameState.phase!=='gameOver')endRound(gameState);
           }
         } else if(msg.type==='opponent_left'){
           _wsOpponentLeft();
@@ -4599,6 +4612,10 @@ function processAction(msg,gs,me,en) {
         sidelog('\u2694',dmg+' dmg');
         if(me.hp<=0){me.dead=true;me.hp=0;endRound(gs);}
         pushState(me);
+        // Also explicitly push HP over WS so opponent's health bar stays in sync
+        if(_ws&&_wsReady&&_ws.readyState===WebSocket.OPEN){
+          _ws.send(JSON.stringify({type:'action',data:{type:'hp_sync',from:myId,data:{hp:Math.round(me.hp),dead:me.dead},ts:Date.now()}}));
+        }
       }
     }
   } else if(msg.type==='skill1'){
@@ -4713,6 +4730,12 @@ function processAction(msg,gs,me,en) {
     if(meR4)meR4.cls=myClass;
     pvpRematchReady=false;opponentRematchReady=false;
     hideOverlay();resetRound(gs);
+  } else if(msg.type==='hp_sync'){
+    // Opponent is confirming our HP after taking a hit — update their health bar
+    if(msg.data&&msg.data.hp!=null){
+      en.hp=msg.data.hp;
+      if(msg.data.dead&&!en.dead){en.dead=true;if(gs.phase!=='gameOver')endRound(gs);}
+    }
   } else if(msg.type==='opponent_left_lobby'){
     // Opponent went back to menu - take us to lobby
     gs.phase='gameOver';
@@ -4774,6 +4797,12 @@ function startListeningActions() {
       var keys=Object.keys(data);
       var newKeys=keys.filter(function(k){return !seenActionKeys[k];});
       if(newKeys.length===0)return;
+      // Sort by seq number to handle out-of-order delivery
+      newKeys.sort(function(a,b){
+        var sa=data[a]&&data[a].seq!=null?data[a].seq:0;
+        var sb=data[b]&&data[b].seq!=null?data[b].seq:0;
+        return sa-sb;
+      });
       dbg('Inbox: '+newKeys.length+' new msg(s)');
       newKeys.forEach(function(k){
         seenActionKeys[k]=true;
@@ -5854,6 +5883,10 @@ function doStartRematch(guestCls){
   // Send start to guest via inbox - retry a few times to ensure delivery
   pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,spawnFlip:pvpSpawnFlip});
   setTimeout(function(){if(gameState&&gameState.phase==='fighting')return;pushAction('rematch_start',{arenaKey:ak3,hostCls:myClass,spawnFlip:pvpSpawnFlip});},300);
+  // Tell server to reset round state
+  if(_ws&&_wsReady&&_ws.readyState===WebSocket.OPEN){
+    _ws.send(JSON.stringify({type:'round_reset'}));
+  }
   hideOverlay();resetRound(gameState);
 }
 // Class picker in overlay
