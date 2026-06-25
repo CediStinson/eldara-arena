@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eldara Arena</title>
+<title>Champions of Iskara</title>
 <style>
 :root{--bg:#0a0a0f;--panel:#12121a;--border:#2a2a3a;--gold:#e8b84b;--red:#c0392b;--blue:#2980b9;--green:#27ae60;--text:#d4c9a8;--dim:#6b6355;--hp:#e74c3c;--mp:#3498db;}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -170,7 +170,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 </head>
 <body class="loading">
 <div id="loading-screen" style="position:fixed;inset:0;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s">
-  <img src="coi_logo.png" alt="Eldara Arena" style="width:320px;max-width:80vw;object-fit:contain;filter:drop-shadow(0 0 40px rgba(232,184,75,0.5))">
+  <img src="coi_logo.png" alt="Champions of Iskara" style="width:320px;max-width:80vw;object-fit:contain;filter:drop-shadow(0 0 40px rgba(232,184,75,0.5))">
   <div style="margin-top:32px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:4px;color:rgba(232,184,75,0.5);animation:ldpulse 1.4s ease-in-out infinite">LOADING</div>
   <style>@keyframes ldpulse{0%,100%{opacity:0.3}50%{opacity:1}}</style>
 </div>
@@ -188,7 +188,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 <!-- AUTH -->
 <div class="screen active" id="auth-screen">
   <div class="auth-box">
-    <img src="coi_logo.png" alt="Eldara Arena" style="width:280px;margin-bottom:8px;object-fit:contain">
+    <img src="coi_logo.png" alt="Champions of Iskara" style="width:280px;margin-bottom:8px;object-fit:contain">
     <div class="auth-sub">sign in to save your progress</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="auth-tab-login">SIGN IN</button>
@@ -5066,7 +5066,7 @@ function showScreen(id){
           name:'THE IRONBLOOD CLAN',
           title:'House of the Red Banner',
           accent:'#8b1010',
-          lore:'From the frozen steppes beyond the Ashwall, the Ironblood have never bowed to a king. They elect their chieftain the only way they understand - the last one standing. They come to Eldara not for gold, but for the right to call themselves the strongest in the world. Their fighters carry blood debts and old grudges. They do not lose gracefully.'
+          lore:'From the frozen steppes beyond the Ashwall, the Ironblood have never bowed to a king. They elect their chieftain the only way they understand - the last one standing. They come to Iskara not for gold, but for the right to call themselves the strongest in the world. Their fighters carry blood debts and old grudges. They do not lose gracefully.'
         },
         {
           name:'HOUSE AELINDRA',
@@ -5194,7 +5194,7 @@ function buildSpellDesc(cls){
   var flavor={
     warrior:"Once a nameless conscript on the front lines, he survived sieges that killed entire battalions. He doesn't fight for glory or coin - only the next battle matters. Veterans say his eyes went cold the day he stopped counting the dead.",
     mage:"An elven arcanist of a forgotten bloodline, he left his people's forest centuries ago seeking older, darker magic. He speaks little, but when he raises his staff, even warlords step back. The grey in his hair is not age - it is the cost of what he knows.",
-    ranger:"Nobody knows her real name. She appeared in the slums of Eldara at seventeen with nothing but a stolen blade and a talent for disappearing. She has since made six guilds, three kings, and one god deeply regret crossing her."
+    ranger:"Nobody knows her real name. She appeared in the slums of Iskara at seventeen with nothing but a stolen blade and a talent for disappearing. She has since made six guilds, three kings, and one god deeply regret crossing her."
   };
   h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">';
   h+='<div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:8px">LORE</div>';
