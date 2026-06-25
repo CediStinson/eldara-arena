@@ -178,7 +178,11 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   setTimeout(function(){
     var ld=document.getElementById('loading-screen');
     if(ld&&ld.style.display!=='none'){ld.style.opacity='0';document.body.classList.remove('loading');setTimeout(function(){ld.style.display='none';},650);}
-  },5000);
+  },1500);
+  // If no session token exists, skip loading screen immediately
+  (function(){
+    try{var t=sessionStorage.getItem('eldara_token');if(!t){var ld=document.getElementById('loading-screen');if(ld){ld.style.display='none';}document.body.classList.remove('loading');}}catch(e){}
+  })();
 </script>
 
 <!-- AUTH -->
@@ -528,7 +532,9 @@ function fbSetAuth(path, data) {
 
 function fbGetAuth(path) {
   var url = FB_BASE + path + '.json' + (authToken ? '?auth=' + authToken : '');
-  return fetch(url).then(function(r){return r.json();}).catch(function(){return null;});
+  var ctrl = new AbortController();
+  var t = setTimeout(function(){ctrl.abort();}, 3000);
+  return fetch(url, {signal: ctrl.signal}).then(function(r){clearTimeout(t);return r.json();}).catch(function(){clearTimeout(t);return null;});
 }
 
 function signIn(email, pass) {
@@ -711,8 +717,10 @@ function fbPush(path, data) {
   }).catch(function(){});
 }
 function fbGet(path) {
-  return fetch(FB_BASE+path+'.json'+authParam())
-    .then(function(r){return r.json();}).catch(function(){return null;});
+  var ctrl = new AbortController();
+  var t = setTimeout(function(){ctrl.abort();}, 3000);
+  return fetch(FB_BASE+path+'.json'+authParam(), {signal: ctrl.signal})
+    .then(function(r){clearTimeout(t);return r.json();}).catch(function(){clearTimeout(t);return null;});
 }
 function fbDelete(path) {
   return fetch(FB_BASE+path+'.json'+authParam(),{method:'DELETE'}).catch(function(){});
@@ -1468,101 +1476,47 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
   // Neck behind head (2 rows, drawn first so head sits on top)
   f(-1*S+1,(-2+bob)*S,S,2*S,'#906848');
 
-  // ── HAIR BEHIND (tier-dependent length) ──
-  if(rT===0){
-    px(ctx,2,-5+bob,'#7a2010',1,10); px(ctx,3,-4+bob,'#5a1008',1,7); px(ctx,4,-3+bob,'#420c06',1,4);
-  } else if(rT===1){
-    px(ctx,2,-5+bob,'#7a2010',1,12); px(ctx,3,-4+bob,'#5a1008',1,9); px(ctx,4,-3+bob,'#420c06',1,6); px(ctx,1,-4+bob,'#802010',1,5);
-  } else if(rT===2){
-    px(ctx,2,-5+bob,'#7a2010',1,13); px(ctx,3,-5+bob,'#5a1008',1,11); px(ctx,4,-4+bob,'#420c06',1,7); px(ctx,1,-4+bob,'#802010',1,6);
-  } else {
-    px(ctx,2,-6+bob,'#902810',1,14); px(ctx,3,-5+bob,'#7a2010',1,12); px(ctx,4,-4+bob,'#5a1008',1,8); px(ctx,5,-3+bob,'#420c06',1,5); px(ctx,1,-4+bob,'#802010',1,7);
-  }
+  // ── HAIR BEHIND (all tiers use T3 wild long tail) ──
+  px(ctx,2,-6+bob,'#3a0c04',1,14); px(ctx,3,-5+bob,'#2e0a02',1,12); px(ctx,4,-4+bob,'#220802',1,8); px(ctx,5,-3+bob,'#180601',1,5); px(ctx,1,-4+bob,'#340a02',1,7);
 
-  // ── HAIR ON HEAD (4 distinct tier styles) ──
-  px(ctx,-2,-8+bob,'#802010',4,1); // shared crown base
+  // ── HAIR ON HEAD (all tiers: T3 style, top row removed) ──
+  px(ctx,-2,-8+bob,'#3a0c04',4,1); // shared crown base
   f(-2*S,(-8+bob)*S,1,1,'#0a0a0f'); f(1*S+S-1,(-8+bob)*S,1,1,'#0a0a0f'); // crown corners
-  if(rT===0){
-    // T0: pulled-back sleek — flat crown, everything behind, minimal sides
-    px(ctx,-2,-7+bob,'#7a2010',4,1);   // flat crown (same width, no peak)
-    px(ctx,-2,-6+bob,'#621008',3,1);   // narrows at base
-    px(ctx,2,-5+bob,'#7a2010',1,5);    // modest right flow
-    px(ctx,3,-4+bob,'#5a1008',1,4);
-    f(-2*S,(-5+bob)*S,1,S,'#6a1808');  // single front pixel (loose strand)
-  } else if(rT===1){
-    // T1: natural loose curl — wider, left strand visible, medium flow
-    px(ctx,-2,-7+bob,'#902810',4,1);
-    px(ctx,-3,-6+bob,'#7a2010',5,1);   // widens at y=-6 (5 wide, sticks left)
-    f(-3*S,(-6+bob)*S,1,1,'#0a0a0f'); f(1*S+S-1,(-6+bob)*S,1,1,'#0a0a0f'); // corner cuts
-    px(ctx,-3,-5+bob,'#621008',1,3);   // left curl down
-    px(ctx,2,-5+bob,'#802010',1,7);
-    px(ctx,3,-4+bob,'#621008',1,5);
-    px(ctx,4,-3+bob,'#4e0e06',1,3);
-    f(-2*S,(-5+bob)*S,1,S,'#802010');
-  } else if(rT===2){
-    // T2: off-centre parting, hair sweeps dramatically to one side
-    px(ctx,-1,-9+bob,'#7a2010',3,1);   // off-centre peak (3 wide, shifted right)
-    px(ctx,-2,-7+bob,'#902810',4,1);
-    px(ctx,-2,-6+bob,'#7a2010',4,1);
-    px(ctx,-3,-5+bob,'#621008',1,2);   // small left
-    px(ctx,2,-5+bob,'#902810',1,10);   // dominant right sweep
-    px(ctx,3,-4+bob,'#7a2010',1,8);
-    px(ctx,4,-3+bob,'#621008',1,5);
-    px(ctx,1,-4+bob,'#802010',1,5);    // inner sweep strand
-    f(-2*S,(-5+bob)*S,1,S,'#802010');
-  } else {
-    // T3: wild dramatic — widest crown, extra strands everywhere
-    px(ctx,-1,-9+bob,'#902810',2,1);   // tall elevated peak
-    px(ctx,-2,-7+bob,'#902810',4,2);   // double-height wide rows
-    px(ctx,-3,-6+bob,'#7a2010',1,4);   // strong left flow
-    px(ctx,-4,-5+bob,'#621008',1,3);   // extra wild left strand
-    px(ctx,2,-6+bob,'#902810',1,10);
-    px(ctx,3,-5+bob,'#7a2010',1,8);
-    px(ctx,4,-4+bob,'#621008',1,6);
-    px(ctx,1,-4+bob,'#802010',1,6);    // inner strand
-    f(-2*S,(-5+bob)*S,1,2*S,'#802010'); // strong front bangs
-  }
+  px(ctx,-2,-7+bob,'#420e04',4,2);
+  px(ctx,-3,-6+bob,'#2e0a02',1,4);
+  px(ctx,-4,-5+bob,'#220802',1,3);
+  px(ctx,2,-6+bob,'#420e04',1,10);
+  px(ctx,3,-5+bob,'#2e0a02',1,8);
+  px(ctx,4,-4+bob,'#220802',1,6);
+  px(ctx,1,-4+bob,'#340a02',1,6);
+  f(-2*S,(-5+bob)*S,1,2*S,'#340a02');
 
-  // ── FACE ──
+  // ── FACE ── (3 rows tall: -5 brow, -4 eyes, -3 nose/mouth)
   px(ctx,-2,-5+bob,'#e8b080',4,3);
   px(ctx,-2,-5+bob,'#c89060',1,3);
   px(ctx,1,-5+bob,'#b87848',1,3);
-  f(-1*S,(-5+bob)*S,2*S,2,'#f0c090');
-  // Split brows — two arched brows with skin gap between
-  f(-2*S,(-5+bob)*S,S,1,'#3a1808');      // left brow
-  f(0*S,(-5+bob)*S,S,1,'#3a1808');        // right brow
-  f(-2*S+1,(-5+bob)*S,1,1,'#c09060');    // left brow highlight
-  f(0*S+1,(-5+bob)*S,1,1,'#c09060');     // right brow highlight
-  // Eyes — simple like warrior, green iris
+  // Brow line — 1px lower, split with gap over nose bridge
+  f(-2*S,(-5+bob)*S+1,S,1,'#2a1006');
+  f(0*S,(-5+bob)*S+1,S,1,'#2a1006');
+  // Eyes at row -4
   f(-2*S,(-4+bob)*S,S,S,'#d8d4c0');
   f(-2*S,(-4+bob)*S,S,1,'#2a1008');
   f(-2*S+1,(-4+bob)*S+1,1,1,'#1a6010');
-  f(-2*S+S-1,(-4+bob)*S,1,1,'#d8eed0');
   f(0*S,(-4+bob)*S,S,S,'#d8d4c0');
   f(0*S,(-4+bob)*S,S,1,'#2a1008');
   f(0*S+1,(-4+bob)*S+1,1,1,'#1a6010');
-  f(0*S+S-1,(-4+bob)*S,1,1,'#d8eed0');
   f(-1*S,(-4+bob)*S,S,S,'#e8b080');
-  // Nose — 1px wide, 1px tall (narrower)
-  f(-1*S+1,(-3+bob)*S,1,1,'#c08860');
-  // Clip outermost corner pixel on each side of face bottom
-  f(-2*S,(-3+bob)*S+S-1,1,1,'#a07050');
-  f(1*S+S-1,(-3+bob)*S+S-1,1,1,'#906848');
+  // Nose
+  f(-1*S+1,(-3+bob)*S,2,S,'#c89060');
+  // Clip bottom corners — single px to round face without visible black squares
+  f(-2*S,(-3+bob)*S+S-1,1,1,'#0a0a0f');
+  f(1*S+S-1,(-3+bob)*S+S-1,1,1,'#0a0a0f');
+  // Mouth — 1 cell wide, centred
+  f(-1*S+1,(-3+bob)*S+2,S,1,'#5a2810');
 
-  // ── LOWER FACE ──
-  px(ctx,-1,-2+bob,'#e8b080',2,1);
-  // Fill jaw gaps both sides
-  f(-2*S,(-2+bob)*S,1,S,'#b07858');
-  f(-2*S+1,(-2+bob)*S,1,S,'#c89060');
-  f(0*S+S,(-2+bob)*S,1,S,'#c89060');
-  f(0*S+S+1,(-2+bob)*S,1,S,'#b07858');
-  f(0,(-1+bob)*S,S+2,S,'#c89060');
-  // Neck skin at top of body bridges chin to body
-  f(-1*S+1,(0+bob)*S,S,S,'#d09060');
-  if(rT===3){
-    px(ctx,-2,-1+bob,'#1a1220',4,2);
-    f(-2*S,(-1+bob)*S,4*S,1,'#26182e');
-  }
+  // ── CHIN ──
+  px(ctx,-1,-2+bob,'#d0a068',2,1);
+  px(ctx,-1,-1+bob,'#c09060',2,1);
 
   // ── HIP CAPS + LEGS (drawn before body so body covers tops) ──
   var lc=rT<=1?'#c88060':rT===2?'#4a2c10':'#3c3848';
@@ -1591,6 +1545,7 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-2,0+bob,'#1e2818',1,9); px(ctx,1,0+bob,'#1e2818',1,9);
     f(-2*S+1,(0+bob)*S,1,8*S,'#404e38');
     px(ctx,-2,8+bob,'#2a1808',4,1);
+    f(-2*S,(3+bob)*S,2*S,1,'#223a1c'); f(0,(3+bob)*S,2*S,1,'#223a1c');
   } else if(rT===1){
     // Brown leather vest — the base
     px(ctx,-2,0+bob,'#261808',4,9);
@@ -1601,6 +1556,7 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     f(-1*S,(6+bob)*S,S,1,'#4a3010');
     px(ctx,-2,8+bob,'#1e1008',4,1);
     f(-1*S,(8+bob)*S,S,1,'#907828');
+    f(-2*S,(3+bob)*S,2*S,1,'#1a1006'); f(0,(3+bob)*S,2*S,1,'#1a1006');
   } else if(rT===2){
     // Tier 1 base but darker leather — same structure
     px(ctx,-2,0+bob,'#1a1008',4,9);
@@ -1609,13 +1565,12 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     f(-2*S+1,(0+bob)*S,1,8*S,'#2a1c10');
     f(-1*S,(3+bob)*S,S,1,'#382010');
     f(-1*S,(6+bob)*S,S,1,'#382010');
-    // Extra chest strap (upgrade from t1)
     f(-2*S,(2+bob)*S,4*S,1,'#4a3010');
     px(ctx,-2,8+bob,'#140c04',4,1);
     f(-1*S,(8+bob)*S,S,1,'#907828');
-    // Small shoulder detail
     px(ctx,-4,-1+bob,'#3a2818',2,3);
     f(-4*S,(-1+bob)*S,1,3*S,'#4a3828');
+    f(-2*S,(4+bob)*S,2*S,1,'#120c04'); f(0,(4+bob)*S,2*S,1,'#120c04');
   } else {
     // Tier 1 base but darkest — same structure, silver accents
     px(ctx,-2,0+bob,'#0e0c10',4,9);
@@ -1624,15 +1579,14 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     f(-2*S+1,(0+bob)*S,1,8*S,'#201e22');
     f(-1*S,(3+bob)*S,S,1,'#2a2830');
     f(-1*S,(6+bob)*S,S,1,'#2a2830');
-    // Chest strap + silver trim
     f(-2*S,(2+bob)*S,4*S,1,'#383438');
-    f(-2*S+1,(0+bob)*S,1,9*S,'#505060'); // silver left edge
+    f(-2*S+1,(0+bob)*S,1,9*S,'#505060');
     px(ctx,-2,8+bob,'#0a0808',4,1);
-    f(-1*S,(8+bob)*S,S,1,'#a09060'); // gold-ish buckle
-    // Shoulder pad (bigger than t2)
+    f(-1*S,(8+bob)*S,S,1,'#a09060');
     px(ctx,-4,-1+bob,'#484858',3,4);
     f(-4*S,(-1+bob)*S,1,4*S,'#606070');
     f(-4*S,(-2+bob)*S,3*S,1,'#505060');
+    f(-2*S,(4+bob)*S,2*S,1,'#0c0c14'); f(0,(4+bob)*S,2*S,1,'#0c0c14');
   }
 
   // (no hood — removed, was causing black blobs)
@@ -2661,9 +2615,26 @@ var gameState=null;
 var canvas, gctx, CW, CH;
 var keys={}, lastTs=0;
 var remoteState=null;
-// Interpolation: ring buffer of timestamped position snapshots
+// === ARENA CACHE ===
+var _arenaCache=null, _arenaCacheKey='', _arenaCacheTick=-1;
+function drawArenaCached(ctx, arena, tick) {
+  var key=arena.name+'|'+JSON.stringify(arena.tiles);
+  var hasAnim=arena.tiles.some(function(row){return row.some(function(t){return t===4||t===5;});});
+  // Redraw cache if arena changed or every 4 ticks if animated tiles present
+  if(key!==_arenaCacheKey||!_arenaCache||(hasAnim&&tick-_arenaCacheTick>=4)){
+    if(!_arenaCache||_arenaCache.width!==AW*TILE||_arenaCache.height!==AH*TILE){
+      _arenaCache=document.createElement('canvas');
+      _arenaCache.width=AW*TILE;_arenaCache.height=AH*TILE;
+    }
+    var ac=_arenaCache.getContext('2d');
+    ac.clearRect(0,0,_arenaCache.width,_arenaCache.height);
+    drawArena(ac,arena,tick);
+    _arenaCacheKey=key;_arenaCacheTick=tick;
+  }
+  ctx.drawImage(_arenaCache,0,0);
+}
 var _enPosBuffer=[];
-var _INTERP_DELAY=120; // render 120ms behind real-time (covers ~100ms jitter)
+var _INTERP_DELAY=80; // render 80ms behind real-time (down from 120ms)
 var enemyNamePvp='Opponent', enemyClsPvp='warrior', enemyIdPvp='';
 var esEnemy=null, esActions=null, esGuest=null, esMatchStart=null, esChat=null;
 
@@ -3515,7 +3486,7 @@ function draw(gs) {
   gctx.clearRect(0,0,CW,CH);gctx.fillStyle='#0a0a0f';gctx.fillRect(0,0,CW,CH);
   var ox=Math.floor((CW-AW*TILE)/2),oy=Math.floor((CH-AH*TILE)/2);
   gctx.save();gctx.translate(ox,oy);
-  drawArena(gctx,gs.arena,gs.tick);
+  drawArenaCached(gctx,gs.arena,gs.tick);
 
   // -- FOOTPRINTS (behind everything) --
   drawFootDust(gctx,0,0); // coords already in arena space
@@ -4476,7 +4447,7 @@ function startListeningEnemy(enemyId) {
       if(data.x!=null&&data.y!=null){
         var now=Date.now();
         _enPosBuffer.push({t:now,x:data.x,y:data.y,dir:data.dir,anim:data.anim,moving:data.moving});
-        var cutoff=now-600;
+        var cutoff=now-300;
         while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
       }
     } else {
@@ -4506,7 +4477,7 @@ function connectGameWS(){
 
     var connectTimeout=setTimeout(function(){
       if(!_wsReady&&_ws){try{_ws.close();}catch(e){}}
-    },5000); // give up after 5s per attempt
+    },2000); // give up after 2s per attempt
 
     _ws.onopen=function(){
       clearTimeout(connectTimeout);
@@ -4532,7 +4503,7 @@ function connectGameWS(){
             var now=Date.now();
             _enPosBuffer.push({t:now,x:msg.data.x,y:msg.data.y,
               dir:msg.data.dir,anim:msg.data.anim,moving:msg.data.moving});
-            var cutoff=now-600;
+            var cutoff=now-300;
             while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
           }
         } else if(msg.type==='action'){
@@ -4590,6 +4561,12 @@ function processAction(msg,gs,me,en) {
     var atkPos=msg.data||{};var C5=CLS[atkPos.cls||en.cls];
     en.attacking=14;
     var expos={x:atkPos.x!=null?atkPos.x:en.x,y:atkPos.y!=null?atkPos.y:en.y};
+    // Snap enemy sprite to their actual attack position — eliminates slash/sprite offset
+    if(atkPos.x!=null&&atkPos.y!=null){
+      en.x=atkPos.x;en.y=atkPos.y;
+      // Clear interp buffer so we don't rubber-band back
+      _enPosBuffer=[];
+    }
     dbg('ATK recv type='+(C5.atkType||'melee'));
     if(C5.atkType==='proj'){
       var projType2=en.cls==='mage'?'ice':'arrow';
@@ -4627,6 +4604,7 @@ function processAction(msg,gs,me,en) {
   } else if(msg.type==='skill1'){
     var sk1r=CLS[en.cls].s1,sp1=msg.data||{};
     var enPos1={x:sp1.x!=null?sp1.x:en.x,y:sp1.y!=null?sp1.y:en.y};
+    if(sp1.x!=null&&sp1.y!=null){en.x=sp1.x;en.y=sp1.y;_enPosBuffer=[];}
     var sdist1=Math.hypot(enPos1.x-me.x,enPos1.y-me.y);
     en.s1cd=sk1r.cd;
     // Trap placement - register on our side (we can't see it, but need it for trigger sync)
@@ -4664,6 +4642,7 @@ function processAction(msg,gs,me,en) {
   } else if(msg.type==='skill2'){
     var sk2r=CLS[en.cls].s2,sp2=msg.data||{};
     var enPos3={x:sp2.x!=null?sp2.x:en.x,y:sp2.y!=null?sp2.y:en.y};
+    if(sp2.x!=null&&sp2.y!=null){en.x=sp2.x;en.y=sp2.y;_enPosBuffer=[];}
     var sdist2=Math.hypot(enPos3.x-me.x,enPos3.y-me.y);
     dbg('SK2 recv type='+(sk2r.proj?'proj':sk2r.aoe?'aoe':sk2r.blink?'blink':'?'));
     en.s2cd=sk2r.cd;
@@ -4843,6 +4822,30 @@ function genCode(){return Math.random().toString(36).substring(2,8).toUpperCase(
 var _loopId=null;
 var _ws=null,_wsReady=false,_wsPingTimer=null,_wsStateTick=0;
 var WS_SERVER='wss://eldara-arena-production.up.railway.app'; // Railway WS server
+// === WS SERVER PING ===
+var _wsServerOnline=null;
+function pingWsServer(){
+  return new Promise(function(resolve){
+    _wsServerOnline=null;
+    var ws=new WebSocket(WS_SERVER);
+    var t=setTimeout(function(){
+      try{ws.close();}catch(e){}
+      _wsServerOnline=false;
+      resolve(false);
+    },3000);
+    ws.onopen=function(){
+      clearTimeout(t);
+      _wsServerOnline=true;
+      try{ws.close();}catch(e){}
+      resolve(true);
+    };
+    ws.onerror=function(){
+      clearTimeout(t);
+      _wsServerOnline=false;
+      resolve(false);
+    };
+  });
+}
 function startMainLoop(){
   if(_loopId)cancelAnimationFrame(_loopId);
   lastTs=performance.now();
@@ -4863,10 +4866,8 @@ function mainLoop(ts) {
       var dbg2=document.getElementById('debug-log');
       if(dbg2){dbg2.style.display='block';dbg2.textContent='DRAW ERR: '+e.message;}
     }
-    // High-frequency position push over WebSocket (30fps = every 2 frames)
+    // High-frequency position push over WebSocket (every frame)
     if(gameMode==='pvp'&&_ws&&_wsReady&&_ws.readyState===WebSocket.OPEN){
-      _wsStateTick++;
-      if(_wsStateTick%2===0){
         var meWS=gameState.players.find(function(p){return p.isMe;});
         if(meWS){
           _ws.send(JSON.stringify({type:'state',data:{
@@ -4881,7 +4882,6 @@ function mainLoop(ts) {
             frosted:!!meWS.frosted,frostSlow:meWS.frostSlow||0
           }}));
         }
-      }
     }
   }
   _loopId=requestAnimationFrame(mainLoop);
@@ -5391,6 +5391,15 @@ document.getElementById('btn-pvp').addEventListener('click',function(e){
   document.getElementById('setup-error').textContent='';
   document.getElementById('setup-screen').style.display='flex';
   registerOnline();startOnlinePolling();
+  // Ping WS server and show status in queue-status
+  var qs=document.getElementById('queue-status');
+  if(qs)qs.textContent='Connecting to live server...';
+  pingWsServer().then(function(online){
+    if(qs){
+      qs.textContent=online?'Live server ready.':'Live server unavailable — using fallback.';
+      setTimeout(function(){if(qs.textContent.indexOf('queue')===-1)qs.textContent='';},2500);
+    }
+  });
 });
 document.getElementById('tab-host').addEventListener('click',function(){
   setupMode='host';
@@ -5568,6 +5577,14 @@ function joinQueue(){
   });
 }
 var _matchmaking=false;
+// Wait for WS server then call fn — if already known, call immediately
+function _waitForWS(fn){
+  if(_wsServerOnline===true){fn();return;}
+  if(_wsServerOnline===false){fn();return;} // offline: proceed anyway (Firebase fallback)
+  var qs=document.getElementById('queue-status');
+  if(qs)qs.textContent='Waiting for live server...';
+  pingWsServer().then(function(){fn();});
+}
 function processQueueData(data){
     if(!data||!_inQueue||_matchmaking)return;
     var others=Object.keys(data).filter(function(k){return k!==authUid;});
@@ -5600,7 +5617,7 @@ function processQueueData(data){
         enemyIdPvp=gd.id;enemyNamePvp=gd.name;enemyClsPvp=gd.cls;
         fbSet('/rooms/'+roomCode+'/matchStart',{arenaKey:arenaKey,hostCls:myClass,spawnFlip:pvpSpawnFlip});
         document.getElementById('setup-screen').style.display='none';
-        launchPvP(arenaKey,myId,myName,myClass);
+        _waitForWS(function(){launchPvP(arenaKey,myId,myName,myClass);});
       });
     } else {
       // Guest - wait for matchmade notification from host
@@ -5619,7 +5636,7 @@ function processQueueData(data){
           fbSet('/rooms/'+roomCode+'/guest',{id:myId,name:myName,cls:myClass,ts:Date.now()}).then(function(){
             document.getElementById('setup-screen').style.display='none';
             enemyIdPvp=mData.hostId;enemyNamePvp=mData.hostName;enemyClsPvp=mData.hostCls;
-            launchPvP(mData.arenaKey||null,mData.hostId,mData.hostName,mData.hostCls);
+            _waitForWS(function(){launchPvP(mData.arenaKey||null,mData.hostId,mData.hostName,mData.hostCls);});
           });
         });
       }
