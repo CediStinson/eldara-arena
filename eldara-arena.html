@@ -1716,7 +1716,7 @@ var ARENAS = {
     [1,1,0,0,7,0,0,0,0,0,0,7,0,0,1,1],
     [1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  temple:{name:'Shadow Temple',sp1:{x:1,y:0},sp2:{x:14,y:9},tiles:[
+  temple:{name:'Obsidian Crypt',sp1:{x:1,y:0},sp2:{x:14,y:9},tiles:[
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
     [1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],
@@ -5514,7 +5514,7 @@ document.getElementById('btn-choose-arena').addEventListener('click',function(){
   if(document.getElementById('train-random-arena').checked)return;
   var list=document.getElementById('arena-picker-list');
   list.innerHTML='';
-  var arenaNames={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple'};
+  var arenaNames={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Obsidian Crypt'};
   ARENA_KEYS.forEach(function(ak){
     var card=document.createElement('div');
     var isSelected=lockedArena===ak;
@@ -6898,7 +6898,7 @@ function buildMatchHistory(){
   el.innerHTML=matchHistory.slice(0,10).map(function(m){
     var d=new Date(m.date);
     var ds=d.getDate()+'.'+(d.getMonth()+1)+'. '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
-    var arenaNames2={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple',crypt:'The Crypt',maze:'Runic Maze'};
+    var arenaNames2={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Obsidian Crypt',crypt:'The Crypt',maze:'Runic Maze'};
     var aname=arenaNames2[m.arena]||m.arena||'?';
     var modeStr=m.mode==='pvp'?'PvP':'Training';
     var clsName=m.myCls?m.myCls.charAt(0).toUpperCase()+m.myCls.slice(1):'?';
