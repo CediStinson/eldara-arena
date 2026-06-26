@@ -75,9 +75,9 @@ function collBlocked(a,cx,cy){var r=COLL_R;return isWall(a,cx-r,cy)||isWall(a,cx
 function resolveX(a,p){var cx=p.x,cy=p.y-COLL_OFFSET_Y;if(!collBlocked(a,cx,cy))return;p.vx=0;var tx=Math.floor(cx/TILE)*TILE+TILE/2;var pd=cx>=tx?1:-1;for(var i=1;i<=TILE;i++){if(!collBlocked(a,cx+pd*i,cy)){p.x=cx+pd*i;return;}if(!collBlocked(a,cx-pd*i,cy)){p.x=cx-pd*i;return;}}}
 function resolveY(a,p){var cx=p.x,cy=p.y-COLL_OFFSET_Y;if(!collBlocked(a,cx,cy))return;p.vy=0;var ty=Math.floor(cy/TILE)*TILE+TILE/2;var pd=cy>=ty?1:-1;for(var i=1;i<=TILE;i++){if(!collBlocked(a,cx,cy+pd*i)){p.y=(cy+pd*i)+COLL_OFFSET_Y;return;}if(!collBlocked(a,cx,cy-pd*i)){p.y=(cy-pd*i)+COLL_OFFSET_Y;return;}}}
 
-function mkPlayer(id,cls,name,spawn,isHost,level,redEyes){
+function mkPlayer(id,cls,name,spawn,isHost,level,redEyes,skullHelmet){
   var C=CLS[cls];
-  return {id:id,name:name,cls:cls,isHost:isHost,level:level||1,redEyes:!!redEyes,
+  return {id:id,name:name,cls:cls,isHost:isHost,level:level||1,redEyes:!!redEyes,skullHelmet:!!skullHelmet,
     x:spawn.x*TILE+TILE/2,y:spawn.y*TILE+TILE/2,
     vx:0,vy:0,hp:C.hp,maxHp:C.hp,
     dir:isHost?3:2,anim:0,moving:false,
@@ -101,8 +101,8 @@ function mkGS(arenaKey,host,guest){
   var sp2=arena.sp2;
   return {
     arena:arena,arenaKey:ak,
-    players:[mkPlayer(host.playerId,host.cls,host.name,sp1,true,host.level,host.redEyes),
-              mkPlayer(guest.playerId,guest.cls,guest.name,sp2,false,guest.level,guest.redEyes)],
+    players:[mkPlayer(host.playerId,host.cls,host.name,sp1,true,host.level,host.redEyes,host.skullHelmet),
+              mkPlayer(guest.playerId,guest.cls,guest.name,sp2,false,guest.level,guest.redEyes,guest.skullHelmet)],
     projs:[],effects:[],traps:[],dopps:[],
     tick:0,phase:'pregame',countdown:5000,roundTimer:99,roundMs:0,round:1
   };
@@ -403,7 +403,7 @@ wss.on('connection',function(ws){
           if(room[msg.role]&&room[msg.role]!==ws){try{room[msg.role].close();}catch(e){}}
           room[msg.role]=ws;
           ws.roomCode=code;ws.role=msg.role;ws.playerId=msg.playerId;
-          room[msg.role+'Info']={playerId:msg.playerId,name:msg.playerName||msg.role,cls:msg.cls||'warrior',level:msg.level||1,redEyes:!!msg.redEyes};
+          room[msg.role+'Info']={playerId:msg.playerId,name:msg.playerName||msg.role,cls:msg.cls||'warrior',level:msg.level||1,redEyes:!!msg.redEyes,skullHelmet:!!msg.skullHelmet};
           console.log('JOIN '+code+' as '+msg.role+' cls='+msg.cls);
           if(room.host&&room.guest){
             send(room.host,{type:'ready'});
@@ -582,7 +582,7 @@ function serializeGS(gs){
   return {
     phase:gs.phase,tick:gs.tick,countdown:gs.countdown,roundTimer:gs.roundTimer,arenaKey:gs.arenaKey,
     players:gs.players.map(function(p){
-      return {id:p.id,name:p.name,cls:p.cls,isHost:p.isHost,level:p.level||1,redEyes:!!p.redEyes,
+      return {id:p.id,name:p.name,cls:p.cls,isHost:p.isHost,level:p.level||1,redEyes:!!p.redEyes,skullHelmet:!!p.skullHelmet,
         x:Math.round(p.x),y:Math.round(p.y),dir:p.dir,anim:Math.round(p.anim*10)/10,moving:p.moving,
         hp:Math.round(p.hp),maxHp:p.maxHp,dead:p.dead,wins:p.wins,
         attacking:p.attacking,atkTimer:Math.round(p.atkTimer),
