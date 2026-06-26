@@ -3236,7 +3236,7 @@ function update(gs,dt) {
   // In PvP: server runs simulation, client predicts own movement locally
   if(gameMode==='pvp'){
     updateHitNumbers(dt);updateFootDust(dt);
-    // Client-side prediction: move locally so it feels instant
+    pushInputs(); // must be here — PvP returns early before the bottom of update()
     if(gs.phase==='fighting'){
       var meP=gs.players.find(function(p){return p.isMe;});
       if(meP&&!meP.dead&&!meP.stunned)updateLocal(gs,meP,dt);
