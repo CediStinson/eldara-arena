@@ -4500,9 +4500,10 @@ function connectGameWS(){
           sidelog('WS','Connected — authoritative server active');
           // Host triggers match start
           if(iAmHost){
+            var ak=gameState&&gameState.arenaKey?gameState.arenaKey:ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
             _ws.send(JSON.stringify({
               type:'match_start',
-              arenaKey:gameState?gameState.arenaKey:null,
+              arenaKey:ak,
               hostCls:myClass||'warrior',
               guestCls:enemyClsPvp||'warrior'
             }));
