@@ -6,7 +6,7 @@
 <title>Champions of Iskara</title>
 <style>
 :root{--bg:#0a0a0f;--panel:#12121a;--border:#2a2a3a;--gold:#e8b84b;--red:#c0392b;--blue:#2980b9;--green:#27ae60;--text:#d4c9a8;--dim:#6b6355;--hp:#e74c3c;--mp:#3498db;}
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated}
 body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;overflow:hidden;height:100vh;width:100vw;user-select:none;font-size:14px}
 #train-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(4px)}
 .screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#0a0a0f}
@@ -1716,7 +1716,7 @@ var ARENAS = {
     [1,1,0,0,7,0,0,0,0,0,0,7,0,0,1,1],
     [1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]},
-  temple:{name:'Obsidian Crypt',sp1:{x:1,y:0},sp2:{x:14,y:9},tiles:[
+  temple:{name:'Shadow Temple',sp1:{x:1,y:0},sp2:{x:14,y:9},tiles:[
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
     [1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],
@@ -3219,12 +3219,8 @@ function update(gs,dt) {
         setTimeout(function(){var e2=document.getElementById('pregame-timer');if(e2)e2.style.opacity='0';},600);}
       showBanner('FIGHT!');
     }
-    // During pregame: still sync positions so players see each other
     if(gameMode==='pvp'){
-      var meP=gs.players.find(function(p){return p.isMe;});
-      var enP=gs.players.find(function(p){return !p.isMe;});
-      if(meP){pushThrottle+=dt;if(pushThrottle>80){pushThrottle=0;pushState(meP);}}
-      if(enP)lerpRemote(enP);
+      pushInputs(); // still send inputs during pregame so server sees position
     }
     return;
   }
@@ -3236,6 +3232,11 @@ function update(gs,dt) {
   var me=gs.players.find(function(p){return p.isMe;});
   var en=gs.players.find(function(p){return !p.isMe;});
   if(!me||!en){if(me)updateLocal(gs,me,dt);return;}
+  // In PvP: server runs simulation, client just sends inputs and renders
+  if(gameMode==='pvp'){
+    updateHitNumbers(dt);updateFootDust(dt);
+    return;
+  }
   var _meOldX=me?me.x:0,_meOldY=me?me.y:0;
   updateLocal(gs,me,dt);
   var _dist2=Math.hypot(me.x-_meOldX,me.y-_meOldY);
@@ -3352,7 +3353,8 @@ function update(gs,dt) {
     }
   }
   updateHUD(gs);
-  if(gameMode==='pvp'){pushThrottle+=dt;if(pushThrottle>80){pushThrottle=0;pushState(me);}
+  if(gameMode==='pvp'){
+    pushInputs(); // send input state to authoritative server every frame
     _pingTimer+=dt;if(_pingTimer>3000){_pingTimer=0;measurePing();}
     updateRoomHeartbeat(dt);
   }
@@ -4458,31 +4460,30 @@ function startListeningEnemy(enemyId) {
   });
 }
 
-// === WebSocket layer ===
+// === WebSocket layer — authoritative server ===
 function connectGameWS(){
   if(!roomCode||!myId)return;
-  // Close any existing connection first
   disconnectGameWS();
   var role=iAmHost?'host':'guest';
   var attempts=0;
   var maxAttempts=3;
 
   function tryConnect(){
-    if(attempts>=maxAttempts){
-      sidelog('WS','Using Firebase only');
-      return;
-    }
+    if(attempts>=maxAttempts){sidelog('WS','Failed to connect — no authoritative game');return;}
     attempts++;
-    try{ _ws=new WebSocket(WS_SERVER); }
-    catch(e){ return; }
+    try{_ws=new WebSocket(WS_SERVER);}catch(e){return;}
 
     var connectTimeout=setTimeout(function(){
       if(!_wsReady&&_ws){try{_ws.close();}catch(e){}}
-    },2000); // give up after 2s per attempt
+    },2000);
 
     _ws.onopen=function(){
       clearTimeout(connectTimeout);
-      _ws.send(JSON.stringify({type:'join',roomCode:roomCode,playerId:myId,role:role}));
+      // Join room with full player info so server can build game state
+      _ws.send(JSON.stringify({
+        type:'join',roomCode:roomCode,role:role,
+        playerId:myId,playerName:myName||'Player',cls:myClass||'warrior'
+      }));
       _wsPingTimer=setInterval(function(){
         if(_ws&&_ws.readyState===WebSocket.OPEN)
           _ws.send(JSON.stringify({type:'ping',ts:Date.now()}));
@@ -4492,43 +4493,39 @@ function connectGameWS(){
     _ws.onmessage=function(e){
       try{
         var msg=JSON.parse(e.data);
+
         if(msg.type==='ready'){
-          _wsReady=true;
-          attempts=0; // reset for future reconnects
-          sidelog('WS','Connected — high-frequency sync active');
-        } else if(msg.type==='state'){
-          if(!msg.data)return;
-          if(!remoteState)remoteState={};
-          Object.assign(remoteState,msg.data);
-          if(msg.data.x!=null&&msg.data.y!=null){
-            var now=Date.now();
-            _enPosBuffer.push({t:now,x:msg.data.x,y:msg.data.y,
-              dir:msg.data.dir,anim:msg.data.anim,moving:msg.data.moving});
-            var cutoff=now-300;
-            while(_enPosBuffer.length>1&&_enPosBuffer[0].t<cutoff)_enPosBuffer.shift();
+          _wsReady=true;attempts=0;
+          sidelog('WS','Connected — authoritative server active');
+          // Host triggers match start
+          if(iAmHost){
+            _ws.send(JSON.stringify({
+              type:'match_start',
+              arenaKey:gameState?gameState.arenaKey:null,
+              hostCls:myClass||'warrior',
+              guestCls:enemyClsPvp||'warrior'
+            }));
           }
-        } else if(msg.type==='action'){
-          if(gameState){
-            var meW=gameState.players.find(function(p){return p.isMe;});
-            var enW=gameState.players.find(function(p){return !p.isMe;});
-            if(meW&&enW)processAction(msg.data,gameState,meW,enW);
-          }
+
+        } else if(msg.type==='gamestate'){
+          // Server is authoritative — apply full state
+          applyServerState(msg.data);
+
         } else if(msg.type==='round_over'){
-          // Server authoritatively decided round is over
           if(gameState&&gameState.phase!=='gameOver'){
-            var deadId=msg.deadIds&&msg.deadIds[0];
-            var meRO=gameState.players.find(function(p){return p.isMe;});
-            var enRO=gameState.players.find(function(p){return !p.isMe;});
-            if(deadId&&meRO&&enRO){
-              var deadPlayer=gameState.players.find(function(p){return p.id===deadId;});
-              if(deadPlayer&&!deadPlayer.dead){deadPlayer.dead=true;deadPlayer.hp=0;}
-            }
-            if(gameState.phase!=='gameOver')endRound(gameState);
+            var dead=gameState.players.find(function(p){return p.id===msg.deadId;});
+            if(dead){dead.dead=true;dead.hp=0;}
+            endRound(gameState);
           }
+
+        } else if(msg.type==='pong'){
+          var lat=Date.now()-(msg.ts||0);
+          document.getElementById('conn-bar').textContent='ONLINE '+lat+'ms';
+
         } else if(msg.type==='opponent_left'){
           _wsOpponentLeft();
         }
-      }catch(ex){}
+      }catch(ex){console.error('WS msg error',ex);}
     };
 
     _ws.onclose=function(){
@@ -4536,18 +4533,76 @@ function connectGameWS(){
       _wsReady=false;
       clearInterval(_wsPingTimer);_wsPingTimer=null;
       if(!gameState||gameMode!=='pvp')return;
-      // Retry connection if game still running and under max attempts
       if(attempts<maxAttempts){
-        sidelog('WS','Retrying connection... ('+attempts+'/'+maxAttempts+')');
-        setTimeout(tryConnect,2000);
+        sidelog('WS','Reconnecting... ('+attempts+'/'+maxAttempts+')');
+        setTimeout(tryConnect,1500);
       } else {
-        sidelog('WS','Using Firebase only');
+        sidelog('WS','Connection lost');
       }
     };
-    _ws.onerror=function(){ _wsReady=false; };
+    _ws.onerror=function(){_wsReady=false;};
   }
-
   tryConnect();
+}
+
+// Apply authoritative server game state to local gameState
+var _lastPhase='';
+function applyServerState(snap){
+  if(!snap||!gameState)return;
+  var prevPhase=gameState.phase;
+  gameState.phase=snap.phase;
+  gameState.tick=snap.tick;
+  gameState.countdown=snap.countdown;
+  gameState.roundTimer=snap.roundTimer;
+  if(snap.arenaKey&&ARENAS[snap.arenaKey]){
+    gameState.arena=ARENAS[snap.arenaKey];
+    gameState.arenaKey=snap.arenaKey;
+    _arenaCacheKey=''; // invalidate arena cache on arena change
+  }
+  // If server reset to pregame (rematch), close overlay
+  if(prevPhase==='gameOver'&&snap.phase==='pregame'){
+    pvpRematchReady=false;opponentRematchReady=false;
+    hideOverlay();
+    showBanner('Get Ready!');
+    var btn=document.getElementById('ov-rematch');
+    if(btn){btn.disabled=false;btn.textContent='REMATCH';}
+  }
+  // Apply player states
+  snap.players.forEach(function(sp){
+    var lp=gameState.players.find(function(p){return p.id===sp.id;});
+    if(!lp)return;
+    Object.assign(lp,sp);
+    lp.isMe=(sp.id===myId);
+  });
+  // Apply projs, effects, traps, dopps directly
+  gameState.projs=snap.projs||[];
+  gameState.effects=snap.effects||[];
+  gameState.traps=snap.traps||[];
+  gameState.dopps=snap.dopps||[];
+  // Update HUD
+  updateHUD(gameState);
+}
+
+// Send input state to server every frame
+function pushInputs(){
+  if(!_ws||!_wsReady||_ws.readyState!==WebSocket.OPEN)return;
+  _ws.send(JSON.stringify({type:'input',data:{
+    up:!!(keys['KeyW']||keys['ArrowUp']),
+    down:!!(keys['KeyS']||keys['ArrowDown']),
+    left:!!(keys['KeyA']||keys['ArrowLeft']),
+    right:!!(keys['KeyD']||keys['ArrowRight'])
+  }}));
+}
+
+// Send action to server
+function pushAction(type,data){
+  if(_ws&&_wsReady&&_ws.readyState===WebSocket.OPEN){
+    _ws.send(JSON.stringify({type:'action',data:Object.assign({type:type},data||{})}));
+  } else {
+    // Fallback: Firebase
+    if(!enemyIdPvp)return;
+    fbPush('/rooms/'+roomCode+'/inbox/'+enemyIdPvp,{type:type,from:myId,data:data||{},ts:Date.now(),seq:_actionSeq++});
+  }
 }
 
 function _wsOpponentLeft(){
@@ -4938,9 +4993,12 @@ document.addEventListener('keydown',function(e){
   if(e.code==='KeyG'){
     if(me.fireballCharging){me.fireballCharging=false;me.fireballCharge=0;}
     if(me.atkTimer<=0&&!me.disarmed&&!(me.stunned>0)){
-      var wasSneak=me.stealthed&&me.stealthFirstHit;
-      doAttack(gameState,me,en);
-      if(gameMode==='pvp')pushAction('attack',{x:Math.round(me.x),y:Math.round(me.y),cls:me.cls,sneak:wasSneak});
+      if(gameMode==='pvp'){
+        pushAction('attack',{});
+      } else {
+        var wasSneak=me.stealthed&&me.stealthFirstHit;
+        doAttack(gameState,me,en);
+      }
     }
   }
 
@@ -4950,23 +5008,30 @@ document.addEventListener('keydown',function(e){
     var sk1=CLS[me.cls]&&CLS[me.cls].s1;
     if(me.stunned&&!(sk1&&(sk1.arcaneShield||sk1.warcry)))return;
     if(sk1&&sk1.charged&&me.s1cd<=0){
-      me.fireballCharging=true;me.fireballCharge=0;
+      if(gameMode==='pvp'){
+        pushAction('fireball_charge',{charging:true});
+      } else {
+        me.fireballCharging=true;me.fireballCharge=0;
+      }
     } else if(!sk1||!sk1.charged){
-      doSkill(gameState,me,en,1);if(gameMode==='pvp')pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y)});
+      if(gameMode==='pvp'){pushAction('skill1',{});}
+      else{doSkill(gameState,me,en,1);}
     }
   }
   if(e.code==='KeyJ'){
     if(me.fireballCharging){me.fireballCharging=false;me.fireballCharge=0;}
     var sk2=CLS[me.cls]&&CLS[me.cls].s2;
     if(!me.stunned||(sk2&&(sk2.warcry||sk2.arcaneShield||sk2.stealth))){
-      doSkill(gameState,me,en,2);if(gameMode==='pvp')pushAction('skill2',{x:Math.round(me.x),y:Math.round(me.y)});
+      if(gameMode==='pvp'){pushAction('skill2',{});}
+      else{doSkill(gameState,me,en,2);}
     }
   }
   if(e.code==='Space'){
     if(me.fireballCharging){me.fireballCharging=false;me.fireballCharge=0;}
     var mv=CLS[me.cls]&&CLS[me.cls].move;
     if(!me.stunned||(mv&&mv.blink)){
-      doMoveAbility(gameState,me,en);if(gameMode==='pvp')pushAction('move',{x:Math.round(me.x),y:Math.round(me.y)});
+      if(gameMode==='pvp'){pushAction('move',{});}
+      else{doMoveAbility(gameState,me,en);}
     }
   }
 });
@@ -4980,16 +5045,19 @@ document.addEventListener('keyup',function(e){
     me.fireballCharging=false;
     var sk1=CLS[me.cls]&&CLS[me.cls].s1;
     if(sk1&&sk1.charged&&me.s1cd<=0&&me.fireballCharge>100){
-      // Fire with scaled damage
-      var chargeRatio=me.fireballCharge/sk1.chargeMax;
-      var scaledDmg=Math.round(sk1.dmg+(sk1.chargeDmgMax-sk1.dmg)*chargeRatio);
-      me.s1cd=sk1.cd;
-      var angle=Math.atan2(en.y-me.y,en.x-me.x);
-      gs.projs.push({id:me.id+'_'+(me.projId++),owner:me.id,type:'fireball',
-        x:me.x,y:me.y+10,vx:Math.cos(angle)*sk1.speed,vy:Math.sin(angle)*sk1.speed,
-        dmg:scaledDmg,dot:0,dotDur:0,range:sk1.range,traveled:0,alive:true,anim:0});
-      spawnEfx(gs,'cast',me.x,me.y);
-      if(gameMode==='pvp')pushAction('skill1',{x:Math.round(me.x),y:Math.round(me.y),chargedDmg:scaledDmg});
+      if(gameMode==='pvp'){
+        // Server handles charge and fires based on its own tracked charge time
+        pushAction('skill1',{charged:true});
+      } else {
+        var chargeRatio=me.fireballCharge/sk1.chargeMax;
+        var scaledDmg=Math.round(sk1.dmg+(sk1.chargeDmgMax-sk1.dmg)*chargeRatio);
+        me.s1cd=sk1.cd;
+        var angle=Math.atan2(en.y-me.y,en.x-me.x);
+        gs.projs.push({id:me.id+'_'+(me.projId++),owner:me.id,type:'fireball',
+          x:me.x,y:me.y+10,vx:Math.cos(angle)*sk1.speed,vy:Math.sin(angle)*sk1.speed,
+          dmg:scaledDmg,dot:0,dotDur:0,range:sk1.range,traveled:0,alive:true,anim:0});
+        spawnEfx(gs,'cast',me.x,me.y);
+      }
     }
     me.fireballCharge=0;
   }
@@ -5514,7 +5582,7 @@ document.getElementById('btn-choose-arena').addEventListener('click',function(){
   if(document.getElementById('train-random-arena').checked)return;
   var list=document.getElementById('arena-picker-list');
   list.innerHTML='';
-  var arenaNames={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Obsidian Crypt'};
+  var arenaNames={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple'};
   ARENA_KEYS.forEach(function(ak){
     var card=document.createElement('div');
     var isSelected=lockedArena===ak;
@@ -5778,43 +5846,32 @@ document.getElementById('lob-start').addEventListener('click',function(){
 document.getElementById('lob-back').addEventListener('click',function(){leaveQueue();cleanupFB();showScreen('title-screen');});
 
 function launchPvP(arenaKey,hostId,hostName,hostCls) {
-  var arena=ARENAS[arenaKey]||ARENAS[ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)]];
   iAmHost=(myId===hostId)||isHost;
   if(!iAmHost&&hostId){enemyIdPvp=hostId;}
-  var meClass=myClass||'warrior';
-  // Use pvpSpawnFlip (shared between host/guest via matchmade data)
-  var hostGetsP1=pvpSpawnFlip;
-  var mySpawn=iAmHost?(hostGetsP1?arena.sp1:arena.sp2):(hostGetsP1?arena.sp2:arena.sp1);
-  var enSpawn=iAmHost?(hostGetsP1?arena.sp2:arena.sp1):(hostGetsP1?arena.sp1:arena.sp2);
-  var me=mkPlayer(myId,meClass,myName||'Player',mySpawn,true);
-  me.redEyes=hasRedEyes(meClass);
   var enId=iAmHost?enemyIdPvp:hostId;
   var enName=(iAmHost?enemyNamePvp:hostName)||'Opponent';
   var enCls=(iAmHost?enemyClsPvp:hostCls)||'warrior';
   if(!enId){addLobbyMsg('System','Error: opponent ID missing',true);return;}
-  var en=mkPlayer(enId,enCls,enName,enSpawn,false);
   gameMode='pvp';
+  // Create a minimal local gameState for rendering — server will overwrite with authoritative state
+  var arena=ARENAS[arenaKey]||ARENAS[ARENA_KEYS[0]];
+  var me=mkPlayer(myId,myClass,myName||'Player',arena.sp1,true);
+  me.redEyes=hasRedEyes(myClass);
+  var en=mkPlayer(enId,enCls,enName,arena.sp2,false);
   gameState=mkGS(arenaKey,me,en);
   document.getElementById('sp-myname').textContent=myName||'Player';
   document.getElementById('sp-enname').textContent=enName||'Opponent';
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
   showScreen('game-screen');hideOverlay();resizeCanvas();
-  connectGameWS(); // high-frequency position sync over WebSocket
-  startListeningEnemy(enId);startListeningActions();
-
-  updateProfileBadge();
-  updateHUD(gameState);showBanner('Get Ready!');
+  connectGameWS();
+  // Don't start listening for Firebase actions — server handles everything now
+  // Only keep Firebase for non-game stuff (lobby, rematch signals)
+  startListeningActions(); // fallback only
+  updateProfileBadge();updateHUD(gameState);showBanner('Get Ready!');
   startMainLoop();
-  // Hide loading screen in case it's still showing
   var ld2=document.getElementById('loading-screen');if(ld2)ld2.style.display='none';
-  // Track PvP games played
   try{var pvpN=parseInt(localStorage.getItem('eldara_pvp_played')||'0')+1;localStorage.setItem('eldara_pvp_played',pvpN);}catch(e){}
-  // Also save to Firebase so it persists across devices
-  if(authUid&&!isGuest){
-    fbGet('/users/'+authUid+'/pvpPlayed').then(function(n){
-      fbSet('/users/'+authUid+'/pvpPlayed',(parseInt(n||0)+1));
-    }).catch(function(){});
-  }
+  if(authUid&&!isGuest){fbGet('/users/'+authUid+'/pvpPlayed').then(function(n){fbSet('/users/'+authUid+'/pvpPlayed',(parseInt(n||0)+1));}).catch(function(){});}
 }
 
 function launchTraining(continuing) {
@@ -5856,13 +5913,10 @@ document.getElementById('ov-rematch').addEventListener('click',function(){
   var st=document.getElementById('ov-rematch-status');
   if(st){st.style.display='block';st.textContent='Waiting for opponent...';}
   pvpRematchReady=true;
-  // Signal via inbox
+  // Tell server we're ready for rematch with our class choice
   pushAction('rematch_ready',{cls:myClass});
-  // If opponent already signaled (we received their ready before pressing), start now
-  if(opponentRematchReady&&isHost){
-    opponentRematchReady=false;
-    setTimeout(function(){doStartRematch(opponentRematchCls);},100);
-  }
+  // Server will reset game state and broadcast when both are ready
+  // Client just waits for next gamestate message
 });
 
 function checkBothRematchReady(){
@@ -6898,7 +6952,7 @@ function buildMatchHistory(){
   el.innerHTML=matchHistory.slice(0,10).map(function(m){
     var d=new Date(m.date);
     var ds=d.getDate()+'.'+(d.getMonth()+1)+'. '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
-    var arenaNames2={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Obsidian Crypt',crypt:'The Crypt',maze:'Runic Maze'};
+    var arenaNames2={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple',crypt:'The Crypt',maze:'Runic Maze'};
     var aname=arenaNames2[m.arena]||m.arena||'?';
     var modeStr=m.mode==='pvp'?'PvP':'Training';
     var clsName=m.myCls?m.myCls.charAt(0).toUpperCase()+m.myCls.slice(1):'?';
