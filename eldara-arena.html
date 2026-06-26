@@ -4497,7 +4497,8 @@ function connectGameWS(){
         playerId:myId,playerName:myName||'Player',cls:myClass||'warrior',
         level:getLevel(myClass)||1,
         redEyes:hasRedEyes(myClass)||false,
-        skullHelmet:hasSkullHelmet(myClass)||false
+        skullHelmet:hasSkullHelmet(myClass)||false,
+        crownOn:hasCrown()||false
       }));
       _wsPingTimer=setInterval(function(){
         if(_ws&&_ws.readyState===WebSocket.OPEN)
@@ -5962,10 +5963,14 @@ document.getElementById('ov-rematch').addEventListener('click',function(){
   var st=document.getElementById('ov-rematch-status');
   if(st){st.style.display='block';st.textContent='Waiting for opponent...';}
   pvpRematchReady=true;
-  // Tell server we're ready for rematch with our class choice
-  pushAction('rematch_ready',{cls:myClass});
-  // Server will reset game state and broadcast when both are ready
-  // Client just waits for next gamestate message
+  // Reconnect WS if dropped, then signal ready
+  if(!_ws||!_wsReady||_ws.readyState!==WebSocket.OPEN){
+    sidelog('WS','Reconnecting for rematch...');
+    connectGameWS();
+    setTimeout(function(){pushAction('rematch_ready',{cls:myClass});},1000);
+  } else {
+    pushAction('rematch_ready',{cls:myClass});
+  }
 });
 
 function checkBothRematchReady(){
