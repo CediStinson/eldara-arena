@@ -3210,6 +3210,14 @@ function update(gs,dt) {
     });
   }
   if(gs.phase==='pregame'){
+    if(gameMode==='pvp'){
+      // PvP: server drives countdown, just display it and send inputs
+      var sec2=Math.ceil(gs.countdown/1000);
+      var el2=document.getElementById('pregame-timer');
+      if(el2){el2.textContent=sec2>0?sec2:'GO!';el2.style.opacity='1';el2.style.color=sec2<=3?'#e74c3c':'var(--gold)';el2.style.textShadow=sec2<=3?'0 0 60px #e74c3c':'0 0 60px #e8b84b';}
+      pushInputs();
+      return;
+    }
     gs.countdown-=dt;
     var sec=Math.ceil(gs.countdown/1000);
     var el=document.getElementById('pregame-timer');
@@ -3219,9 +3227,6 @@ function update(gs,dt) {
       if(el){el.textContent='GO!';el.style.color='#27ae60';el.style.textShadow='0 0 60px #27ae60';
         setTimeout(function(){var e2=document.getElementById('pregame-timer');if(e2)e2.style.opacity='0';},600);}
       showBanner('FIGHT!');
-    }
-    if(gameMode==='pvp'){
-      pushInputs(); // still send inputs during pregame so server sees position
     }
     return;
   }
@@ -3233,10 +3238,15 @@ function update(gs,dt) {
   var me=gs.players.find(function(p){return p.isMe;});
   var en=gs.players.find(function(p){return !p.isMe;});
   if(!me||!en){if(me)updateLocal(gs,me,dt);return;}
-  // In PvP: fully trust server state, send inputs, no local prediction
+  // In PvP: send inputs every frame, run local movement prediction for responsiveness
   if(gameMode==='pvp'){
     updateHitNumbers(dt);updateFootDust(dt);
     pushInputs();
+    // Client-side prediction for own player — only movement, not combat
+    if(gs.phase==='fighting'){
+      var meP=gs.players.find(function(p){return p.isMe;});
+      if(meP&&!meP.dead&&!(meP.stunned>0)&&!meP.warCharging)updateLocal(gs,meP,dt);
+    }
     return;
   }
   var _meOldX=me?me.x:0,_meOldY=me?me.y:0;
@@ -4583,18 +4593,27 @@ function applyServerState(snap){
     if(btn){btn.disabled=false;btn.textContent='REMATCH';}
   }
   if(prevPhase==='pregame'&&snap.phase==='fighting'){
-    _hasSpawned=true; // fight started — trust local movement from here
+    var fightEl=document.getElementById('pregame-timer');
+    if(fightEl){fightEl.textContent='GO!';fightEl.style.opacity='1';fightEl.style.color='#27ae60';fightEl.style.textShadow='0 0 60px #27ae60';
+      setTimeout(function(){var e2=document.getElementById('pregame-timer');if(e2)e2.style.opacity='0';},600);}
+    showBanner('FIGHT!');
   }
   snap.players.forEach(function(sp){
     var lp=gameState.players.find(function(p){return p.id===sp.id;});
     if(!lp)return;
     var isMe=sp.id===myId;
     if(isMe){
-      // Fully trust server for own player — no prediction fighting
+      // Own player: apply all state from server, but blend position gently
+      var savedX=lp.x,savedY=lp.y,savedDir=lp.dir,savedAnim=lp.anim,savedMoving=lp.moving;
       Object.assign(lp,sp);
       lp.isMe=true;
+      // Gentle position correction — snap if >60px off, blend if <60px
+      var dx=sp.x-savedX,dy=sp.y-savedY,d=Math.hypot(dx,dy);
+      if(d<60){lp.x=savedX+dx*0.2;lp.y=savedY+dy*0.2;}
+      // Keep local animation/direction for responsiveness
+      if(savedMoving===lp.moving){lp.dir=savedDir;lp.anim=savedAnim;}
     } else {
-      // Opponent: smooth interpolation toward server position
+      // Opponent: smooth interpolation
       var odx=sp.x-lp.x,ody=sp.y-lp.y,od=Math.hypot(odx,ody);
       if(od>150){lp.x=sp.x;lp.y=sp.y;}
       else{lp.x+=odx*0.5;lp.y+=ody*0.5;}
