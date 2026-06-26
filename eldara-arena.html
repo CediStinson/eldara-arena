@@ -202,6 +202,9 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     </div>
     <div class="auth-err" id="auth-err"></div>
     <button class="auth-btn" id="auth-submit">ENTER THE ARENA</button>
+    <div id="auth-forgot-wrap" style="text-align:center;margin-top:6px">
+      <button id="auth-forgot" style="background:none;border:none;color:var(--dim);font-family:inherit;font-size:11px;letter-spacing:2px;cursor:pointer;text-decoration:underline">Forgot password?</button>
+    </div>
     <div class="auth-divider">&#9135;&#9135;&#9135; or &#9135;&#9135;&#9135;</div>
     <button class="auth-btn" id="auth-guest" style="border-color:var(--border);color:var(--dim)">PLAY AS GUEST</button>
   </div>
@@ -6833,6 +6836,7 @@ document.getElementById('auth-tab-login').addEventListener('click', function() {
   document.getElementById('auth-username-wrap').style.display = 'none';
   document.getElementById('auth-submit').textContent = 'ENTER THE ARENA';
   document.getElementById('auth-err').textContent = '';
+  document.getElementById('auth-forgot-wrap').style.display = 'block';
 });
 
 document.getElementById('auth-tab-register').addEventListener('click', function() {
@@ -6842,6 +6846,42 @@ document.getElementById('auth-tab-register').addEventListener('click', function(
   document.getElementById('auth-username-wrap').style.display = 'block';
   document.getElementById('auth-submit').textContent = 'CREATE ACCOUNT';
   document.getElementById('auth-err').textContent = '';
+  document.getElementById('auth-forgot-wrap').style.display = 'none';
+});
+
+document.getElementById('auth-forgot').addEventListener('click', function() {
+  var email = document.getElementById('auth-email').value.trim();
+  if(!email){
+    document.getElementById('auth-err').textContent = 'Enter your email address first.';
+    return;
+  }
+  var btn = document.getElementById('auth-forgot');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' + FB_KEY, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({requestType: 'PASSWORD_RESET', email: email})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.error){
+      var msg = d.error.message||'Error';
+      if(msg==='EMAIL_NOT_FOUND') msg = 'No account found with that email.';
+      document.getElementById('auth-err').textContent = msg;
+    } else {
+      document.getElementById('auth-err').style.color = '#27ae60';
+      document.getElementById('auth-err').textContent = 'Reset email sent! Check your inbox.';
+      setTimeout(function(){
+        document.getElementById('auth-err').style.color = '';
+        document.getElementById('auth-err').textContent = '';
+      }, 5000);
+    }
+    btn.textContent = 'Forgot password?';
+    btn.disabled = false;
+  }).catch(function(){
+    document.getElementById('auth-err').textContent = 'Something went wrong. Try again.';
+    btn.textContent = 'Forgot password?';
+    btn.disabled = false;
+  });
 });
 
 document.getElementById('auth-submit').addEventListener('click', function() {
