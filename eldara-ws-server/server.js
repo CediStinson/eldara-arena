@@ -96,9 +96,9 @@ function mkPlayer(id,cls,name,spawn,isHost){
 function mkGS(arenaKey,host,guest){
   var ak=arenaKey||ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
   var arena=ARENAS[ak];
-  var spawnFlip=Math.random()<0.5;
-  var sp1=spawnFlip?arena.sp2:arena.sp1;
-  var sp2=spawnFlip?arena.sp1:arena.sp2;
+  // Host always sp1, guest always sp2 — no random flip, client syncs to server state
+  var sp1=arena.sp1;
+  var sp2=arena.sp2;
   return {
     arena:arena,arenaKey:ak,
     players:[mkPlayer(host.playerId,host.cls,host.name,sp1,true),
@@ -230,6 +230,12 @@ function doMoveAbility(gs,user,target){
 
 function updatePlayer(gs,p,inputs,dt){
   if(p.stunned>0||p.dead)return;
+  if(!inputs){
+    // Log once per player when inputs are missing
+    if(!p._inputWarnLogged){p._inputWarnLogged=true;console.log('NO INPUTS for player '+p.id+' ('+p.name+')');}
+    return;
+  }
+  p._inputWarnLogged=false;
   var C=CLS[p.cls];
   var spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+(C.move.galeSpd||0)):1)*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1)*(p.frostSlow>0?0.25:1)*(p.fireballCharging&&p.cls==='mage'?0.25:1);
   p.vx=0;p.vy=0;var moved=false;
@@ -252,12 +258,13 @@ function updatePlayer(gs,p,inputs,dt){
 function update(gs,inputs,dt){
   if(!gs||gs.phase==='gameOver')return;
   gs.tick++;
+  var p0=gs.players[0],p1=gs.players[1];
+  if(!p0||!p1)return;
   // Dopps
   if(gs.dopps){gs.dopps=gs.dopps.filter(function(d){return d.life>0;});gs.dopps.forEach(function(d){d.life-=dt;d.anim+=dt*0.01;d.x+=d.vx;d.y+=d.vy;if(d.x<TILE*2||d.x>(AW-2)*TILE)d.vx*=-1;if(d.y<TILE*2||d.y>(AH-2)*TILE)d.vy*=-1;});}
   if(gs.phase==='pregame'){
     gs.countdown-=dt;
     if(gs.countdown<=0){gs.phase='fighting';}
-    // Still update positions during pregame so players see each other
     updatePlayer(gs,p0,inputs[p0.id],dt);
     updatePlayer(gs,p1,inputs[p1.id],dt);
     return;
@@ -266,10 +273,9 @@ function update(gs,inputs,dt){
   gs.roundMs+=dt;
   if(gs.roundMs>=1000){gs.roundMs-=1000;gs.roundTimer=Math.max(0,gs.roundTimer-1);}
   if(gs.roundTimer<=0){
-    var p0=gs.players[0],p1=gs.players[1],w=p0.hp>=p1.hp?p0:p1;
+    var w=p0.hp>=p1.hp?p0:p1;
     w.wins++;endRound(gs);return;
   }
-  var p0=gs.players[0],p1=gs.players[1];
   // Update each player with their inputs
   updatePlayer(gs,p0,inputs[p0.id],dt);
   updatePlayer(gs,p1,inputs[p1.id],dt);
@@ -415,9 +421,12 @@ wss.on('connection',function(ws){
         }
 
         case 'input':{
-          // Client sends current input state: {up,down,left,right}
           var room2=rooms.get(ws.roomCode);
-          if(room2&&ws.playerId)room2.inputs[ws.playerId]=msg.data;
+          if(room2&&ws.playerId){
+            room2.inputs[ws.playerId]=msg.data;
+          } else {
+            console.log('INPUT IGNORED: roomCode='+ws.roomCode+' playerId='+ws.playerId+' hasRoom='+(!!room2));
+          }
           break;
         }
 
