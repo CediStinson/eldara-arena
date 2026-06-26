@@ -296,7 +296,6 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   <div style="display:flex;border-bottom:1px solid var(--border)">
     <button class="settings-tab active" data-stab="profile" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">PROFILE</button>
     <button class="settings-tab" data-stab="stats" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">STATS</button>
-    <button class="settings-tab" data-stab="history" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-family:Courier New,monospace;font-size:11px;letter-spacing:2px;cursor:pointer">MATCH HISTORY</button>
   </div>
   <!-- Tab content -->
   <div style="flex:1;overflow-y:auto;padding:28px 40px;max-width:600px;width:100%;align-self:center;box-sizing:border-box">
@@ -315,11 +314,6 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
       <div id="my-rank-display" style="font-size:13px;color:var(--text);letter-spacing:1px;margin-bottom:24px">—</div>
       <div style="font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:10px">PVP STREAK</div>
       <div style="font-size:12px;color:var(--text);margin-bottom:24px">Current: <span id="streak-display">0</span> &nbsp;·&nbsp; Best: <span id="best-streak-display">0</span></div>
-    </div>
-    <!-- MATCH HISTORY tab -->
-    <div id="stab-history" class="settings-section" style="display:none">
-      <div style="font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:12px">RECENT MATCHES</div>
-      <div id="match-history-list" style="font-size:9px"></div>
     </div>
   </div>
   <!-- Name change confirm overlay (nested) -->
@@ -849,31 +843,30 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
 
   // -- BODY --
   if(wT===0){
-    // Bare chest — colours consistent with face
+    // Bare chest — exactly matches face skin color
     px(ctx,-3,0+bob,'#c09050',6,9);
-    px(ctx,-2,0+bob,'#c89060',4,8);
-    px(ctx,-1,2+bob,'#c89060',2,5);   // centre highlight — same tone, not yellower
-    px(ctx,-3,0+bob,'#a06030',1,9);   // left shadow
-    px(ctx,2,0+bob,'#986030',1,9);    // right shadow
+    px(ctx,-2,0+bob,'#c09050',4,8);
+    px(ctx,-1,2+bob,'#c8a060',2,5);   // subtle centre highlight
+    px(ctx,-3,0+bob,'#a07030',1,9);   // left shadow
+    px(ctx,2,0+bob,'#907030',1,9);    // right shadow
     // Round top corners
     f(-3*S,(0+bob)*S,2,3,'#0a0a0f');
     f(3*S-2,(0+bob)*S,2,3,'#0a0a0f');
-    // Edge detail
-    f(-3*S+1,(0+bob)*S,1,9*S,'#c89060');
-    f(3*S-1,(0+bob)*S,1,9*S,'#906030');
-    // Muscle lines
-    f(-2*S,(3+bob)*S,4*S,1,'#b07040');
-    f(-2*S,(6+bob)*S,4*S,1,'#a86838');
-    // Two horizontal leather chest bands
+    f(-3*S+1,(0+bob)*S,1,9*S,'#c8a060'); // left edge highlight
+    f(3*S-1,(0+bob)*S,1,9*S,'#906030');  // right shadow
+    // Subtle muscle definition — same skin tone, not darker
+    f(-2*S,(3+bob)*S,4*S,1,'#b88040');
+    f(-2*S,(6+bob)*S,4*S,1,'#b07838');
+    // Two thin leather chest straps
     px(ctx,-3,1+bob,'#5a3010',6,1);
     f(-3*S+1,(1+bob)*S,1,S,'#7a4818');
     f(2*S+S-1,(1+bob)*S,1,S,'#3a1e08');
     px(ctx,-3,5+bob,'#5a3010',6,1);
     f(-3*S+1,(5+bob)*S,1,S,'#7a4818');
     f(2*S+S-1,(5+bob)*S,1,S,'#3a1e08');
-    // Belt — simple leather strap, no buckle
+    // Belt
     px(ctx,-3,8+bob,'#3a1c08',6,2);
-    f(-3*S,(8+bob)*S,6*S,1,'#4a2810'); // top edge slightly lighter
+    f(-3*S,(8+bob)*S,6*S,1,'#4a2810');
   } else if(wT===1){
     // Padded leather armor — more protection than bare chest, less than plate
     px(ctx,-3,0+bob,'#4a3010',6,9);
@@ -1139,7 +1132,7 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     f(-1*S,(-3+bob)*S+S-1,3*S,1,'#904010');
   }
 
-  // -- SWORD --
+  // -- SWORD / AXE --
   var wpT=getWeaponTier('warrior');
   var gx=4;
   if(wpT===0){
@@ -1173,23 +1166,28 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     f((gx+1)*S,(-11+bob)*S,1,12*S,'#9098a0');
     f((gx-1)*S,(3+bob)*S,5*S,1,'#b0b8b8');
   } else {
-    px(ctx,gx,9+bob,'#c0c8c0',2,2);px(ctx,gx,9+bob,'#f0f0e8',1,1);
-    px(ctx,gx,4+bob,'#2a1e10',2,6);px(ctx,gx,5+bob,'#6a5a38',1,4);
-    px(ctx,gx-2,3+bob,'#c8a030',6,1);
-    px(ctx,gx-1,2+bob,'#c8a030',1,1);px(ctx,gx+2,2+bob,'#c8a030',1,1);
-    px(ctx,gx,-14+bob,'#b8c0c0',2,18);px(ctx,gx,-14+bob,'#d8e0e0',1,17);
-    px(ctx,gx+1,-14+bob,'#c8d0d0',1,13);px(ctx,gx-1,-12+bob,'#c0c8c8',1,10);
-    px(ctx,gx,-3+bob,'rgba(200,160,40,0.7)',1,1);
-    px(ctx,gx,-7+bob,'rgba(200,160,40,0.7)',1,1);
-    px(ctx,gx,-11+bob,'rgba(200,160,40,0.5)',1,1);
-    px(ctx,gx,-14+bob,'#d8e0e0',2,1);px(ctx,gx,-15+bob,'#e8f0f0',1,1);
-    f(gx*S,(-14+bob)*S,1,18*S,'#f0f8f8');
-    f(gx*S,(-14+bob)*S,1,1,'#ffffff');
-    f((gx+1)*S,(-13+bob)*S,1,13*S,'#a0a8a8');
-    f((gx-2)*S,(3+bob)*S,6*S,1,'#e0b840');
-    f(gx*S+1,(-5+bob)*S,1,1,'#e8c040');
-    f(gx*S+1,(-9+bob)*S,1,1,'#e8c040');
-    f(gx*S+1,(-13+bob)*S,1,1,'#e8c040');
+    // T3: Battle Axe
+    var ax=gx-1;
+    // Handle
+    px(ctx,ax+1,9+bob,'#5a3a18',1,5);px(ctx,ax+1,4+bob,'#6a4a20',1,5);
+    px(ctx,ax+1,9+bob,'#3a2010',1,1);
+    f((ax+1)*S+1,(4+bob)*S,1,9*S,'#7a5828');
+    // Gold crossguard
+    px(ctx,ax,3+bob,'#c8a030',4,1);
+    px(ctx,ax,3+bob,'#e0b840',1,1);px(ctx,ax+3,3+bob,'#a08020',1,1);
+    // Axe head — wide blade
+    px(ctx,ax,-3+bob,'#b8c0c8',2,7);
+    px(ctx,ax-1,-2+bob,'#c8d0d8',1,5);
+    px(ctx,ax-2,-1+bob,'#d8e0e8',1,3);
+    px(ctx,ax+1,-4+bob,'#a0a8b0',1,8);
+    // Blade edge highlight
+    f(ax*S,(-3+bob)*S,1,7*S,'#e0e8f0');
+    f((ax-1)*S,(-2+bob)*S,1,5*S,'#d0d8e0');
+    // Gold inlay on blade
+    px(ctx,ax,-1+bob,'#c8a030',1,1);px(ctx,ax,1+bob,'#c8a030',1,1);px(ctx,ax,-3+bob,'#c8a030',1,1);
+    // Beard of axe (bottom curve)
+    px(ctx,ax+2,2+bob,'#9098a0',1,2);
+    px(ctx,ax+3,4+bob,'#707880',1,1);
   }
 
   // -- SHIELD --
@@ -1202,35 +1200,38 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     f(-6*S-1,(1+bob)*S,1,7*S,'#3a2010');
     f(-8*S,(4+bob)*S,3*S,1,'#5a3818');
   } else if(wpT===1){
-    px(ctx,-8,0+bob,'#3a3830',3,9);px(ctx,-7,1+bob,'#6a4820',2,7);
-    px(ctx,-8,0+bob,'#6a6860',1,2);
-    px(ctx,-7,4+bob,'#909090',2,1);px(ctx,-8,4+bob,'#484848',1,1);
-    f(-8*S,(0+bob)*S,1,9*S,'#848280');
-    f(-6*S-1,(0+bob)*S,1,9*S,'#282826');
-    f(-8*S,(0+bob)*S,3*S,1,'#707070');
-    f(-8*S,(9+bob)*S-1,3*S,1,'#282828');
+    // T1: steel kite shield
+    px(ctx,-9,-1+bob,'#3a3830',4,11);px(ctx,-8,0+bob,'#6a6860',1,2);
+    px(ctx,-8,4+bob,'#909090',3,1);px(ctx,-9,4+bob,'#484848',1,1);
+    f(-9*S,(-1+bob)*S,1,11*S,'#848280');
+    f(-5*S-1,(-1+bob)*S,1,11*S,'#282826');
+    f(-9*S,(-1+bob)*S,4*S,1,'#707070');
+    f(-9*S,(10+bob)*S-1,4*S,1,'#282828');
+    px(ctx,-8,4+bob,'#c8a030',2,1); // boss
   } else if(wpT===2){
-    px(ctx,-8,0+bob,'#2a2e36',3,9);px(ctx,-8,0+bob,'#3a4050',2,8);
-    px(ctx,-8,0+bob,'#1e2228',1,8);
-    px(ctx,-7,1+bob,'#8b1010',1,6);px(ctx,-7,1+bob,'#aa1818',1,3);
-    px(ctx,-8,0+bob,'#c8a030',1,1);px(ctx,-7,4+bob,'#c8a030',2,1);
-    px(ctx,-8,8+bob,'#c8a030',3,1);
-    px(ctx,-8,3+bob,'#404858',3,1);px(ctx,-8,6+bob,'#404858',3,1);
-    f(-8*S+1,(0+bob)*S,1,9*S,'#4a5060');
-    f(-8*S,(0+bob)*S,3*S,1,'#c8a030');
-    f(-8*S,(9+bob)*S-1,3*S,1,'#a08020');
-    f(-7*S,(1+bob)*S,1,6*S,'#cc2020');
+    // T2: same as T1 but bigger (4 wide, 12 tall)
+    px(ctx,-9,-1+bob,'#2a2e36',4,12);px(ctx,-8,0+bob,'#3a4050',3,10);
+    px(ctx,-9,-1+bob,'#1e2228',1,10);
+    px(ctx,-8,1+bob,'#8b1010',1,8);px(ctx,-8,2+bob,'#aa1818',1,5);
+    px(ctx,-9,-1+bob,'#c8a030',1,1);px(ctx,-8,5+bob,'#c8a030',3,1);
+    px(ctx,-9,10+bob,'#c8a030',4,1);
+    px(ctx,-9,3+bob,'#404858',4,1);px(ctx,-9,7+bob,'#404858',4,1);
+    f(-9*S+1,(-1+bob)*S,1,12*S,'#4a5060');
+    f(-9*S,(-1+bob)*S,4*S,1,'#c8a030');
+    f(-9*S,(11+bob)*S-1,4*S,1,'#a08020');
+    f(-8*S,(1+bob)*S,1,8*S,'#cc2020');
   } else {
-    px(ctx,-8,0+bob,'#2a2e36',3,9);px(ctx,-8,0+bob,'#3a4050',2,8);
-    px(ctx,-8,0+bob,'#c8a030',1,9);
-    px(ctx,-7,1+bob,'#8b1010',1,6);px(ctx,-7,1+bob,'#cc2020',1,3);
-    px(ctx,-8,0+bob,'#c8a030',3,1);px(ctx,-8,8+bob,'#c8a030',3,1);
-    px(ctx,-7,4+bob,'#907828',2,1);px(ctx,-9,0+bob,'#e0b840',1,3);
-    px(ctx,-8,3+bob,'#c8a030',3,1);px(ctx,-8,6+bob,'#c8a030',3,1);
-    f(-8*S+1,(0+bob)*S,1,9*S,'#e0b840');
-    f(-8*S,(0+bob)*S,3*S,1,'#f0c850');
-    f(-7*S,(1+bob)*S,1,6*S,'#ee2020');
-    f(-9*S,(0+bob)*S,1,3*S,'#f0c840');
+    // T3: same as T1/T2 but largest (4 wide, 13 tall) with full gold trim
+    px(ctx,-9,-2+bob,'#2a2e36',4,13);px(ctx,-8,-1+bob,'#3a4050',3,11);
+    px(ctx,-9,-2+bob,'#c8a030',1,11);
+    px(ctx,-8,0+bob,'#8b1010',1,8);px(ctx,-8,1+bob,'#cc2020',1,5);
+    px(ctx,-9,-2+bob,'#c8a030',4,1);px(ctx,-9,10+bob,'#c8a030',4,1);
+    px(ctx,-8,4+bob,'#907828',3,1);px(ctx,-10,-2+bob,'#e0b840',1,3);
+    px(ctx,-9,2+bob,'#c8a030',4,1);px(ctx,-9,6+bob,'#c8a030',4,1);
+    f(-9*S+1,(-2+bob)*S,1,13*S,'#e0b840');
+    f(-9*S,(-2+bob)*S,4*S,1,'#f0c850');
+    f(-8*S,0+bob*S,1,8*S,'#ee2020');
+    f(-10*S,(-2+bob)*S,1,3*S,'#f0c840');
   }
   ctx.restore();
 }
@@ -1243,234 +1244,298 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   var bob=Math.sin(anim*0.12)*0.6;
   var oy=Math.sin(anim*0.08)*2;
   var rv=Math.sin(anim*0.06)*1;
+  function f(fx,fy,fw,fh,fc){ctx.fillStyle=fc;ctx.fillRect(fx,fy,fw,fh);}
 
-  // -- ROBE COLORS per tier --
-  // T0: dark grey-purple (apprentice, simple)
-  // T1: deep midnight blue-purple (scholar)
-  // T2: rich dark purple (arcanist)
-  // T3: darkest imperial purple, arcane glow (archmage)
-  var robeBase=mT===0?'#1e1a2a':mT===1?'#1a1432':mT===2?'#1e0e40':'#140830';
-  var robeMid =mT===0?'#2a2440':mT===1?'#241c4a':mT===2?'#2e1460':'#1e0c48';
-  var robeHi  =mT===0?'#362e52':mT===1?'#2e2258':mT===2?'#3a1878':'#280e60';
-  var trimCol =mT===0?'#483060':mT===1?'#5a2890':mT===2?'#7a20c0':'#9a30e0';
-  var shCol   =mT===0?'#100e18':mT===1?'#0e0a20':mT===2?'#0a0618':'#080412';
+  // -- ROBE COLORS — teal/dark green + gold, dark underlayer --
+  var darkBase='#1e1c18'; // dark underlayer (tabard/inner)
+  var darkMid ='#2a2820'; // slightly lighter dark
+  var teal0='#0e4440'; var teal1='#145a50'; var teal2='#186858'; var teal3='#1a7060';
+  var tealHi0='#1a6058'; var tealHi1='#207868'; var tealHi2='#248870'; var tealHi3='#2a9880';
+  var tealCol=mT===0?teal0:mT===1?teal1:mT===2?teal2:teal3;
+  var tealHi =mT===0?tealHi0:mT===1?tealHi1:mT===2?tealHi2:tealHi3;
+  var gold1='#8a6820'; var gold2='#b08828'; var gold3='#d4a830'; var goldHi='#e8c848';
+  var goldCol=mT===1?gold1:mT===2?gold2:gold3;
+  var shCol  =mT===0?'#0e0c08':mT===1?'#0a1410':mT===2?'#081210':'#061010';
 
   // -- FLOWING ROBE BODY --
-  // Back layer (slightly wider, darker - gives depth)
   px(ctx,-4,-1+bob,shCol,8,15);
-  // Main robe body - slim torso, flares at hem
-  px(ctx,-3,0+bob,robeBase,6,12);
-  px(ctx,-2,0+bob,robeMid,4,11);
-  px(ctx,-1,1+bob,robeHi,2,7);
-  px(ctx,-3,0+bob,shCol,1,11); // left shadow
-  px(ctx,2,0+bob,shCol,1,11);  // right shadow
-  // Vertical center opening (robe front split)
-  px(ctx,-1,2+bob,robeBase,1,7);
-  px(ctx,0,4+bob,shCol,1,5);
-  // Purple trim stripes (T2+)
-  if(mT>=2){
-    px(ctx,-3,0+bob,trimCol,1,11);
-    px(ctx,2,0+bob,trimCol,1,11);
-  }
-  // Rune/embroidery detail on chest (T3)
-  if(mT>=3){
-    px(ctx,-1,2+bob,trimCol,2,1);
-    px(ctx,-1,4+bob,trimCol,2,1);
-    px(ctx,-1,6+bob,trimCol,2,1);
-    px(ctx,0,3+bob,trimCol,1,1);
-    px(ctx,-2,3+bob,trimCol,1,1);
-  }
-  // Sash belt
   if(mT===0){
-    px(ctx,-3,9+bob,'#2a2030',6,1); // plain dark cord
+    // T0: simple dark tabard only — no outer robe, no sleeves
+    px(ctx,-2,0+bob,darkBase,4,12);
+    px(ctx,-1,0+bob,darkMid,2,11);
+    px(ctx,-2,0+bob,shCol,1,12);
+    px(ctx,1,0+bob,shCol,1,12);
+    // Tabard texture — simple vertical seam
+    px(ctx,-1,2+bob,darkBase,1,8);
+    // Plain hemp belt
+    px(ctx,-2,9+bob,'#4a3818',4,1);
+    px(ctx,-1,9+bob,'#6a5028',2,1);
   } else if(mT===1){
-    px(ctx,-3,9+bob,trimCol,6,1);
+    // T1: dark underlayer + teal outer coat, open at chest showing dark inside
+    // Dark underlayer
+    px(ctx,-2,0+bob,darkBase,4,12);px(ctx,-1,0+bob,darkMid,2,11);
+    px(ctx,-2,0+bob,shCol,1,12);px(ctx,1,0+bob,shCol,1,12);
+    // Teal outer coat — open V at chest
+    px(ctx,-3,0+bob,tealCol,2,12);px(ctx,1,0+bob,tealCol,2,12);
+    // Coat left panel shading
+    px(ctx,-3,0+bob,shCol,1,12);
+    px(ctx,2,0+bob,shCol,1,12);
+    // V-chest opening — dark shows through centre
+    px(ctx,-2,0+bob,tealCol,1,3); // left lapel
+    px(ctx,1,0+bob,tealCol,1,3);  // right lapel
+    // Bronze trim on coat edges
+    px(ctx,-3,0+bob,gold1,1,11);
+    px(ctx,2,0+bob,gold1,1,11);
+    // Belt
+    px(ctx,-3,9+bob,gold1,6,1);px(ctx,-1,9+bob,gold1,2,1);
+  } else if(mT===2){
+    // T2: dark underlayer + fuller teal robe, gold trim, sash
+    px(ctx,-2,0+bob,darkBase,4,12);px(ctx,-1,0+bob,darkMid,2,11);
+    // Teal robe mostly closed, dark peeking at chest V
+    px(ctx,-3,0+bob,tealCol,6,12);
+    px(ctx,-2,0+bob,tealHi,4,11);
+    px(ctx,-1,1+bob,tealHi,2,6);
+    px(ctx,-3,0+bob,shCol,1,12);px(ctx,2,0+bob,shCol,1,12);
+    // Chest V dark opening
+    px(ctx,-1,0+bob,darkBase,2,3);
+    px(ctx,0,0+bob,darkMid,1,2);
+    // Gold trim
+    px(ctx,-3,0+bob,gold2,1,11);px(ctx,2,0+bob,gold2,1,11);
+    px(ctx,-3,0+bob,goldHi,1,2);px(ctx,2,0+bob,goldHi,1,2); // gleam
+    // Sash belt
+    px(ctx,-3,9+bob,gold2,6,2);px(ctx,-1,9+bob,goldHi,2,1);px(ctx,0,9+bob,gold2,1,1);
   } else {
-    px(ctx,-3,9+bob,trimCol,6,2);   // wider arcane sash
-    px(ctx,-1,9+bob,'rgba(160,60,220,0.4)',2,1); // glow
+    // T3: full flowing archmage robe like reference — teal + rich gold
+    px(ctx,-3,0+bob,tealCol,6,12);
+    px(ctx,-2,0+bob,tealHi,4,11);
+    px(ctx,-1,1+bob,tealHi,2,7);
+    px(ctx,-3,0+bob,shCol,1,11);px(ctx,2,0+bob,shCol,1,11);
+    // Dark underlayer at chest V
+    px(ctx,-1,0+bob,darkBase,2,3);px(ctx,0,0+bob,darkMid,1,2);
+    // Rich gold trim
+    px(ctx,-3,0+bob,gold3,1,11);px(ctx,2,0+bob,gold3,1,11);
+    px(ctx,-3,0+bob,goldHi,1,3);px(ctx,2,0+bob,goldHi,1,3);
+    // Gold chest clasp/amulet at V
+    px(ctx,-1,2+bob,gold3,2,1);px(ctx,-1,2+bob,goldHi,1,1);
+    // Gold sash belt
+    px(ctx,-3,9+bob,gold3,6,2);
+    px(ctx,-3,9+bob,goldHi,1,1);px(ctx,-1,9+bob,goldHi,2,1);px(ctx,2,9+bob,goldHi,1,1);
+    px(ctx,-3,10+bob,gold3,6,1);
+    // Rune detail on coat — subtle gold marks
+    px(ctx,-2,3+bob,gold3,1,1);px(ctx,-2,5+bob,gold3,1,1);px(ctx,-2,7+bob,gold3,1,1);
+    px(ctx,1,4+bob,gold3,1,1);px(ctx,1,6+bob,gold3,1,1);
   }
-  // Robe hem - elegantly flared, longer in back
-  px(ctx,-4,11+bob+rv,robeBase,8,5);
-  px(ctx,-5,13+bob+rv,robeBase,2,3);px(ctx,3,13+bob+rv,robeBase,2,3);
+  // Robe hem
+  px(ctx,-4,11+bob+rv,mT===0?darkBase:tealCol,8,5);
+  px(ctx,-3,11+bob+rv,mT===0?darkMid:tealHi,4,4);
+  px(ctx,-5,13+bob+rv,mT===0?darkBase:tealCol,2,3);px(ctx,3,13+bob+rv,mT===0?darkBase:tealCol,2,3);
   px(ctx,-5,14+bob+rv,shCol,2,2);px(ctx,3,14+bob+rv,shCol,2,2);
-  // Hem trim
-  if(mT>=2){
-    px(ctx,-4,15+bob+rv,trimCol,8,1);
-  }
+  if(mT>=1){px(ctx,-4,11+bob+rv,goldCol,8,1);} // gold hem band
   if(mT>=3){
-    // Glowing arcane hem runes
-    px(ctx,-3,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
-    px(ctx,-1,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
-    px(ctx,1,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
-    px(ctx,3,15+bob+rv,'rgba(160,60,255,0.6)',1,1);
+    px(ctx,-4,15+bob+rv,gold3,8,1);
+    px(ctx,-3,15+bob+rv,goldHi,1,1);px(ctx,2,15+bob+rv,goldHi,1,1);
   }
 
-  // -- SLEEVES - wide and flowing --
-  px(ctx,-5,0+bob,robeBase,2,11);px(ctx,3,0+bob,robeBase,2,11);
-  px(ctx,-6,2+bob,shCol,1,9);px(ctx,4,2+bob,shCol,1,9); // outer sleeve shadow
-  px(ctx,-5,0+bob,shCol,1,10);
-  if(mT>=1){px(ctx,-5,0+bob,trimCol,1,8);} // trim stripe on sleeve
-  // Sleeve cuffs
-  if(mT>=1){
-    px(ctx,-6,9+bob,trimCol,2,2);px(ctx,4,9+bob,trimCol,2,2);
-    px(ctx,-6,9+bob,robeHi,1,1);
+  // -- SLEEVES --
+  if(mT===0){
+    // T0: simple dark short sleeves matching tabard
+    px(ctx,-5,0+bob,darkBase,2,8);px(ctx,3,0+bob,darkBase,2,8);
+    px(ctx,-6,2+bob,shCol,1,6);px(ctx,4,2+bob,shCol,1,6);
+    px(ctx,-5,0+bob,shCol,1,8);
+  } else if(mT===1){
+    // T1: simple teal sleeves matching coat
+    px(ctx,-5,0+bob,tealCol,2,10);px(ctx,3,0+bob,tealCol,2,10);
+    px(ctx,-6,2+bob,shCol,1,8);px(ctx,4,2+bob,shCol,1,8);
+    px(ctx,-5,0+bob,shCol,1,9);
+    px(ctx,-5,0+bob,gold1,1,9);px(ctx,3,0+bob,gold1,1,9); // bronze stripe
+    px(ctx,-6,9+bob,gold1,2,2);px(ctx,4,9+bob,gold1,2,2); // cuffs
+  } else if(mT===2){
+    // T2: wider teal sleeves, gold cuffs
+    px(ctx,-5,0+bob,tealCol,2,11);px(ctx,3,0+bob,tealCol,2,11);
+    px(ctx,-6,2+bob,shCol,1,9);px(ctx,4,2+bob,shCol,1,9);
+    px(ctx,-5,0+bob,shCol,1,10);
+    px(ctx,-5,0+bob,gold2,1,10);px(ctx,3,0+bob,gold2,1,10);
+    px(ctx,-6,9+bob,gold2,2,2);px(ctx,4,9+bob,gold2,2,2);
+    px(ctx,-6,9+bob,goldHi,1,1);
+  } else {
+    // T3: wide flowing sleeves like reference
+    px(ctx,-5,0+bob,tealCol,2,11);px(ctx,3,0+bob,tealCol,2,11);
+    px(ctx,-5,0+bob,tealHi,1,10);px(ctx,4,0+bob,tealHi,1,10);
+    px(ctx,-6,2+bob,shCol,1,9);px(ctx,4,2+bob,shCol,1,9);
+    px(ctx,-5,0+bob,gold3,1,11);px(ctx,3,0+bob,gold3,1,11);
+    px(ctx,-5,0+bob,goldHi,1,3);px(ctx,3,0+bob,goldHi,1,3);
+    px(ctx,-6,9+bob,gold3,2,2);px(ctx,4,9+bob,gold3,2,2);
+    px(ctx,-6,9+bob,goldHi,1,1);px(ctx,4,9+bob,goldHi,1,1);
   }
-  // Hands - pale elven skin
+  // Hands
   px(ctx,-6,10+bob,'#d0c8b8',2,2);px(ctx,4,10+bob,'#d0c8b8',2,2);
   px(ctx,-6,11+bob,'#b8b0a0',2,1);px(ctx,4,11+bob,'#b8b0a0',2,1);
 
-  // -- SHOES - dark elegant pointed --
+  // -- SHOES --
   px(ctx,-3,15+bob,'#18141e',3,3);px(ctx,0,15+bob,'#18141e',3,3);
   px(ctx,-2,17+bob,'#0e0c14',2,1);px(ctx,1,17+bob,'#0e0c14',2,1);
-  // Pointed toe
   px(ctx,-4,16+bob,'#18141e',1,2);px(ctx,3,16+bob,'#18141e',1,2);
-  if(mT>=2){
-    px(ctx,-4,15+bob,trimCol,1,1);px(ctx,3,15+bob,trimCol,1,1);
-  }
+  if(mT>=2){px(ctx,-4,15+bob,mT>=3?gold3:gold2,1,1);px(ctx,3,15+bob,mT>=3?gold3:gold2,1,1);}
 
-  // -- FACE - pale elven --
-  var skinCol='#d8cfc0'; // pale elven skin all tiers
-  var eyeCol=mT===0?'rgba(100,160,220,0.9)':mT===1?'rgba(120,80,220,0.9)':mT===2?'rgba(160,60,240,0.95)':'rgba(200,80,255,1.0)';
-  // Grey hair behind face
-  px(ctx,2,-5+bob,'#a8a8a0',1,10); // hair flow right
-  px(ctx,3,-4+bob,'#989890',1,9);
-  px(ctx,-4,-4+bob,'#b0b0a8',1,8); // hair flow left
-  // Face - slightly narrow and angular (elven)
-  px(ctx,-2,-7+bob,skinCol,4,6);
-  px(ctx,-2,-7+bob,'#c0b8a8',1,5); // left face shadow
-  px(ctx,1,-7+bob,'#c8c0b0',1,5);  // right face shadow
-  // Pointed elven ear
-  px(ctx,2,-6+bob,skinCol,1,2);    // right ear
-  px(ctx,3,-5+bob,skinCol,1,1);    // ear tip
-  px(ctx,-3,-6+bob,skinCol,1,2);   // left ear
-  px(ctx,-4,-5+bob,skinCol,1,1);   // left ear tip
-  // Eyes - colour shifts per tier
-  px(ctx,-2,-5+bob,'#080408',1,1);px(ctx,0,-5+bob,'#080408',1,1); // eye shadow
-  px(ctx,-2,-5+bob,eyeCol,1,1);px(ctx,0,-5+bob,eyeCol,1,1);
-  // Glowing eye effect (T3)
+  // -- FACE - warrior proportions, elven skin (rows -5,-4,-3) --
+  var skinCol='#d8cfc0';
+  var eyeCol=mT===0?'rgba(80,180,160,0.9)':mT===1?'rgba(60,200,180,0.9)':mT===2?'rgba(40,220,200,0.95)':'rgba(80,255,220,1.0)';
+  // Face block 4 wide 3 tall — identical to warrior
+  px(ctx,-2,-5+bob,skinCol,4,3);
+  px(ctx,-2,-5+bob,'#c0b8a8',1,2);  // left shadow
+  px(ctx,1,-5+bob,'#c8c0b0',1,2);   // right shadow
+  // Brow line across top of row -5 (like warrior)
+  f(-2*S,(-5+bob)*S,4*S,1,'#706860');
+  f(-2*S+1,(-5+bob)*S,1,1,skinCol); // left brow highlight
+  f(0*S+1,(-5+bob)*S,1,1,skinCol);  // right brow highlight
+  // Eyes at row -4, x=-2 and x=0 — warrior layout exactly
+  f(-2*S,(-4+bob)*S,S,S,'#c8c0b0');
+  f(-2*S,(-4+bob)*S,S,1,'#080408');
+  f(-2*S+1,(-4+bob)*S+1,1,1,eyeCol);
+  f(0*S,(-4+bob)*S,S,S,'#c8c0b0');
+  f(0*S,(-4+bob)*S,S,1,'#080408');
+  f(0*S+1,(-4+bob)*S+1,1,1,eyeCol);
+  f(-1*S,(-4+bob)*S,S,S,skinCol);   // skin bridge between eyes
+  // Glowing eye T3
   if(mT>=3){
-    ctx.fillStyle='rgba(200,60,255,0.25)';
-    ctx.fillRect(-3*S,-6*S,5*S,2*S);
+    ctx.fillStyle='rgba(200,60,255,0.2)';
+    ctx.fillRect(-3*S,-5*S,5*S,2*S);
   }
-  // Grey eyebrows - sharp elven
-  px(ctx,-3,-6+bob,'#909088',3,1);px(ctx,0,-6+bob,'#909088',2,1);
-  px(ctx,-1,-3+bob,'#c0b8a8',1,1); // nose
-  // No visible lips - thin-lipped elf
-  // Grey hair on head
-  px(ctx,-2,-9+bob,'#a8a8a0',4,3);  // hair top
-  px(ctx,-3,-8+bob,'#b0b0a8',1,3);  // left flow
-  px(ctx,2,-8+bob,'#989890',1,2);   // right flow
-  px(ctx,-1,-10+bob,'#c0c0b8',2,1); // crown highlight
+  // Nose — tiny mark in row -3 (same as warrior)
+  f(-1*S+1,(-3+bob)*S,2,S,'#c0b0a0');
+  // Mouth — subtle 1px line at bottom of row -3
+  f(-1*S+1,(-3+bob)*S+2,S,1,'#a89080');
+  // Clip bottom corners
+  f(-2*S,(-3+bob)*S+S-1,1,1,'#0a0a0f');
+  f(1*S+S-1,(-3+bob)*S+S-1,1,1,'#0a0a0f');
+  // Pointed elven ears (outside the face block)
+  px(ctx,2,-4+bob,skinCol,1,2); px(ctx,3,-3+bob,skinCol,1,1);
+  px(ctx,-3,-4+bob,skinCol,1,2); px(ctx,-4,-3+bob,skinCol,1,1);
+  // Chin — row -2 and -1 taper to body
+  px(ctx,-1,-2+bob,'#ccc4b4',2,1);
+  px(ctx,-1,-1+bob,skinCol,2,1);
+  // -- HAIR --
+  var hc1='#b8b8b0', hc2='#a0a098', hc3='#888880', hc4='#c8c8c0';
+  // Hair behind
+  px(ctx,2,-4+bob,hc2,1,mT===0?6:mT===1?9:mT===2?12:14);
+  px(ctx,3,-3+bob,hc3,1,mT===0?4:mT===1?7:mT===2?10:12);
+  if(mT>=2){px(ctx,4,-2+bob,hc3,1,mT===2?6:8);}
+  if(mT>=3){px(ctx,5,-1+bob,'#787870',1,5);}
+  px(ctx,-3,-4+bob,hc1,1,mT===0?4:6);
+  if(mT>=1){px(ctx,-4,-3+bob,hc2,1,4);}
+  // Crown
+  px(ctx,-2,-7+bob,hc1,4,2);
+  px(ctx,-3,-6+bob,hc2,1,2);
+  px(ctx,2,-6+bob,hc3,1,2);
+  px(ctx,-1,-8+bob,hc4,2,1);
+  if(mT>=3){f(-3*S,(-4+bob)*S,1,2*S,hc2);}
 
-  // -- HEADBAND --
+  // -- HEADBAND at row -6 (just above face top) --
   if(mT===0){
-    // Simple thin dark cord headband
-    px(ctx,-2,-8+bob,'#2a1840',5,1); // dark cord
-    px(ctx,-2,-8+bob,'#3a2850',1,1); // slight highlight
+    px(ctx,-2,-6+bob,'#2a1840',5,1);
+    px(ctx,-2,-6+bob,'#3a2850',1,1);
   } else if(mT===1){
-    // Slim leather headband with small purple gem
-    px(ctx,-2,-8+bob,'#1e1428',5,1);  // dark band
-    px(ctx,-2,-8+bob,'#2e2040',1,1);  // highlight
-    px(ctx,0,-8+bob,'#5a1890',2,1);   // purple gem center
-    px(ctx,0,-8+bob,'#7a30b0',1,1);   // gem highlight
+    px(ctx,-2,-6+bob,'#1e1428',5,1);
+    px(ctx,-2,-6+bob,'#2e2040',1,1);
+    px(ctx,0,-6+bob,'#5a1890',2,1);
+    px(ctx,0,-6+bob,'#7a30b0',1,1);
   } else if(mT===2){
-    // Silver headband with purple gems
-    px(ctx,-3,-8+bob,'#707880',6,1);  // silver band
-    px(ctx,-3,-8+bob,'#909898',1,1);  // left highlight
-    px(ctx,2,-8+bob,'#505860',1,1);   // right shadow
-    px(ctx,-1,-8+bob,'#6a20b0',2,2);  // large center gem
-    px(ctx,-1,-9+bob,'#8a30d0',2,1);  // gem top facet
-    px(ctx,0,-8+bob,'#c090f0',1,1);   // gem shine
-    // Small side gems
-    px(ctx,-3,-8+bob,'#4a1880',1,1);px(ctx,2,-8+bob,'#4a1880',1,1);
+    px(ctx,-3,-6+bob,'#707880',6,1);   // silver band
+    px(ctx,-3,-6+bob,'#909898',1,1);
+    px(ctx,2,-6+bob,'#505860',1,1);
+    px(ctx,-1,-7+bob,'#6a20b0',2,2);   // gem rises above band
+    px(ctx,-1,-8+bob,'#8a30d0',2,1);   // gem top facet
+    px(ctx,0,-7+bob,'#c090f0',1,1);    // gem shine
+    px(ctx,-3,-6+bob,'#4a1880',1,1);px(ctx,2,-6+bob,'#4a1880',1,1); // side gems
   } else {
-    // Gold headband with multiple arcane gems - grand archmage
-    px(ctx,-3,-8+bob,'#c8a030',6,1);  // gold band
-    px(ctx,-3,-8+bob,'#e0b840',1,1);  // left gleam
-    px(ctx,2,-8+bob,'#a88020',1,1);   // right shadow
-    // Center large gem
-    px(ctx,-1,-9+bob,'#8020c0',2,3);  // gem body
-    px(ctx,-1,-10+bob,'#a030e0',2,2); // gem upper facet
-    px(ctx,0,-10+bob,'#d080ff',1,1);  // gem shine
-    // Gem glow
+    px(ctx,-3,-6+bob,'#c8a030',6,1);   // gold band
+    px(ctx,-3,-6+bob,'#e0b840',1,1);
+    px(ctx,2,-6+bob,'#a88020',1,1);
+    px(ctx,-1,-7+bob,'#8020c0',2,2);   // center gem rises above
+    px(ctx,-1,-8+bob,'#a030e0',2,1);
+    px(ctx,0,-8+bob,'#d080ff',1,1);
     ctx.fillStyle='rgba(160,40,255,0.3)';
-    ctx.fillRect(-2*S,-11*S,4*S,4*S);
-    // Side gems
-    px(ctx,-3,-8+bob,'#6020a0',1,2);px(ctx,2,-8+bob,'#6020a0',1,2);
-    px(ctx,-3,-9+bob,'#8030c0',1,1);px(ctx,2,-9+bob,'#8030c0',1,1);
+    ctx.fillRect(-2*S,-9*S,4*S,3*S);
+    px(ctx,-3,-7+bob,'#6020a0',1,1);px(ctx,2,-7+bob,'#6020a0',1,1); // side gems
+    px(ctx,-3,-6+bob,'#6020a0',1,1);px(ctx,2,-6+bob,'#6020a0',1,1);
   }
 
-  // -- BEARD - silver-grey, all tiers but grows --
+  // -- BEARD --
+  // Corner pixels smooth the round face edge on all tiers
+  px(ctx,-2,-2+bob,'#888080',1,1); px(ctx,1,-2+bob,'#888080',1,1);
   if(mT===0){
-    // Short stubble / young elf
     px(ctx,-1,-2+bob,'#888080',2,1);
   } else if(mT===1){
-    // Chin beard - neat
-    px(ctx,-1,-1+bob,'#a0a098',2,2);
-    px(ctx,0,1+bob,'#909088',1,1);
+    px(ctx,-1,-2+bob,'#a0a098',2,1);
+    px(ctx,-1,-1+bob,'#909088',2,1);
+    px(ctx,0,0+bob,'#808078',1,1);
   } else if(mT===2){
-    // Longer flowing beard
-    px(ctx,-2,-1+bob,'#b0b0a8',4,3);
-    px(ctx,-1,2+bob,'#a0a098',2,3);
-    px(ctx,-2,2+bob,'#c0c0b8',1,2); // highlight
-    px(ctx,1,4+bob,'#909088',1,2);
+    px(ctx,-1,-2+bob,'#b0b0a8',2,1);
+    px(ctx,-1,-1+bob,'#a0a098',2,2);
+    px(ctx,0,1+bob,'#909088',1,2);
+    px(ctx,-1,2+bob,'#888880',1,1);
   } else {
-    // Grand long silver beard
-    px(ctx,-2,-1+bob,'#c8c8c0',4,3);
-    px(ctx,-2,2+bob,'#b8b8b0',4,6);
-    px(ctx,-1,7+bob,'#a8a8a0',2,3);
-    px(ctx,-2,3+bob,'#e0e0d8',1,4); // bright highlight streak
-    px(ctx,0,5+bob,'#c0c0b8',1,3);
+    px(ctx,-2,-2+bob,'#c8c8c0',4,1);
+    px(ctx,-2,-1+bob,'#c0c0b8',4,1);
+    px(ctx,-1,0+bob,'#b8b8b0',2,2);
+    px(ctx,-1,2+bob,'#a8a8a0',2,1);
+    px(ctx,0,3+bob,'#989890',1,2);
+    px(ctx,-2,-1+bob,'#e0e0d8',1,1);
   }
 
   // -- STAFF (thin long shaft, orb scales with weapon tier) --
   var mwpT=getWeaponTier('mage');
-  // Thin single-pixel shaft - long and elegant
+  // Staff shaft
   ctx.strokeStyle=mwpT===0?'#3a2408':'#4a3010';
   ctx.lineWidth=S;
   ctx.beginPath();ctx.moveTo(4.5*S,12*S+bob*S);ctx.lineTo(4.5*S,-4*S+bob*S);ctx.stroke();
   ctx.strokeStyle=mwpT===0?'#5a3c14':'#6a5020';
   ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(5*S,11*S+bob*S);ctx.lineTo(5*S,-3*S+bob*S);ctx.stroke();
-  // Single ring on shaft
+  // Gold ring on shaft T1+
   if(mwpT>=1){
-    ctx.strokeStyle=mwpT>=3?'#c8a030':'#404858';
+    ctx.strokeStyle=mwpT>=2?'#d4a830':'#8a6820';
     ctx.lineWidth=S;
     ctx.beginPath();ctx.moveTo(3.5*S,4*S+bob*S);ctx.lineTo(6*S,4*S+bob*S);ctx.stroke();
   }
+  if(mwpT>=2){
+    ctx.strokeStyle='#d4a830';ctx.lineWidth=S;
+    ctx.beginPath();ctx.moveTo(3.5*S,7*S+bob*S);ctx.lineTo(6*S,7*S+bob*S);ctx.stroke();
+  }
   if(mwpT===0){
-    // Tier 0: tiny purple gem on tip - not floating
-    px(ctx,4,-3+bob,'#6040a0',1,2);  // gem body
-    px(ctx,4,-3+bob,'#9060d0',1,1);  // gem top facet
-    px(ctx,5,-3+bob,'#4a3080',1,1);  // gem shadow
+    // T0: tiny turquoise gem
+    px(ctx,4,-3+bob,'#186858',1,2);
+    px(ctx,4,-3+bob,'#2a9880',1,1);
+    px(ctx,5,-3+bob,'#0e4440',1,1);
   } else if(mwpT===1){
-    // Tier 1: small purple stone, bit bigger
-    px(ctx,3,-3+bob,'#6040a0',2,2);  // stone body
-    px(ctx,3,-4+bob,'#8050c0',2,1);  // top facet
-    px(ctx,4,-3+bob,'#4a3080',1,2);  // right shadow
-    px(ctx,3,-5+bob,'#9060d0',1,1);  // tip sparkle
+    // T1: small turquoise stone
+    px(ctx,3,-3+bob,'#186858',2,2);
+    px(ctx,3,-4+bob,'#2a9880',2,1);
+    px(ctx,4,-3+bob,'#0e4440',1,2);
+    px(ctx,3,-5+bob,'#40c8a0',1,1); // sparkle
   } else if(mwpT===2){
-    // Tier 2: crystal orb - medium
-    ctx.fillStyle='rgba(120,60,220,0.22)';
-    ctx.beginPath();ctx.arc(4.5*S,(-7+bob+oy)*S,6*S,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='rgba(160,80,255,0.45)';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.arc(4.5*S,(-7+bob+oy)*S,6*S,0,Math.PI*2);ctx.stroke();
-    px(ctx,3,-9+bob+oy,'#8050c0',3,3);
-    px(ctx,4,-8+bob+oy,'rgba(220,180,255,0.95)',2,2);
-    px(ctx,3,-10+bob+oy,'rgba(180,130,255,0.5)',3,1);
-    px(ctx,4,-9+bob+oy,'rgba(240,210,255,1)',1,1);
+    // T2: turquoise crystal — small clean gem, no giant glow
+    px(ctx,3,-7+bob+oy,'#186858',3,4);
+    px(ctx,4,-8+bob+oy,'#2a9880',2,3);
+    px(ctx,3,-9+bob+oy,'#40c8a0',2,1);
+    px(ctx,4,-8+bob+oy,'#80e8c8',1,1); // shine
+    px(ctx,3,-7+bob+oy,'#0e4440',1,4); // shadow
+    // Small subtle glow
+    ctx.fillStyle='rgba(40,180,140,0.12)';
+    ctx.beginPath();ctx.arc(4.5*S,(-7+bob+oy)*S,4*S,0,Math.PI*2);ctx.fill();
   } else {
-    // Tier 3: glowing arcane orb
-    ctx.fillStyle='rgba(140,60,255,0.25)';
-    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,8*S,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='rgba(180,90,255,0.5)';ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,8*S,0,Math.PI*2);ctx.stroke();
-    ctx.strokeStyle='rgba(200,120,255,0.2)';ctx.lineWidth=4;
-    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,12*S,0,Math.PI*2);ctx.stroke();
-    px(ctx,3,-10+bob+oy,'#8050c0',3,3);
-    px(ctx,4,-9+bob+oy,'rgba(230,190,255,0.98)',2,2);
-    px(ctx,3,-11+bob+oy,'rgba(190,140,255,0.55)',3,1);
-    px(ctx,4,-10+bob+oy,'rgba(250,220,255,1)',1,1);
+    // T3: larger turquoise gem, clean glow
+    px(ctx,3,-8+bob+oy,'#186858',3,5);
+    px(ctx,4,-9+bob+oy,'#2a9880',2,4);
+    px(ctx,3,-10+bob+oy,'#40c8a0',3,1);
+    px(ctx,4,-9+bob+oy,'#80e8c8',1,2); // shine
+    px(ctx,3,-8+bob+oy,'#0e4440',1,5); // shadow
+    px(ctx,3,-11+bob+oy,'#a0f0d8',1,1); // tip gleam
+    // Clean focused glow — not too big
+    ctx.fillStyle='rgba(40,200,160,0.15)';
+    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,5*S,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(60,220,180,0.3)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,6*S,0,Math.PI*2);ctx.stroke();
   }
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.4)';ctx.fillRect(-6*S,-19*S,14*S,38*S);}
@@ -1678,12 +1743,26 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-5,6+bob,'#4a3018',1,3);px(ctx,-6,5+bob,'#505858',2,1);
     px(ctx,-6,9+bob,'#888e8e',1,5);px(ctx,-7,9+bob,'#9aa0a0',1,4);
   } else {
-    px(ctx,4,5+bob,'#6a4a18',1,4);px(ctx,4,4+bob,'#8a6020',2,1);
-    px(ctx,3,8+bob,'#6a4a18',4,1);
-    px(ctx,5,-9+bob,'#c8d0d8',1,18);px(ctx,6,-9+bob,'#dce4ec',1,16);
-    px(ctx,7,-8+bob,'#eef4f8',1,10);
-    px(ctx,-5,6+bob,'#c8a030',1,3);px(ctx,-6,5+bob,'#c8a030',2,1);
-    px(ctx,-6,9+bob,'#c8d0d8',1,5);px(ctx,-7,9+bob,'#dce8f0',1,4);
+    // T3: Rapier — thin elegant blade, swept guard, pirate style
+    // Main blade — single pixel wide, very long
+    px(ctx,5,8+bob,'#6a5030',1,3);  // grip
+    px(ctx,5,6+bob,'#8a7040',1,2);  // grip wrap
+    // Swept guard — curves elegantly
+    px(ctx,3,5+bob,'#c8a030',4,1);  // main guard bar
+    px(ctx,3,4+bob,'#c8a030',1,1);  // upper curve
+    px(ctx,6,6+bob,'#c8a030',1,1);  // lower curve
+    px(ctx,3,5+bob,'#e0b840',1,1);  // guard gleam
+    // Thin rapier blade
+    px(ctx,5,-9+bob,'#c8d0d8',1,15); // blade
+    px(ctx,6,-8+bob,'#d8e0e8',1,12); // blade highlight
+    f(5*S,(-9+bob)*S,1,15*S,'#e0e8f0'); // edge highlight
+    px(ctx,5,-9+bob,'#e8f0f8',1,1);  // tip gleam
+    // Off-hand: thin parrying dagger
+    px(ctx,-5,6+bob,'#c8a030',1,3);  // gold grip
+    px(ctx,-6,5+bob,'#c8a030',2,1);  // small guard
+    px(ctx,-6,9+bob,'#c0c8d0',1,5);  // dagger blade
+    px(ctx,-7,9+bob,'#d0d8e0',1,3);
+    f(-6*S,9*S+bob*S,1,5*S,'#e0e8f0');
   }
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.35)';ctx.fillRect(-6*S,-12*S,16*S,34*S);}
@@ -3698,7 +3777,7 @@ function draw(gs) {
     if(p.isMe&&hasSkullHelmet(p.cls)||(!p.isMe&&p.skullHelmet)){
       gctx.save();
       gctx.translate(p.x, p.y);
-      if(p.dir!==2) gctx.scale(-1,1);
+      if(p.dir===2) gctx.scale(-1,1); // flipped: mirror when facing LEFT (was right)
       var sx=-1, sy=-17;
       var R=11;
       // Muted aged bone colours
@@ -3761,7 +3840,7 @@ function draw(gs) {
     // Cardboard crown cosmetic (shown when hasCrown() and it's my player, or crown synced for opponent)
     if((p.isMe&&hasCrown())||(!p.isMe&&p.crownOn)){
       gctx.save();
-      gctx.translate(p.x,p.y-24); // shift up to head level
+      gctx.translate(p.x,p.y-22); // lowered by 2px (was -24)
       if(p.dir!==2)gctx.scale(-1,1);
       // Tilted slightly - lopsided, sitting crooked on the head
       gctx.rotate(0.18);
@@ -5338,6 +5417,30 @@ function buildSpellDesc(cls){
   h+='<div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:8px">LORE</div>';
   h+='<div style="font-size:11px;color:rgba(255,255,255,0.82);line-height:1.8;font-style:italic">'+(flavor[cls]||'')+'</div>';
   h+='</div>';
+  // Stats section
+  var d=getClassData(cls);
+  var pvpWins=d.wins||0;
+  var pvpPlayed=d.games||0;
+  var pvpLosses=Math.max(0,pvpPlayed-pvpWins);
+  var pvpKills=d.pvpKills||d.kills||0;
+  var winRate=pvpPlayed>0?Math.round(pvpWins/pvpPlayed*100):0;
+  var streak=d.currentStreak||0;
+  var bestStreak=d.bestStreak||0;
+  var s1Uses=d.s1Uses||0;
+  var s2Uses=d.s2Uses||0;
+  var moveUses=d.moveUses||0;
+  h+='<div style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">';
+  h+='<div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:10px">STATS</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px">';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">MATCHES</div><div style="font-size:13px;color:var(--text)">'+pvpPlayed+'</div></div>';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">WIN RATE</div><div style="font-size:13px;color:'+(winRate>=50?'#27ae60':'#c0392b')+'">'+winRate+'%</div></div>';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">PVP KILLS</div><div style="font-size:13px;color:var(--text)">'+pvpKills+'</div></div>';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">WIN STREAK</div><div style="font-size:13px;color:var(--gold)">'+streak+' <span style="font-size:9px;color:var(--dim)">(best '+bestStreak+')</span></div></div>';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">'+C.s1.name.toUpperCase()+' USED</div><div style="font-size:13px;color:var(--text)">'+s1Uses+'</div></div>';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">'+C.s2.name.toUpperCase()+' USED</div><div style="font-size:13px;color:var(--text)">'+s2Uses+'</div></div>';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">'+C.move.name.toUpperCase()+' USED</div><div style="font-size:13px;color:var(--text)">'+moveUses+'</div></div>';
+  h+='<div><div style="font-size:9px;color:var(--dim);letter-spacing:1px">LEVEL</div><div style="font-size:13px;color:var(--text)">'+xpD.level+'</div></div>';
+  h+='</div></div>';
   return {html:h, nextTierLevel:null, cls:cls};
 }
 
@@ -6708,9 +6811,9 @@ function getRedEyePos(cls,level){
     if(level>=10){return [[-2,-4],[0,-4]];} // visor eyes
     return [[-2,-4],[0,-4]]; // all warrior tiers same position now
   } else if(cls==='mage'){
-    return [[-2,-4],[0,-4]]; // mage eye positions
+    return [[-2,-4],[0,-4]]; // mage eye positions (row -4, warrior-style face)
   } else {
-    return [[-2,-5],[0,-5]]; // rogue green eye positions
+    return [[-2,-4],[0,-4]]; // rogue eye positions (matched to face row -4)
   }
 }
 function getWeaponTier(cls){
@@ -7056,29 +7159,6 @@ document.getElementById('btn-settings').addEventListener('click',function(){
   document.querySelectorAll('.settings-section').forEach(function(s){s.style.display='none';});
   var profSec=document.getElementById('stab-profile');if(profSec)profSec.style.display='block';
 });
-// -- MATCH HISTORY PANEL --
-function buildMatchHistory(){
-  var el=document.getElementById('match-history-list');
-  if(!el)return;
-  if(matchHistory.length===0){el.innerHTML='<div style="color:var(--dim);font-size:10px;padding:8px 0">No matches played yet.</div>';return;}
-  el.innerHTML=matchHistory.slice(0,10).map(function(m){
-    var d=new Date(m.date);
-    var ds=d.getDate()+'.'+(d.getMonth()+1)+'. '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
-    var arenaNames2={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple',crypt:'The Crypt',maze:'Runic Maze'};
-    var aname=arenaNames2[m.arena]||m.arena||'?';
-    var modeStr=m.mode==='pvp'?'PvP':'Training';
-    var clsName=m.myCls?m.myCls.charAt(0).toUpperCase()+m.myCls.slice(1):'?';
-    var enClsName=m.enCls?m.enCls.charAt(0).toUpperCase()+m.enCls.slice(1):'?';
-    return '<div style="border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;display:flex;align-items:center;gap:8px">'
-      +'<span style="font-size:11px;color:'+(m.won?'#27ae60':'#c0392b')+'">'+( m.won?'W':'L')+'</span>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:9px;color:var(--gold);letter-spacing:1px">'+modeStr+'   '+aname+'</div>'
-      +'<div style="font-size:9px;color:rgba(255,255,255,0.6)">'+clsName+' Lv.'+m.myLvl+' vs '+(m.enName||'?')+' ('+enClsName+' Lv.'+m.enLvl+')</div>'
-      +'</div>'
-      +'<span style="font-size:9px;color:var(--dim);white-space:nowrap">'+ds+'</span>'
-      +'</div>';
-  }).join('');
-}
 
 document.getElementById('settings-close').addEventListener('click',function(){
   document.getElementById('settings-overlay').style.display='none';
@@ -7092,7 +7172,6 @@ document.querySelectorAll('.settings-tab').forEach(function(btn){
     btn.style.borderBottomColor='var(--gold)';btn.style.color='var(--gold)';
     document.querySelectorAll('.settings-section').forEach(function(s){s.style.display='none';});
     document.getElementById('stab-'+btn.dataset.stab).style.display='block';
-    if(btn.dataset.stab==='history')buildMatchHistory();
   });
 });
 var _pendingNameChange=null,_pendingNameUsed=0;
