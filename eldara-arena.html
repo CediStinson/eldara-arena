@@ -7361,7 +7361,7 @@ function resizeCanvas(){
 window.addEventListener('resize',resizeCanvas);
 
 // -- MOBILE TOUCH CONTROLS --
-var _isMobile=/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||('ontouchstart' in window)||window.innerWidth<1024;
+var _isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||('ontouchstart' in window&&/Mobi/i.test(navigator.userAgent));
 function showMobileControls(show){
   var el=document.getElementById('mobile-controls');
   if(el)el.style.display=show?'block':'none';
