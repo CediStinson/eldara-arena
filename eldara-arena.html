@@ -4490,7 +4490,8 @@ function connectGameWS(){
         type:'join',roomCode:roomCode,role:role,
         playerId:myId,playerName:myName||'Player',cls:myClass||'warrior',
         level:getLevel(myClass)||1,
-        redEyes:hasRedEyes(myClass)||false
+        redEyes:hasRedEyes(myClass)||false,
+        skullHelmet:hasSkullHelmet(myClass)||false
       }));
       _wsPingTimer=setInterval(function(){
         if(_ws&&_ws.readyState===WebSocket.OPEN)
@@ -4568,6 +4569,16 @@ function applyServerState(snap){
     gameState.arenaKey=snap.arenaKey;
     _arenaCacheKey='';
   }
+  // Phase transitions
+  if(prevPhase!=='gameOver'&&snap.phase==='gameOver'){
+    // Server declared game over — trigger end round overlay
+    snap.players.forEach(function(sp){
+      var lp=gameState.players.find(function(p){return p.id===sp.id;});
+      if(lp){Object.assign(lp,sp);lp.isMe=(sp.id===myId);}
+    });
+    if(gameState.phase!=='gameOver')endRound(gameState);
+    return;
+  }
   if(prevPhase==='gameOver'&&snap.phase==='pregame'){
     pvpRematchReady=false;opponentRematchReady=false;
     hideOverlay();showBanner('Get Ready!');
@@ -4579,26 +4590,16 @@ function applyServerState(snap){
     if(!lp)return;
     var isMe=sp.id===myId;
     if(isMe){
-      // For our own player: smoothly correct position (client prediction)
-      // Only snap if we're very far off (teleport/respawn)
-      var dx=sp.x-lp.x, dy=sp.y-lp.y;
-      var dist=Math.hypot(dx,dy);
-      if(dist>80){
-        // Large correction — snap directly
-        lp.x=sp.x;lp.y=sp.y;
-      } else if(dist>5){
-        // Small drift — blend toward server position
-        lp.x+=dx*0.3;lp.y+=dy*0.3;
-      }
-      // Apply all non-position fields
-      var savedX=lp.x,savedY=lp.y;
+      // Own player: keep local position (client prediction), only apply combat state from server
+      var savedX=lp.x,savedY=lp.y,savedVx=lp.vx,savedVy=lp.vy,savedDir=lp.dir,savedAnim=lp.anim,savedMoving=lp.moving;
       Object.assign(lp,sp);
-      lp.x=savedX;lp.y=savedY;
+      lp.x=savedX;lp.y=savedY;lp.vx=savedVx;lp.vy=savedVy;
+      lp.dir=savedDir;lp.anim=savedAnim;lp.moving=savedMoving;
     } else {
-      // For opponent: interpolate position for smoothness
+      // Opponent: interpolate position smoothly
       var odx=sp.x-lp.x,ody=sp.y-lp.y,od=Math.hypot(odx,ody);
-      if(od>120){lp.x=sp.x;lp.y=sp.y;}
-      else{lp.x+=odx*0.4;lp.y+=ody*0.4;}
+      if(od>150){lp.x=sp.x;lp.y=sp.y;}
+      else{lp.x+=odx*0.35;lp.y+=ody*0.35;}
       var savedOX=lp.x,savedOY=lp.y;
       Object.assign(lp,sp);
       lp.x=savedOX;lp.y=savedOY;
