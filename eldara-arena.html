@@ -4483,7 +4483,9 @@ function connectGameWS(){
       // Join room with full player info so server can build game state
       _ws.send(JSON.stringify({
         type:'join',roomCode:roomCode,role:role,
-        playerId:myId,playerName:myName||'Player',cls:myClass||'warrior'
+        playerId:myId,playerName:myName||'Player',cls:myClass||'warrior',
+        level:getLevel(myClass)||1,
+        redEyes:hasRedEyes(myClass)||false
       }));
       _wsPingTimer=setInterval(function(){
         if(_ws&&_ws.readyState===WebSocket.OPEN)
