@@ -531,7 +531,7 @@ wss.on('connection',function(ws){
   ws.on('error',function(e){console.error('ws error:',e.message);});
 });
 
-var TICK_RATE=20; // 20hz server tick
+var TICK_RATE=60; // 60hz server tick
 var TICK_MS=1000/TICK_RATE;
 
 function startGameLoop(room,code){
