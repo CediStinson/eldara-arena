@@ -239,6 +239,8 @@ function updatePlayer(gs,p,inputs,dt){
     if(inputs.left){p.vx=-spd;p.dir=2;moved=true;}
     if(inputs.right){p.vx=spd;p.dir=3;moved=true;}
   }
+  // Diagonal normalisation
+  if(p.vx!==0&&p.vy!==0){var n=Math.SQRT1_2;p.vx*=n;p.vy*=n;}
   p.moving=moved;
   if(p.rolling>0){p.vx=p.rollDir.x*spd;p.vy=p.rollDir.y*spd;}
   var step=dt/16;
@@ -252,7 +254,14 @@ function update(gs,inputs,dt){
   gs.tick++;
   // Dopps
   if(gs.dopps){gs.dopps=gs.dopps.filter(function(d){return d.life>0;});gs.dopps.forEach(function(d){d.life-=dt;d.anim+=dt*0.01;d.x+=d.vx;d.y+=d.vy;if(d.x<TILE*2||d.x>(AW-2)*TILE)d.vx*=-1;if(d.y<TILE*2||d.y>(AH-2)*TILE)d.vy*=-1;});}
-  if(gs.phase==='pregame'){gs.countdown-=dt;if(gs.countdown<=0){gs.phase='fighting';}return;}
+  if(gs.phase==='pregame'){
+    gs.countdown-=dt;
+    if(gs.countdown<=0){gs.phase='fighting';}
+    // Still update positions during pregame so players see each other
+    updatePlayer(gs,p0,inputs[p0.id],dt);
+    updatePlayer(gs,p1,inputs[p1.id],dt);
+    return;
+  }
   if(gs.phase==='countdown'){gs.countdown-=dt;if(gs.countdown<=0)resetRound(gs);return;}
   gs.roundMs+=dt;
   if(gs.roundMs>=1000){gs.roundMs-=1000;gs.roundTimer=Math.max(0,gs.roundTimer-1);}
@@ -463,6 +472,9 @@ wss.on('connection',function(ws){
           if(!room4.hostInfo||!room4.guestInfo){console.log('match_start: missing player info');break;}
           room4.gs=mkGS(ak4,room4.hostInfo,room4.guestInfo);
           room4.inputs={};
+          // Pre-populate with empty inputs so updatePlayer never gets undefined
+          room4.inputs[room4.hostInfo.playerId]={up:false,down:false,left:false,right:false};
+          room4.inputs[room4.guestInfo.playerId]={up:false,down:false,left:false,right:false};
           startGameLoop(room4,ws.roomCode);
           broadcastState(room4,ws.roomCode,true);
           console.log('MATCH_START '+ws.roomCode+' arena='+ak4);
