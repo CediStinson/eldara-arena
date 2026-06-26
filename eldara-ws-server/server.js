@@ -265,8 +265,7 @@ function update(gs,inputs,dt){
   if(gs.phase==='pregame'){
     gs.countdown-=dt;
     if(gs.countdown<=0){gs.phase='fighting';}
-    updatePlayer(gs,p0,inputs[p0.id],dt);
-    updatePlayer(gs,p1,inputs[p1.id],dt);
+    // No movement during pregame countdown
     return;
   }
   if(gs.phase==='countdown'){gs.countdown-=dt;if(gs.countdown<=0)resetRound(gs);return;}
