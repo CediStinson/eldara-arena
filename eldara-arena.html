@@ -240,6 +240,7 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 
   <div style="position:absolute;top:50%;left:16px;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;align-items:center">
     <button id="btn-leaderboard" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:3px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed" title="Leaderboard">LEADERBOARD</button>
+    <button id="btn-match-history" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:3px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed" title="Match History">MATCH HISTORY</button>
     <button id="btn-achievements" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:3px;padding:8px 14px;cursor:pointer;text-transform:uppercase;writing-mode:vertical-rl;text-orientation:mixed" title="Achievements">ACHIEVEMENTS</button>
   </div>
   <button id="btn-logout" style="position:absolute;top:12px;right:16px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;padding:6px 12px;cursor:pointer;text-transform:uppercase" title="Log out">LOGOUT</button>
@@ -272,6 +273,16 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <div id="leaderboard-list-lb"></div>
     <div style="margin-top:16px;text-align:center">
       <button id="lb-close" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;padding:6px 20px;cursor:pointer">CLOSE</button>
+    </div>
+  </div>
+</div>
+<!-- Match History Overlay -->
+<div id="match-history-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:var(--panel);border:1px solid var(--border);padding:24px 28px;min-width:320px;max-width:500px;width:90vw;font-family:'Courier New',monospace;max-height:80vh;overflow-y:auto">
+    <div style="font-size:11px;letter-spacing:4px;color:var(--gold);margin-bottom:16px">MATCH HISTORY</div>
+    <div id="match-history-list-overlay"></div>
+    <div style="margin-top:16px;text-align:center">
+      <button id="mh-close" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;padding:6px 20px;cursor:pointer">CLOSE</button>
     </div>
   </div>
 </div>
@@ -2783,8 +2794,9 @@ function renderLeaderboard(){
 }
 
 function saveMatchHistory(entry){
+  if(entry.mode!=='pvp')return; // only save PvP matches
   matchHistory.unshift(entry);
-  if(matchHistory.length>10)matchHistory=matchHistory.slice(0,10);
+  if(matchHistory.length>20)matchHistory=matchHistory.slice(0,20);
   try{localStorage.setItem('eldara_match_history',JSON.stringify(matchHistory));}catch(e){}
 }
 
@@ -7407,6 +7419,41 @@ document.getElementById('btn-leaderboard').addEventListener('click',function(){
 document.getElementById('lb-close').addEventListener('click',function(){
   document.getElementById('leaderboard-overlay').style.display='none';
 });
+
+document.getElementById('btn-match-history').addEventListener('click',function(){
+  var ov=document.getElementById('match-history-overlay');
+  ov.style.display='flex';
+  renderMatchHistoryOverlay();
+});
+document.getElementById('mh-close').addEventListener('click',function(){
+  document.getElementById('match-history-overlay').style.display='none';
+});
+
+function renderMatchHistoryOverlay(){
+  var el=document.getElementById('match-history-list-overlay');
+  if(!el)return;
+  var pvpOnly=matchHistory.filter(function(m){return m.mode==='pvp';});
+  if(pvpOnly.length===0){
+    el.innerHTML='<div style="color:var(--dim);font-size:10px;padding:8px 0">No PvP matches played yet.</div>';
+    return;
+  }
+  var arenaNames2={volcano:'Volcanic Rift',desert:'Desert Colosseum',temple:'Shadow Temple',crypt:'The Crypt',maze:'Runic Maze'};
+  el.innerHTML=pvpOnly.slice(0,20).map(function(m){
+    var d=new Date(m.date);
+    var ds=d.getDate()+'.'+(d.getMonth()+1)+'. '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+    var aname=arenaNames2[m.arena]||m.arena||'?';
+    var clsName=m.myCls?m.myCls.charAt(0).toUpperCase()+m.myCls.slice(1):'?';
+    var enClsName=m.enCls?m.enCls.charAt(0).toUpperCase()+m.enCls.slice(1):'?';
+    return '<div style="border-bottom:1px solid rgba(255,255,255,0.06);padding:8px 0;display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:13px;font-weight:bold;color:'+(m.won?'#27ae60':'#c0392b')+'">'+( m.won?'W':'L')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:10px;color:var(--gold);letter-spacing:1px">'+aname+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,0.6);margin-top:2px">'+clsName+' Lv.'+m.myLvl+' vs '+(m.enName||'?')+' ('+enClsName+' Lv.'+m.enLvl+')</div>'
+      +'</div>'
+      +'<span style="font-size:9px;color:var(--dim);white-space:nowrap">'+ds+'</span>'
+      +'</div>';
+  }).join('');
+}
 
 document.getElementById('btn-achievements').addEventListener('click',function(){
   // Mark all currently earned achievements as seen and remove glow
