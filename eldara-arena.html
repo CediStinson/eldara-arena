@@ -4580,21 +4580,32 @@ function applyServerState(snap){
     return;
   }
   if(prevPhase==='gameOver'&&snap.phase==='pregame'){
+    _hasSpawned=false; // reset for rematch
     pvpRematchReady=false;opponentRematchReady=false;
     hideOverlay();showBanner('Get Ready!');
     var btn=document.getElementById('ov-rematch');
     if(btn){btn.disabled=false;btn.textContent='REMATCH';}
+  }
+  if(prevPhase==='pregame'&&snap.phase==='fighting'){
+    _hasSpawned=true; // fight started — trust local movement from here
   }
   snap.players.forEach(function(sp){
     var lp=gameState.players.find(function(p){return p.id===sp.id;});
     if(!lp)return;
     var isMe=sp.id===myId;
     if(isMe){
-      // Own player: keep local position (client prediction), only apply combat state from server
-      var savedX=lp.x,savedY=lp.y,savedVx=lp.vx,savedVy=lp.vy,savedDir=lp.dir,savedAnim=lp.anim,savedMoving=lp.moving;
-      Object.assign(lp,sp);
-      lp.x=savedX;lp.y=savedY;lp.vx=savedVx;lp.vy=savedVy;
-      lp.dir=savedDir;lp.anim=savedAnim;lp.moving=savedMoving;
+      if(!_hasSpawned){
+        // Not yet spawned — fully trust server position
+        Object.assign(lp,sp);
+        lp.isMe=true;
+      } else {
+        // After spawn — keep local position, only apply combat state
+        var savedX=lp.x,savedY=lp.y,savedVx=lp.vx,savedVy=lp.vy,savedDir=lp.dir,savedAnim=lp.anim,savedMoving=lp.moving;
+        Object.assign(lp,sp);
+        lp.x=savedX;lp.y=savedY;lp.vx=savedVx;lp.vy=savedVy;
+        lp.dir=savedDir;lp.anim=savedAnim;lp.moving=savedMoving;
+        lp.isMe=true;
+      }
     } else {
       // Opponent: interpolate position smoothly
       var odx=sp.x-lp.x,ody=sp.y-lp.y,od=Math.hypot(odx,ody);
@@ -4603,8 +4614,8 @@ function applyServerState(snap){
       var savedOX=lp.x,savedOY=lp.y;
       Object.assign(lp,sp);
       lp.x=savedOX;lp.y=savedOY;
+      lp.isMe=false;
     }
-    lp.isMe=isMe;
   });
   gameState.projs=snap.projs||[];
   gameState.effects=snap.effects||[];
@@ -4614,6 +4625,7 @@ function applyServerState(snap){
 }
 
 // Send input state to server every frame
+var _hasSpawned=false; // snap to server position on first gamestate
 function pushInputs(){
   if(!_ws||!_wsReady||_ws.readyState!==WebSocket.OPEN)return;
   _ws.send(JSON.stringify({type:'input',data:{
@@ -5894,6 +5906,7 @@ function launchPvP(arenaKey,hostId,hostName,hostCls) {
   document.getElementById('conn-bar').textContent='ONLINE';document.getElementById('conn-bar').classList.add('online');
   showScreen('game-screen');hideOverlay();resizeCanvas();
   connectGameWS();
+  _hasSpawned=false; // reset so first server state snaps position
   // Don't start listening for Firebase actions — server handles everything now
   // Only keep Firebase for non-game stuff (lobby, rematch signals)
   startListeningActions(); // fallback only
