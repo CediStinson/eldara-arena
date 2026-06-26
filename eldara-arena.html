@@ -3233,14 +3233,10 @@ function update(gs,dt) {
   var me=gs.players.find(function(p){return p.isMe;});
   var en=gs.players.find(function(p){return !p.isMe;});
   if(!me||!en){if(me)updateLocal(gs,me,dt);return;}
-  // In PvP: server runs simulation, client predicts own movement locally
+  // In PvP: fully trust server state, send inputs, no local prediction
   if(gameMode==='pvp'){
     updateHitNumbers(dt);updateFootDust(dt);
-    pushInputs(); // must be here — PvP returns early before the bottom of update()
-    if(gs.phase==='fighting'){
-      var meP=gs.players.find(function(p){return p.isMe;});
-      if(meP&&!meP.dead&&!meP.stunned)updateLocal(gs,meP,dt);
-    }
+    pushInputs();
     return;
   }
   var _meOldX=me?me.x:0,_meOldY=me?me.y:0;
@@ -4571,12 +4567,12 @@ function applyServerState(snap){
   }
   // Phase transitions
   if(prevPhase!=='gameOver'&&snap.phase==='gameOver'){
-    // Server declared game over — trigger end round overlay
     snap.players.forEach(function(sp){
       var lp=gameState.players.find(function(p){return p.id===sp.id;});
       if(lp){Object.assign(lp,sp);lp.isMe=(sp.id===myId);}
     });
-    if(gameState.phase!=='gameOver')endRound(gameState);
+    gameState.phase='fighting'; // temporarily so endRound guard passes
+    endRound(gameState);        // endRound sets phase='gameOver' itself
     return;
   }
   if(prevPhase==='gameOver'&&snap.phase==='pregame'){
@@ -4594,23 +4590,14 @@ function applyServerState(snap){
     if(!lp)return;
     var isMe=sp.id===myId;
     if(isMe){
-      if(!_hasSpawned){
-        // Not yet spawned — fully trust server position
-        Object.assign(lp,sp);
-        lp.isMe=true;
-      } else {
-        // After spawn — keep local position, only apply combat state
-        var savedX=lp.x,savedY=lp.y,savedVx=lp.vx,savedVy=lp.vy,savedDir=lp.dir,savedAnim=lp.anim,savedMoving=lp.moving;
-        Object.assign(lp,sp);
-        lp.x=savedX;lp.y=savedY;lp.vx=savedVx;lp.vy=savedVy;
-        lp.dir=savedDir;lp.anim=savedAnim;lp.moving=savedMoving;
-        lp.isMe=true;
-      }
+      // Fully trust server for own player — no prediction fighting
+      Object.assign(lp,sp);
+      lp.isMe=true;
     } else {
-      // Opponent: interpolate position smoothly
+      // Opponent: smooth interpolation toward server position
       var odx=sp.x-lp.x,ody=sp.y-lp.y,od=Math.hypot(odx,ody);
       if(od>150){lp.x=sp.x;lp.y=sp.y;}
-      else{lp.x+=odx*0.35;lp.y+=ody*0.35;}
+      else{lp.x+=odx*0.5;lp.y+=ody*0.5;}
       var savedOX=lp.x,savedOY=lp.y;
       Object.assign(lp,sp);
       lp.x=savedOX;lp.y=savedOY;
