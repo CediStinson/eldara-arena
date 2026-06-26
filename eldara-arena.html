@@ -4481,12 +4481,14 @@ function connectGameWS(){
   disconnectGameWS();
   var role=iAmHost?'host':'guest';
   var attempts=0;
-  var maxAttempts=3;
 
+  _wsIntentionalDisconnect=false;
   function tryConnect(){
-    if(attempts>=maxAttempts){sidelog('WS','Failed to connect — no authoritative game');return;}
+    if(_wsIntentionalDisconnect)return;
     attempts++;
-    try{_ws=new WebSocket(WS_SERVER);}catch(e){return;}
+    try{_ws=new WebSocket(WS_SERVER);}catch(e){
+      setTimeout(tryConnect,2000);return;
+    }
 
     var connectTimeout=setTimeout(function(){
       if(!_wsReady&&_ws){try{_ws.close();}catch(e){}}
@@ -4515,9 +4517,11 @@ function connectGameWS(){
 
         if(msg.type==='ready'){
           _wsReady=true;attempts=0;
+          var cb=document.getElementById('conn-bar');
+          if(cb){cb.textContent='ONLINE';cb.classList.add('online');cb.style.color='';}
           sidelog('WS','Connected — authoritative server active');
-          // Host triggers match start — only if game not already running
-          if(iAmHost&&(!gameState||gameState.phase==='pregame'||gameState.tick<5)){
+          // If game already running (reconnect mid-match), don't send match_start
+          if(iAmHost&&(!gameState||gameState.tick<5)){
             var ak=gameState&&gameState.arenaKey?gameState.arenaKey:ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
             _ws.send(JSON.stringify({
               type:'match_start',
@@ -4525,6 +4529,8 @@ function connectGameWS(){
               hostCls:myClass||'warrior',
               guestCls:enemyClsPvp||'warrior'
             }));
+          } else {
+            sidelog('WS','Rejoined room — game continuing');
           }
 
         } else if(msg.type==='gamestate'){
@@ -4552,13 +4558,11 @@ function connectGameWS(){
       clearTimeout(connectTimeout);
       _wsReady=false;
       clearInterval(_wsPingTimer);_wsPingTimer=null;
-      if(!gameState||gameMode!=='pvp')return;
-      if(attempts<maxAttempts){
-        sidelog('WS','Reconnecting... ('+attempts+'/'+maxAttempts+')');
-        setTimeout(tryConnect,1500);
-      } else {
-        sidelog('WS','Connection lost');
-      }
+      if(!gameState||gameMode!=='pvp'||_wsIntentionalDisconnect)return;
+      var cb=document.getElementById('conn-bar');
+      if(cb){cb.textContent='RECONNECTING...';cb.classList.remove('online');cb.style.color='#e67e22';}
+      sidelog('WS','Connection lost — retrying in 1.5s...');
+      setTimeout(tryConnect,1500);
     };
     _ws.onerror=function(){_wsReady=false;};
   }
@@ -4666,7 +4670,9 @@ function _wsOpponentLeft(){
   showScreen('title-screen');
 }
 
+var _wsIntentionalDisconnect=false;
 function disconnectGameWS(){
+  _wsIntentionalDisconnect=true;
   _wsReady=false;
   clearInterval(_wsPingTimer);_wsPingTimer=null;
   _enPosBuffer=[];
