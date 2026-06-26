@@ -1132,62 +1132,77 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     f(-1*S,(-3+bob)*S+S-1,3*S,1,'#904010');
   }
 
+  if(!_skipWeapons){
   // -- SWORD / AXE --
   var wpT=getWeaponTier('warrior');
   var gx=4;
   if(wpT===0){
+    // Handle
     px(ctx,gx,9+bob,'#706860',2,2);px(ctx,gx,8+bob,'#504840',2,1);
     px(ctx,gx,4+bob,'#4a3828',2,5);px(ctx,gx,5+bob,'#3a2818',1,3);
     px(ctx,gx-1,3+bob,'#706860',3,1);
+    // Blade
     px(ctx,gx,-4+bob,'#909888',2,8);px(ctx,gx,-4+bob,'#a0a898',1,7);
-    px(ctx,gx,-1+bob,'#887860',1,1);px(ctx,gx,-3+bob,'#887860',1,1);
-    px(ctx,gx,-4+bob,'#807870',1,1);
     f(gx*S,(-4+bob)*S,1,8*S,'#b8b0a0');
-    f(gx*S,(-4+bob)*S,1,1,'#d0c8b8');
     f((gx+1)*S-1,(-4+bob)*S,1,7*S,'#686058');
+    // Sloped tip
+    px(ctx,gx,-4+bob,'#b0a898',2,1);
+    px(ctx,gx+1,-5+bob,'#a0a090',1,1);
   } else if(wpT===1){
+    // Handle
     px(ctx,gx,9+bob,'#9098a0',2,2);px(ctx,gx,9+bob,'#b0b8c0',1,1);
     px(ctx,gx,4+bob,'#3a2810',2,6);px(ctx,gx,5+bob,'#5a4830',1,4);
     px(ctx,gx-1,3+bob,'#8090a0',4,1);
-    px(ctx,gx,-9+bob,'#9090a0',2,13);px(ctx,gx,-9+bob,'#a8b0b8',1,12);
-    px(ctx,gx,-9+bob,'#b0b8c0',2,1);px(ctx,gx,-10+bob,'#c0c8d0',1,1);
-    f(gx*S,(-9+bob)*S,1,13*S,'#c8d0d8');
-    f(gx*S,(-9+bob)*S,1,1,'#e0e8f0');
+    // Blade
+    px(ctx,gx,-9+bob,'#9090a0',2,12);px(ctx,gx,-9+bob,'#a8b0b8',1,11);
+    f(gx*S,(-9+bob)*S,1,12*S,'#c8d0d8');
     f((gx+1)*S,(-8+bob)*S,1,10*S,'#788090');
+    // Sloped tip
+    px(ctx,gx,-9+bob,'#c0c8d0',2,1);
+    px(ctx,gx+1,-10+bob,'#b0b8c0',1,1);
+    px(ctx,gx,-10+bob,'#d0d8e0',1,1);
   } else if(wpT===2){
+    // Handle
     px(ctx,gx,9+bob,'#b8c0b8',2,2);px(ctx,gx,9+bob,'#d8e0d8',1,1);
     px(ctx,gx,4+bob,'#2a1e10',2,6);px(ctx,gx,5+bob,'#4a3828',1,4);
     px(ctx,gx-1,3+bob,'#909090',5,1);
-    px(ctx,gx,-12+bob,'#b0b8b8',2,16);px(ctx,gx,-12+bob,'#d0d8d8',1,15);
+    // Blade
+    px(ctx,gx,-12+bob,'#b0b8b8',2,15);px(ctx,gx,-12+bob,'#d0d8d8',1,14);
     px(ctx,gx+1,-12+bob,'#c0c8c8',1,11);
-    px(ctx,gx,-12+bob,'#d8e0e0',2,1);px(ctx,gx,-13+bob,'#e8f0f0',1,1);
-    f(gx*S,(-12+bob)*S,1,16*S,'#e8f0f0');
-    f(gx*S,(-12+bob)*S,1,1,'#ffffff');
+    f(gx*S,(-12+bob)*S,1,15*S,'#e8f0f0');
     f((gx+1)*S,(-11+bob)*S,1,12*S,'#9098a0');
     f((gx-1)*S,(3+bob)*S,5*S,1,'#b0b8b8');
+    // Sloped tip
+    px(ctx,gx,-12+bob,'#d8e0e0',2,1);
+    px(ctx,gx+1,-13+bob,'#c8d0d0',1,1);
+    px(ctx,gx,-13+bob,'#e8f0f0',1,1);
   } else {
-    // T3: Battle Axe
-    var ax=gx-1;
-    // Handle
-    px(ctx,ax+1,9+bob,'#5a3a18',1,5);px(ctx,ax+1,4+bob,'#6a4a20',1,5);
-    px(ctx,ax+1,9+bob,'#3a2010',1,1);
-    f((ax+1)*S+1,(4+bob)*S,1,9*S,'#7a5828');
-    // Gold crossguard
-    px(ctx,ax,3+bob,'#c8a030',4,1);
-    px(ctx,ax,3+bob,'#e0b840',1,1);px(ctx,ax+3,3+bob,'#a08020',1,1);
-    // Axe head — wide blade
-    px(ctx,ax,-3+bob,'#b8c0c8',2,7);
-    px(ctx,ax-1,-2+bob,'#c8d0d8',1,5);
-    px(ctx,ax-2,-1+bob,'#d8e0e8',1,3);
-    px(ctx,ax+1,-4+bob,'#a0a8b0',1,8);
+    // T3: Massive battle axe — blade pointing LEFT (outward)
+    var ax=gx;
+    // Long thick handle
+    px(ctx,ax,10+bob,'#5a3a18',2,6);px(ctx,ax,4+bob,'#6a4a20',2,6);
+    f((ax)*S+1,(4+bob)*S,1,10*S,'#7a5828');
+    px(ctx,ax,10+bob,'#3a2010',1,1);
+    // Crossguard
+    px(ctx,ax-1,3+bob,'#888888',4,1);px(ctx,ax-1,3+bob,'#a0a0a0',1,1);
+    // Massive axe head pointing LEFT (outward from warrior)
+    px(ctx,ax-1,-5+bob,'#a0a8b0',2,9);   // back of blade
+    px(ctx,ax-2,-4+bob,'#b0b8c0',1,8);   // blade body
+    px(ctx,ax-3,-3+bob,'#c0c8d0',1,6);   // wider
+    px(ctx,ax-4,-2+bob,'#d0d8e0',1,4);   // widest
+    px(ctx,ax-5,-1+bob,'#d8e0e8',1,2);   // tip area
     // Blade edge highlight
-    f(ax*S,(-3+bob)*S,1,7*S,'#e0e8f0');
-    f((ax-1)*S,(-2+bob)*S,1,5*S,'#d0d8e0');
-    // Gold inlay on blade
-    px(ctx,ax,-1+bob,'#c8a030',1,1);px(ctx,ax,1+bob,'#c8a030',1,1);px(ctx,ax,-3+bob,'#c8a030',1,1);
-    // Beard of axe (bottom curve)
-    px(ctx,ax+2,2+bob,'#9098a0',1,2);
-    px(ctx,ax+3,4+bob,'#707880',1,1);
+    f((ax-4)*S,(-2+bob)*S,1,4*S,'#e8f0f8');
+    f((ax-5)*S,(-1+bob)*S,1,2*S,'#f0f8ff');
+    // Beard of axe (bottom hook)
+    px(ctx,ax-2,3+bob,'#b0b8c0',1,2);
+    px(ctx,ax-3,4+bob,'#c0c8d0',1,2);
+    px(ctx,ax-4,5+bob,'#a0a8b0',1,1);
+    // Top spike
+    px(ctx,ax-1,-5+bob,'#c0c8d0',2,1);
+    px(ctx,ax-2,-6+bob,'#b0b8c0',1,1);
+    // Shadow/depth on blade
+    f((ax-1)*S+S-1,(-5+bob)*S,1,9*S,'#808890');
   }
 
   // -- SHIELD --
@@ -1200,39 +1215,43 @@ function drawWarrior(ctx, x, y, dir, anim, flash, level) {
     f(-6*S-1,(1+bob)*S,1,7*S,'#3a2010');
     f(-8*S,(4+bob)*S,3*S,1,'#5a3818');
   } else if(wpT===1){
-    // T1: steel kite shield
-    px(ctx,-9,-1+bob,'#3a3830',4,11);px(ctx,-8,0+bob,'#6a6860',1,2);
-    px(ctx,-8,4+bob,'#909090',3,1);px(ctx,-9,4+bob,'#484848',1,1);
-    f(-9*S,(-1+bob)*S,1,11*S,'#848280');
-    f(-5*S-1,(-1+bob)*S,1,11*S,'#282826');
-    f(-9*S,(-1+bob)*S,4*S,1,'#707070');
-    f(-9*S,(10+bob)*S-1,4*S,1,'#282828');
-    px(ctx,-8,4+bob,'#c8a030',2,1); // boss
+    // T1: brown kite shield with silver border
+    px(ctx,-8,0+bob,'#6a4820',3,9);px(ctx,-7,1+bob,'#7a5828',2,7);
+    px(ctx,-8,0+bob,'#4a3010',1,8);px(ctx,-7,4+bob,'#a07830',1,1);
+    f(-8*S,(0+bob)*S,1,9*S,'#8a6030');f(-6*S-1,(0+bob)*S,1,9*S,'#3a2010');
+    f(-8*S,(0+bob)*S,3*S,1,'#909090');f(-8*S,(9+bob)*S-1,3*S,1,'#707070');
+    f(-8*S,(0+bob)*S,1,9*S,'#a0a0a0');f(-6*S-1,(0+bob)*S,1,9*S,'#606060');
   } else if(wpT===2){
-    // T2: same as T1 but bigger (4 wide, 12 tall)
-    px(ctx,-9,-1+bob,'#2a2e36',4,12);px(ctx,-8,0+bob,'#3a4050',3,10);
-    px(ctx,-9,-1+bob,'#1e2228',1,10);
-    px(ctx,-8,1+bob,'#8b1010',1,8);px(ctx,-8,2+bob,'#aa1818',1,5);
-    px(ctx,-9,-1+bob,'#c8a030',1,1);px(ctx,-8,5+bob,'#c8a030',3,1);
-    px(ctx,-9,10+bob,'#c8a030',4,1);
-    px(ctx,-9,3+bob,'#404858',4,1);px(ctx,-9,7+bob,'#404858',4,1);
-    f(-9*S+1,(-1+bob)*S,1,12*S,'#4a5060');
-    f(-9*S,(-1+bob)*S,4*S,1,'#c8a030');
-    f(-9*S,(11+bob)*S-1,4*S,1,'#a08020');
-    f(-8*S,(1+bob)*S,1,8*S,'#cc2020');
+    // T2: bigger T1 (4 wide, 11 tall) + centre spike pointing outward
+    px(ctx,-9,-1+bob,'#6a4820',4,11);px(ctx,-8,0+bob,'#7a5828',3,9);
+    px(ctx,-9,-1+bob,'#4a3010',1,10);px(ctx,-8,5+bob,'#a07830',2,1);
+    f(-9*S,(-1+bob)*S,1,11*S,'#8a6030');f(-6*S-1,(-1+bob)*S,1,11*S,'#3a2010');
+    f(-9*S,(-1+bob)*S,4*S,1,'#909090');f(-9*S,(10+bob)*S-1,4*S,1,'#707070');
+    f(-9*S,(-1+bob)*S,1,11*S,'#a0a0a0');f(-6*S-1,(-1+bob)*S,1,11*S,'#606060');
+    px(ctx,-10,5+bob,'#b0b0a8',1,2);px(ctx,-11,6+bob,'#c0c0b8',1,1);
   } else {
-    // T3: same as T1/T2 but largest (4 wide, 13 tall) with full gold trim
-    px(ctx,-9,-2+bob,'#2a2e36',4,13);px(ctx,-8,-1+bob,'#3a4050',3,11);
-    px(ctx,-9,-2+bob,'#c8a030',1,11);
-    px(ctx,-8,0+bob,'#8b1010',1,8);px(ctx,-8,1+bob,'#cc2020',1,5);
-    px(ctx,-9,-2+bob,'#c8a030',4,1);px(ctx,-9,10+bob,'#c8a030',4,1);
-    px(ctx,-8,4+bob,'#907828',3,1);px(ctx,-10,-2+bob,'#e0b840',1,3);
-    px(ctx,-9,2+bob,'#c8a030',4,1);px(ctx,-9,6+bob,'#c8a030',4,1);
-    f(-9*S+1,(-2+bob)*S,1,13*S,'#e0b840');
-    f(-9*S,(-2+bob)*S,4*S,1,'#f0c850');
-    f(-8*S,0+bob*S,1,8*S,'#ee2020');
-    f(-10*S,(-2+bob)*S,1,3*S,'#f0c840');
+    // T3: tower shield — tall, dark, brutal. Different shape entirely
+    px(ctx,-9,-3+bob,'#282830',4,15); // tall body
+    px(ctx,-8,-2+bob,'#383840',3,13);
+    px(ctx,-9,-3+bob,'#1a1a22',1,13);  // left shadow
+    f(-5*S-1,(-3+bob)*S,1,15*S,'#181820'); // right shadow
+    // Rounded top
+    f(-9*S,(-3+bob)*S,4*S,1,'#484850');
+    f(-9*S,(-3+bob)*S,1,1,'#0a0a0f');f(-6*S+S-1,(-3+bob)*S,1,1,'#0a0a0f');
+    // Pointed bottom
+    f(-9*S,(12+bob)*S-1,4*S,1,'#282830');
+    px(ctx,-8,12+bob,'#1a1a22',2,2);px(ctx,-7,13+bob,'#282830',1,1);
+    // Iron rivets
+    px(ctx,-8,-1+bob,'#606068',1,1);px(ctx,-7,-1+bob,'#606068',1,1);
+    px(ctx,-8,10+bob,'#606068',1,1);px(ctx,-7,10+bob,'#606068',1,1);
+    // Horizontal reinforcement bars
+    px(ctx,-9,2+bob,'#484850',4,1);
+    px(ctx,-9,6+bob,'#484850',4,1);
+    px(ctx,-9,9+bob,'#484850',4,1);
+    // Highlight edge
+    f(-9*S+1,(-3+bob)*S,1,14*S,'#505058');
   }
+  } // end !_skipWeapons
   ctx.restore();
 }
 // -- Mage (ancient arcane scholar) --
@@ -1250,7 +1269,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   var darkBase='#1e1c18'; // dark underlayer (tabard/inner)
   var darkMid ='#2a2820'; // slightly lighter dark
   var teal0='#0e4440'; var teal1='#145a50'; var teal2='#186858'; var teal3='#1a7060';
-  var tealHi0='#1a6058'; var tealHi1='#207868'; var tealHi2='#248870'; var tealHi3='#2a9880';
+  var tealHi0='#145450'; var tealHi1='#186058'; var tealHi2='#1c6860'; var tealHi3='#207060';
   var tealCol=mT===0?teal0:mT===1?teal1:mT===2?teal2:teal3;
   var tealHi =mT===0?tealHi0:mT===1?tealHi1:mT===2?tealHi2:tealHi3;
   var gold1='#8a6820'; var gold2='#b08828'; var gold3='#d4a830'; var goldHi='#e8c848';
@@ -1370,6 +1389,20 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   // Hands
   px(ctx,-6,10+bob,'#d0c8b8',2,2);px(ctx,4,10+bob,'#d0c8b8',2,2);
   px(ctx,-6,11+bob,'#b8b0a0',2,1);px(ctx,4,11+bob,'#b8b0a0',2,1);
+  // -- GRIME & DIRT — arena fighters get dirty
+  var grime='rgba(30,22,10,0.35)';var grime2='rgba(20,16,8,0.25)';
+  // Hem dirt — bottom of robe gets muddy
+  px(ctx,-4,14+bob+rv,'rgba(25,18,8,0.5)',8,2);
+  px(ctx,-3,13+bob+rv,'rgba(20,15,6,0.3)',6,1);
+  // Sleeve wear — cuffs and elbows
+  f(-6*S,(5+bob)*S,S,2*S,grime);f(4*S,(5+bob)*S,S,2*S,grime);
+  f(-6*S,(8+bob)*S,2*S,S,grime2);f(4*S,(8+bob)*S,2*S,S,grime2);
+  // Chest scuffs — from combat
+  f(-1*S,(3+bob)*S,S,S,grime);f(0*S,(6+bob)*S,S,S,grime2);
+  f(-2*S,(5+bob)*S,S,S,grime2);f(1*S,(4+bob)*S,S,S,grime);
+  // Robe body wear marks
+  f(-3*S,(7+bob)*S,S,S,grime);f(2*S,(8+bob)*S,S,S,grime2);
+  f(-3*S,(2+bob)*S,S,S,grime2);f(2*S,(3+bob)*S,S,S,grime);
 
   // -- SHOES --
   px(ctx,-3,15+bob,'#18141e',3,3);px(ctx,0,15+bob,'#18141e',3,3);
@@ -1398,7 +1431,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
   f(-1*S,(-4+bob)*S,S,S,skinCol);   // skin bridge between eyes
   // Glowing eye T3
   if(mT>=3){
-    ctx.fillStyle='rgba(200,60,255,0.2)';
+    ctx.fillStyle='rgba(40,200,160,0.2)';
     ctx.fillRect(-3*S,-5*S,5*S,2*S);
   }
   // Nose — tiny mark in row -3 (same as warrior)
@@ -1432,32 +1465,36 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
 
   // -- HEADBAND at row -6 (just above face top) --
   if(mT===0){
-    px(ctx,-2,-6+bob,'#2a1840',5,1);
-    px(ctx,-2,-6+bob,'#3a2850',1,1);
+    // T0: simple dark teal cord
+    px(ctx,-2,-6+bob,'#0e4440',5,1);
+    px(ctx,-2,-6+bob,'#186858',1,1);
   } else if(mT===1){
-    px(ctx,-2,-6+bob,'#1e1428',5,1);
-    px(ctx,-2,-6+bob,'#2e2040',1,1);
-    px(ctx,0,-6+bob,'#5a1890',2,1);
-    px(ctx,0,-6+bob,'#7a30b0',1,1);
+    // T1: teal leather band with small turquoise stone
+    px(ctx,-2,-6+bob,'#0e4440',5,1);
+    px(ctx,-2,-6+bob,'#186858',1,1);
+    px(ctx,0,-6+bob,'#2a9880',2,1);   // turquoise stone
+    px(ctx,0,-6+bob,'#40c8a0',1,1);   // stone shine
   } else if(mT===2){
-    px(ctx,-3,-6+bob,'#707880',6,1);   // silver band
-    px(ctx,-3,-6+bob,'#909898',1,1);
-    px(ctx,2,-6+bob,'#505860',1,1);
-    px(ctx,-1,-7+bob,'#6a20b0',2,2);   // gem rises above band
-    px(ctx,-1,-8+bob,'#8a30d0',2,1);   // gem top facet
-    px(ctx,0,-7+bob,'#c090f0',1,1);    // gem shine
-    px(ctx,-3,-6+bob,'#4a1880',1,1);px(ctx,2,-6+bob,'#4a1880',1,1); // side gems
+    // T2: silver-teal band with turquoise gem rising above
+    px(ctx,-3,-6+bob,'#1a6858',6,1);
+    px(ctx,-3,-6+bob,'#2a8870',1,1);
+    px(ctx,2,-6+bob,'#0e4440',1,1);
+    px(ctx,-1,-7+bob,'#186858',2,2);  // gem body
+    px(ctx,-1,-8+bob,'#2a9880',2,1);  // gem top
+    px(ctx,0,-7+bob,'#40c8a0',1,1);   // shine
+    px(ctx,-3,-6+bob,'#124a38',1,1);px(ctx,2,-6+bob,'#124a38',1,1); // side accents
   } else {
-    px(ctx,-3,-6+bob,'#c8a030',6,1);   // gold band
-    px(ctx,-3,-6+bob,'#e0b840',1,1);
-    px(ctx,2,-6+bob,'#a88020',1,1);
-    px(ctx,-1,-7+bob,'#8020c0',2,2);   // center gem rises above
-    px(ctx,-1,-8+bob,'#a030e0',2,1);
-    px(ctx,0,-8+bob,'#d080ff',1,1);
-    ctx.fillStyle='rgba(160,40,255,0.3)';
-    ctx.fillRect(-2*S,-9*S,4*S,3*S);
-    px(ctx,-3,-7+bob,'#6020a0',1,1);px(ctx,2,-7+bob,'#6020a0',1,1); // side gems
-    px(ctx,-3,-6+bob,'#6020a0',1,1);px(ctx,2,-6+bob,'#6020a0',1,1);
+    // T3: gold band with turquoise gem sitting ON the band, not rising above
+    px(ctx,-3,-6+bob,'#d4a830',6,1);
+    px(ctx,-3,-6+bob,'#e8c848',1,1);
+    px(ctx,2,-6+bob,'#b08828',1,1);
+    // Gem sits on top of band at row -6, rises just 1 row up to -7
+    px(ctx,-1,-7+bob,'#186858',2,1);   // gem body — just 1 row above band
+    px(ctx,0,-7+bob,'#2a9880',1,1);    // gem highlight
+    px(ctx,-1,-6+bob,'#40c8a0',1,1);   // gem on band shine
+    ctx.fillStyle='rgba(40,200,160,0.15)';
+    ctx.fillRect(-2*S,-8*S,4*S,3*S);
+    px(ctx,-3,-6+bob,'#2a9880',1,1);px(ctx,2,-6+bob,'#2a9880',1,1);
   }
 
   // -- BEARD --
@@ -1483,7 +1520,8 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,-2,-1+bob,'#e0e0d8',1,1);
   }
 
-  // -- STAFF (thin long shaft, orb scales with weapon tier) --
+  // -- STAFF --
+  if(!_skipWeapons){
   var mwpT=getWeaponTier('mage');
   // Staff shaft
   ctx.strokeStyle=mwpT===0?'#3a2408':'#4a3010';
@@ -1508,11 +1546,11 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     px(ctx,4,-3+bob,'#2a9880',1,1);
     px(ctx,5,-3+bob,'#0e4440',1,1);
   } else if(mwpT===1){
-    // T1: small turquoise stone
-    px(ctx,3,-3+bob,'#186858',2,2);
-    px(ctx,3,-4+bob,'#2a9880',2,1);
-    px(ctx,4,-3+bob,'#0e4440',1,2);
-    px(ctx,3,-5+bob,'#40c8a0',1,1); // sparkle
+    // T1: small turquoise stone pointing outward — sits on staff tip
+    px(ctx,4,-3+bob,'#186858',2,2);
+    px(ctx,5,-3+bob,'#2a9880',1,2);
+    px(ctx,6,-3+bob,'#40c8a0',1,1); // tip sparkle outward
+    px(ctx,4,-4+bob,'#0e4440',1,1); // shadow top
   } else if(mwpT===2){
     // T2: turquoise crystal — small clean gem, no giant glow
     px(ctx,3,-7+bob+oy,'#186858',3,4);
@@ -1537,6 +1575,7 @@ function drawMage(ctx, x, y, dir, anim, flash, level) {
     ctx.strokeStyle='rgba(60,220,180,0.3)';ctx.lineWidth=1.5;
     ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,6*S,0,Math.PI*2);ctx.stroke();
   }
+  } // end !_skipWeapons
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.4)';ctx.fillRect(-6*S,-19*S,14*S,38*S);}
   ctx.restore();
@@ -1727,54 +1766,212 @@ function drawRanger(ctx, x, y, dir, anim, flash, level) {
   }
 
   // ── WEAPONS ──
+  if(!_skipWeapons){
   var rwpT=getWeaponTier('ranger');
   if(rwpT===0){
     px(ctx,4,6+bob,'#4a3018',1,4);px(ctx,3,5+bob,'#505858',2,1);
     px(ctx,4,0+bob,'#888e8e',1,7);px(ctx,5,0+bob,'#9aa0a0',1,5);px(ctx,4,0+bob,'#707878',1,1);
   } else if(rwpT===1){
+    // Main dagger — right hand
     px(ctx,4,6+bob,'#4a3018',1,4);px(ctx,3,5+bob,'#505858',2,1);
     px(ctx,4,0+bob,'#888e8e',1,7);px(ctx,5,0+bob,'#9aa0a0',1,5);px(ctx,4,0+bob,'#707878',1,1);
-    px(ctx,-5,7+bob,'#3a2410',1,3);px(ctx,-6,6+bob,'#606868',2,1);
-    px(ctx,-6,10+bob,'#787e7e',1,5);px(ctx,-7,10+bob,'#888e8e',1,4);
+    // Off-hand dagger — shifted inward (closer to body)
+    px(ctx,-4,7+bob,'#3a2410',1,3);px(ctx,-5,6+bob,'#606868',2,1);
+    px(ctx,-5,10+bob,'#787e7e',1,5);px(ctx,-6,10+bob,'#888e8e',1,4);
   } else if(rwpT===2){
+    // Main — longer blade
     px(ctx,4,5+bob,'#5a3a10',1,4);px(ctx,4,4+bob,'#6a4a18',2,1);
     px(ctx,3,8+bob,'#8090a0',4,1);
     px(ctx,5,-8+bob,'#8898a8',1,16);px(ctx,6,-8+bob,'#9aaab8',1,14);
-    px(ctx,-5,6+bob,'#4a3018',1,3);px(ctx,-6,5+bob,'#505858',2,1);
-    px(ctx,-6,9+bob,'#888e8e',1,5);px(ctx,-7,9+bob,'#9aa0a0',1,4);
+    // Off-hand — shifted inward
+    px(ctx,-4,6+bob,'#4a3018',1,3);px(ctx,-5,5+bob,'#505858',2,1);
+    px(ctx,-5,9+bob,'#888e8e',1,5);px(ctx,-6,9+bob,'#9aa0a0',1,4);
   } else {
-    // T3: Rapier — thin elegant blade, swept guard, pirate style
-    // Main blade — single pixel wide, very long
-    px(ctx,5,8+bob,'#6a5030',1,3);  // grip
-    px(ctx,5,6+bob,'#8a7040',1,2);  // grip wrap
-    // Swept guard — curves elegantly
-    px(ctx,3,5+bob,'#c8a030',4,1);  // main guard bar
-    px(ctx,3,4+bob,'#c8a030',1,1);  // upper curve
-    px(ctx,6,6+bob,'#c8a030',1,1);  // lower curve
-    px(ctx,3,5+bob,'#e0b840',1,1);  // guard gleam
-    // Thin rapier blade
-    px(ctx,5,-9+bob,'#c8d0d8',1,15); // blade
-    px(ctx,6,-8+bob,'#d8e0e8',1,12); // blade highlight
-    f(5*S,(-9+bob)*S,1,15*S,'#e0e8f0'); // edge highlight
-    px(ctx,5,-9+bob,'#e8f0f8',1,1);  // tip gleam
-    // Off-hand: thin parrying dagger
-    px(ctx,-5,6+bob,'#c8a030',1,3);  // gold grip
-    px(ctx,-6,5+bob,'#c8a030',2,1);  // small guard
-    px(ctx,-6,9+bob,'#c0c8d0',1,5);  // dagger blade
-    px(ctx,-7,9+bob,'#d0d8e0',1,3);
-    f(-6*S,9*S+bob*S,1,5*S,'#e0e8f0');
+    // T3: Rapier + parrying dagger
+    px(ctx,5,8+bob,'#6a5030',1,3);
+    px(ctx,5,6+bob,'#8a7040',1,2);
+    px(ctx,3,5+bob,'#c8a030',4,1);
+    px(ctx,3,4+bob,'#c8a030',1,1);
+    px(ctx,6,6+bob,'#c8a030',1,1);
+    px(ctx,3,5+bob,'#e0b840',1,1);
+    px(ctx,5,-9+bob,'#c8d0d8',1,15);
+    px(ctx,6,-8+bob,'#d8e0e8',1,12);
+    f(5*S,(-9+bob)*S,1,15*S,'#e0e8f0');
+    px(ctx,5,-9+bob,'#e8f0f8',1,1);
+    // Off-hand parrying dagger — shifted inward
+    px(ctx,-4,6+bob,'#c8a030',1,3);
+    px(ctx,-5,5+bob,'#c8a030',2,1);
+    px(ctx,-5,9+bob,'#c0c8d0',1,5);
+    px(ctx,-6,9+bob,'#d0d8e0',1,3);
+    f(-5*S,9*S+bob*S,1,5*S,'#e0e8f0');
   }
+  } // end !_skipWeapons
 
   if(flash){ctx.fillStyle='rgba(255,80,80,0.35)';ctx.fillRect(-6*S,-12*S,16*S,34*S);}
   ctx.restore();
 }
-var _redEyesOverride = null; // set to cls when drawing with red eyes
-var DRAW = {warrior:drawWarrior, mage:drawMage, ranger:drawRanger};
+var DRAW_WEAPONS={
+  warrior:function(ctx,x,y,dir,anim,level){
+    var wT=level<10?0:level<20?1:level<30?2:3;
+    ctx.save();ctx.translate(x,y);if(dir!==2)ctx.scale(-1,1);
+    var bob=Math.sin(anim*0.12)*0.6;
+    function f(fx,fy,fw,fh,fc){ctx.fillStyle=fc;ctx.fillRect(fx,fy,fw,fh);}
+    function px(c,gx,gy,col,w,h){c.fillStyle=col;c.fillRect(gx*S,gy*S,(w||1)*S,(h||1)*S);}
+    var wpT=getWeaponTier('warrior');
+    // -- Arm --
+    if(wT===0){px(ctx,-5,2+bob,'#c09050',2,8);px(ctx,-5,2+bob,'#a07030',1,8);}
+    px(ctx,-6,2+bob,wT===0?'#c09050':'#2a2e36',1,6);
+    // Re-draw sword/axe
+    var gx2=4;
+    if(wpT===0){
+      px(ctx,gx2,9+bob,'#706860',2,2);px(ctx,gx2,8+bob,'#504840',2,1);
+      px(ctx,gx2,4+bob,'#4a3828',2,5);px(ctx,gx2,5+bob,'#3a2818',1,3);
+      px(ctx,gx2-1,3+bob,'#706860',3,1);
+      // Blade 2px wide, original length
+      px(ctx,gx2,-4+bob,'#909888',2,8);px(ctx,gx2,-4+bob,'#a0a898',1,7);
+      f(gx2*S,(-4+bob)*S,1,8*S,'#b8b0a0');f((gx2+1)*S-1,(-4+bob)*S,1,7*S,'#686058');
+      // Tip: narrow to 1px, 1 row above blade top
+      px(ctx,gx2,-5+bob,'#b8b0a0',1,1);
+    } else if(wpT===1){
+      px(ctx,gx2,9+bob,'#9098a0',2,2);px(ctx,gx2,9+bob,'#b0b8c0',1,1);
+      px(ctx,gx2,4+bob,'#3a2810',2,6);px(ctx,gx2,5+bob,'#5a4830',1,4);
+      px(ctx,gx2-1,3+bob,'#8090a0',4,1);
+      px(ctx,gx2,-9+bob,'#9090a0',2,13);px(ctx,gx2,-9+bob,'#a8b0b8',1,12);
+      f(gx2*S,(-9+bob)*S,1,13*S,'#c8d0d8');f((gx2+1)*S,(-8+bob)*S,1,10*S,'#788090');
+      // Tip: 1px above blade top
+      px(ctx,gx2,-10+bob,'#c8d0d8',1,1);
+    } else if(wpT===2){
+      px(ctx,gx2,9+bob,'#b8c0b8',2,2);px(ctx,gx2,9+bob,'#d8e0d8',1,1);
+      px(ctx,gx2,4+bob,'#2a1e10',2,6);px(ctx,gx2,5+bob,'#4a3828',1,4);
+      px(ctx,gx2-1,3+bob,'#909090',5,1);
+      px(ctx,gx2,-12+bob,'#b0b8b8',2,16);px(ctx,gx2,-12+bob,'#d0d8d8',1,15);
+      px(ctx,gx2+1,-12+bob,'#c0c8c8',1,11);
+      f(gx2*S,(-12+bob)*S,1,16*S,'#e8f0f0');f((gx2+1)*S,(-11+bob)*S,1,12*S,'#9098a0');
+      f((gx2-1)*S,(3+bob)*S,5*S,1,'#b0b8b8');
+      // Tip: 1px above blade top
+      px(ctx,gx2,-13+bob,'#e0e8e8',1,1);
+    } else {
+      px(ctx,gx2,10+bob,'#5a4030',2,5);px(ctx,gx2,8+bob,'#7a6040',2,2);
+      px(ctx,gx2-2,6+bob,'#909090',6,1);px(ctx,gx2-1,5+bob,'#b0b0b0',1,1);px(ctx,gx2+2,5+bob,'#808080',1,1);
+      px(ctx,gx2,-14+bob,'#b0b8b8',2,18);px(ctx,gx2,-14+bob,'#c8d0d0',1,17);
+      px(ctx,gx2+1,-14+bob,'#a8b0b0',1,14);px(ctx,gx2-1,-12+bob,'#9098a8',1,12);
+      f(gx2*S,(-14+bob)*S,1,18*S,'#d8e0e0');f((gx2+1)*S,(-13+bob)*S,1,13*S,'#808888');
+      f((gx2-1)*S,(5+bob)*S,5*S,1,'#b0b8b8');
+      // Tip: 1px above blade top
+      px(ctx,gx2,-15+bob,'#d8e0e0',1,1);
+      f(gx2*S+1,(-5+bob)*S,1,1,'rgba(60,70,80,0.5)');
+      f(gx2*S+1,(-9+bob)*S,1,1,'rgba(60,70,80,0.5)');
+      f(gx2*S+1,(-13+bob)*S,1,1,'rgba(60,70,80,0.5)');
+    }
+    // Shield
+    if(wpT===0){
+      px(ctx,-8,1+bob,'#6a4820',3,7);px(ctx,-7,1+bob,'#7a5828',2,6);
+      px(ctx,-8,1+bob,'#4a3010',1,6);px(ctx,-8,1+bob,'#4a3010',3,1);
+      px(ctx,-8,7+bob,'#4a3010',3,1);px(ctx,-7,4+bob,'#a07830',1,1);
+      f(-8*S,(1+bob)*S,1,7*S,'#8a6030');f(-6*S-1,(1+bob)*S,1,7*S,'#3a2010');f(-8*S,(4+bob)*S,3*S,1,'#5a3818');
+    } else if(wpT===1){
+      px(ctx,-8,0+bob,'#3a3830',3,9);px(ctx,-7,1+bob,'#6a6860',2,7);px(ctx,-8,0+bob,'#6a6860',1,2);
+      px(ctx,-7,4+bob,'#909090',2,1);px(ctx,-8,4+bob,'#484848',1,1);
+      f(-8*S,(0+bob)*S,1,9*S,'#848280');f(-6*S-1,(0+bob)*S,1,9*S,'#282826');
+      f(-8*S,(0+bob)*S,3*S,1,'#707070');f(-8*S,(9+bob)*S-1,3*S,1,'#282828');
+    } else if(wpT===2){
+      px(ctx,-9,-1+bob,'#3a3830',4,11);px(ctx,-8,0+bob,'#6a6860',1,2);
+      px(ctx,-8,4+bob,'#909090',3,1);px(ctx,-9,4+bob,'#484848',1,1);
+      f(-9*S,(-1+bob)*S,1,11*S,'#848280');f(-5*S-1,(-1+bob)*S,1,11*S,'#282826');
+      f(-9*S,(-1+bob)*S,4*S,1,'#707070');f(-9*S,(10+bob)*S-1,4*S,1,'#282828');
+      px(ctx,-8,4+bob,'#909090',2,2);px(ctx,-10,4+bob,'#a0a0a0',1,2);px(ctx,-11,5+bob,'#b0b0b0',1,1);
+    } else {
+      px(ctx,-9,-3+bob,'#282830',4,15);px(ctx,-8,-2+bob,'#383840',3,13);
+      px(ctx,-9,-3+bob,'#1a1a22',1,13);f(-5*S-1,(-3+bob)*S,1,15*S,'#181820');
+      f(-9*S,(-3+bob)*S,4*S,1,'#484850');
+      f(-9*S,(-3+bob)*S,1,1,'#0a0a0f');f(-6*S+S-1,(-3+bob)*S,1,1,'#0a0a0f');
+      f(-9*S,(12+bob)*S-1,4*S,1,'#282830');
+      px(ctx,-8,12+bob,'#1a1a22',2,2);px(ctx,-7,13+bob,'#282830',1,1);
+      px(ctx,-8,-1+bob,'#606068',1,1);px(ctx,-7,-1+bob,'#606068',1,1);
+      px(ctx,-8,10+bob,'#606068',1,1);px(ctx,-7,10+bob,'#606068',1,1);
+      px(ctx,-9,2+bob,'#484850',4,1);px(ctx,-9,6+bob,'#484850',4,1);px(ctx,-9,9+bob,'#484850',4,1);
+      f(-9*S+1,(-3+bob)*S,1,14*S,'#505058');
+    }
+    ctx.restore();
+  },
+  mage:function(ctx,x,y,dir,anim,level){
+    var mT=level<10?0:level<20?1:level<30?2:3;
+    ctx.save();ctx.translate(x,y);if(dir!==2)ctx.scale(-1,1);
+    var bob=Math.sin(anim*0.12)*0.6;
+    var oy=Math.sin(anim*0.08)*2;
+    function px(c,gx,gy,col,w,h){c.fillStyle=col;c.fillRect(gx*S,gy*S,(w||1)*S,(h||1)*S);}
+    var mwpT=getWeaponTier('mage');
+    ctx.strokeStyle=mwpT===0?'#3a2408':'#4a3010';ctx.lineWidth=S;
+    ctx.beginPath();ctx.moveTo(4.5*S,12*S+bob*S);ctx.lineTo(4.5*S,-4*S+bob*S);ctx.stroke();
+    ctx.strokeStyle=mwpT===0?'#5a3c14':'#6a5020';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(5*S,11*S+bob*S);ctx.lineTo(5*S,-3*S+bob*S);ctx.stroke();
+    if(mwpT>=1){ctx.strokeStyle=mwpT>=2?'#d4a830':'#8a6820';ctx.lineWidth=S;ctx.beginPath();ctx.moveTo(3.5*S,4*S+bob*S);ctx.lineTo(6*S,4*S+bob*S);ctx.stroke();}
+    if(mwpT>=2){ctx.strokeStyle='#d4a830';ctx.lineWidth=S;ctx.beginPath();ctx.moveTo(3.5*S,7*S+bob*S);ctx.lineTo(6*S,7*S+bob*S);ctx.stroke();}
+    if(mwpT===0){px(ctx,4,-3+bob,'#186858',1,2);px(ctx,4,-3+bob,'#2a9880',1,1);px(ctx,5,-3+bob,'#0e4440',1,1);}
+    else if(mwpT===1){px(ctx,4,-3+bob,'#186858',2,2);px(ctx,5,-4+bob,'#2a9880',1,2);px(ctx,4,-3+bob,'#0e4440',1,2);px(ctx,6,-4+bob,'#40c8a0',1,1);}
+    else if(mwpT===2){
+      px(ctx,3,-7+bob+oy,'#186858',3,4);px(ctx,4,-8+bob+oy,'#2a9880',2,3);px(ctx,3,-9+bob+oy,'#40c8a0',2,1);
+      px(ctx,4,-8+bob+oy,'#80e8c8',1,1);px(ctx,3,-7+bob+oy,'#0e4440',1,4);
+      ctx.fillStyle='rgba(40,180,140,0.1)';ctx.beginPath();ctx.arc(4.5*S,(-7+bob+oy)*S,4*S,0,Math.PI*2);ctx.fill();
+    } else {
+      px(ctx,3,-8+bob+oy,'#186858',3,5);px(ctx,4,-9+bob+oy,'#2a9880',2,4);px(ctx,3,-10+bob+oy,'#40c8a0',3,1);
+      px(ctx,4,-9+bob+oy,'#60d0b0',1,2);px(ctx,3,-8+bob+oy,'#0e4440',1,5);px(ctx,3,-11+bob+oy,'#80e8c8',1,1);
+      ctx.fillStyle='rgba(40,200,160,0.12)';ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,4*S,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(60,220,180,0.2)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(4.5*S,(-9+bob+oy)*S,5*S,0,Math.PI*2);ctx.stroke();
+    }
+    ctx.restore();
+  },
+  ranger:function(ctx,x,y,dir,anim,level){
+    var rT=level<10?0:level<20?1:level<30?2:3;
+    ctx.save();ctx.translate(x,y);if(dir!==2)ctx.scale(-1,1);
+    var bob=Math.sin(anim*0.15)*0.5;
+    function px(c,gx,gy,col,w,h){c.fillStyle=col;c.fillRect(gx*S,gy*S,(w||1)*S,(h||1)*S);}
+    function f(fx,fy,fw,fh,fc){ctx.fillStyle=fc;ctx.fillRect(fx,fy,fw,fh);}
+    var rwpT=getWeaponTier('ranger');
+    if(rwpT===0){
+      px(ctx,4,6+bob,'#4a3018',1,4);px(ctx,3,5+bob,'#505858',2,1);
+      px(ctx,4,0+bob,'#888e8e',1,7);px(ctx,5,0+bob,'#9aa0a0',1,5);
+      // Tip: 1px above blade top (blade top = row 0, tip = row -1)
+      px(ctx,4,-1+bob,'#a0a8a8',1,1);
+    } else if(rwpT===1){
+      px(ctx,4,6+bob,'#4a3018',1,4);px(ctx,3,5+bob,'#505858',2,1);
+      px(ctx,4,0+bob,'#888e8e',1,7);px(ctx,5,0+bob,'#9aa0a0',1,5);
+      px(ctx,4,-1+bob,'#a0a8a8',1,1); // main tip
+      px(ctx,-4,7+bob,'#3a2410',1,3);px(ctx,-5,6+bob,'#505858',1,1);px(ctx,-4,6+bob,'#606868',1,1);
+      px(ctx,-4,10+bob,'#787e7e',1,5);px(ctx,-5,10+bob,'#888e8e',1,4);
+      px(ctx,-4,15+bob,'#707878',1,1); // off-hand tip (blade goes down so tip is 1 below)
+    } else if(rwpT===2){
+      px(ctx,4,5+bob,'#5a3a10',1,4);px(ctx,3,4+bob,'#8090a0',3,1);
+      px(ctx,4,-8+bob,'#8898a8',1,16);px(ctx,5,-8+bob,'#9aaab8',1,14);
+      f(4*S,(-8+bob)*S,1,16*S,'#a8b0b8');
+      px(ctx,4,-9+bob,'#b8c0c8',1,1); // tip: 1px above blade top
+      px(ctx,-4,6+bob,'#4a3018',1,3);px(ctx,-5,5+bob,'#505858',1,1);px(ctx,-4,5+bob,'#606868',1,1);
+      px(ctx,-4,9+bob,'#888e8e',1,6);px(ctx,-5,9+bob,'#9aa0a0',1,4);
+      px(ctx,-4,15+bob,'#707878',1,1); // off-hand tip
+    } else {
+      px(ctx,5,8+bob,'#6a5030',1,3);px(ctx,5,6+bob,'#8a7040',1,2);
+      px(ctx,3,5+bob,'#c8a030',4,1);px(ctx,3,4+bob,'#c8a030',1,1);px(ctx,6,6+bob,'#c8a030',1,1);
+      px(ctx,5,-9+bob,'#b8c0c8',1,17);px(ctx,6,-8+bob,'#c8d0d8',1,14);
+      f(5*S,(-9+bob)*S,1,17*S,'#d8e0e8');
+      px(ctx,5,-10+bob,'#d8e0e8',1,1); // rapier tip: 1px above blade top
+      px(ctx,-4,6+bob,'#c8a030',1,3);px(ctx,-5,5+bob,'#a08820',1,1);px(ctx,-4,5+bob,'#c8a030',1,1);
+      px(ctx,-4,9+bob,'#b0b8c0',1,6);px(ctx,-5,9+bob,'#c0c8d0',1,4);
+      f(-4*S,9*S+bob*S,1,6*S,'#c8d0d8');
+      px(ctx,-4,15+bob,'#a0a8b0',1,1); // parrying dagger tip
+    }
+    ctx.restore();
+  }
+};
+var DRAW={warrior:drawWarrior,mage:drawMage,ranger:drawRanger};
+var _skipWeapons=false; // sprite functions check this to skip weapons in main draw pass
 function drawWithOpts(cls,ctx,x,y,dir,anim,flash,level){
   var useRedEyes=(_redEyesOverride===cls)||(hasRedEyes(cls)&&_redEyesOverride===undefined);
   _redEyesActive=useRedEyes;
+  _skipWeapons=true;
   DRAW[cls](ctx,x,y,dir,anim,flash,level);
+  _skipWeapons=false;
   _redEyesActive=false;
+  DRAW_WEAPONS[cls](ctx,x,y,dir,anim,level);
 }
 var _redEyesActive=false;
 
@@ -3762,17 +3959,19 @@ function draw(gs) {
   for(var pl=0;pl<drawOrder.length;pl++) {
     var p=drawOrder[pl];
     var p=gs.players[pl];
-    if(p.dead){gctx.globalAlpha=0.3;DRAW[p.cls](gctx,p.x,p.y,p.dir,0,false,p.level||1);gctx.globalAlpha=1;continue;}
+    if(p.dead){gctx.globalAlpha=0.3;_skipWeapons=true;DRAW[p.cls](gctx,p.x,p.y,p.dir,0,false,p.level||1);_skipWeapons=false;DRAW_WEAPONS[p.cls](gctx,p.x,p.y,p.dir,0,p.level||1);gctx.globalAlpha=1;continue;}
     // Stealth: enemy = skip entirely, self = very faded
     if(p.stealthed&&!p.isMe) continue;
-    if(p.rolling>0){gctx.globalAlpha=0.2;DRAW[p.cls](gctx,p.x-p.rollDir.x*26,p.y-p.rollDir.y*26,p.dir,p.anim,false,p.level||1);gctx.globalAlpha=1;}
+    if(p.rolling>0){gctx.globalAlpha=0.2;_skipWeapons=true;DRAW[p.cls](gctx,p.x-p.rollDir.x*26,p.y-p.rollDir.y*26,p.dir,p.anim,false,p.level||1);_skipWeapons=false;DRAW_WEAPONS[p.cls](gctx,p.x-p.rollDir.x*26,p.y-p.rollDir.y*26,p.dir,p.anim,p.level||1);gctx.globalAlpha=1;}
 
     if(p.poisoned>0){gctx.fillStyle='rgba(40,180,40,0.12)';gctx.beginPath();gctx.arc(p.x,p.y,24+Math.sin(gs.tick*0.14)*3,0,Math.PI*2);gctx.fill();}
     if(p.stealthed&&p.isMe) gctx.globalAlpha=0.25;
     else if(p.stunned>0) gctx.globalAlpha=0.6;
     var shakeX=0,shakeY=0;
     if(p.warCryShake>0){var sf=p.warCryShake/600;shakeX=(Math.random()-0.5)*6*sf;shakeY=(Math.random()-0.5)*4*sf;}
+    _skipWeapons=true; // weapons will be drawn after cosmetics
     DRAW[p.cls](gctx,p.x+shakeX,p.y+shakeY,p.dir,p.anim,p.hitFlash>0,p.level||1);
+    _skipWeapons=false;
     // Skull helmet drawn first (sprite layer) so crown/weapons render on top
     if(p.isMe&&hasSkullHelmet(p.cls)||(!p.isMe&&p.skullHelmet)){
       gctx.save();
@@ -3913,7 +4112,15 @@ function draw(gs) {
       gctx.restore();
     }
     gctx.globalAlpha=1;
-    // Stealth bar (rogue only, while stealthed - drains to empty)
+    // Draw weapons on top of everything including cosmetics
+    if(!p.dead&&!(p.stealthed&&!p.isMe)){
+      gctx.save();
+      if(p.stealthed&&p.isMe)gctx.globalAlpha=0.25;
+      else if(p.stunned>0)gctx.globalAlpha=0.6;
+      DRAW_WEAPONS[p.cls](gctx,p.x+shakeX,p.y+shakeY,p.dir,p.anim,p.level||1);
+      gctx.globalAlpha=1;
+      gctx.restore();
+    }
     if(p.isMe&&p.cls==='ranger'&&p.stealthed&&p.stealthTimer>0){
       var stealthMax=(CLS.ranger.s2&&CLS.ranger.s2.stealthDur)||7000;
       stealthRatio=Math.min(1,stealthRatio);
@@ -5379,12 +5586,14 @@ var SPRITE_W=90, SPRITE_H=110;
   var animT=0;
   function animCard(){
     cctx.clearRect(0,0,SPRITE_W,SPRITE_H);
-    // Dark tile background
-    // transparent background - no fill
-    // Idle bob animation
     animT+=0.04;
     var drawFn=DRAW[cls];
-    if(drawFn) drawFn(cctx,SPRITE_W/2,40,3,Math.sin(animT)*4,false,getLevel(cls));
+    if(drawFn){
+      _skipWeapons=true;
+      drawFn(cctx,SPRITE_W/2,40,3,Math.sin(animT)*4,false,getLevel(cls));
+      _skipWeapons=false;
+      DRAW_WEAPONS[cls](cctx,SPRITE_W/2,40,3,Math.sin(animT)*4,getLevel(cls));
+    }
     requestAnimationFrame(animCard);
   }
   animCard();
@@ -5512,7 +5721,12 @@ function buildTitleChars() {
               pctx.clearRect(0,0,60,80);
               animTp+=0.025;
               var fn=DRAW[previewCls];
-              if(fn)fn(pctx,30,58,3,Math.sin(animTp)*2,false,previewLevel);
+              if(fn){
+                _skipWeapons=true;
+                fn(pctx,30,58,3,Math.sin(animTp)*2,false,previewLevel);
+                _skipWeapons=false;
+                DRAW_WEAPONS[previewCls](pctx,30,58,3,Math.sin(animTp)*2,previewLevel);
+              }
               window._tierPreviewRaf=requestAnimationFrame(animTierPreview);
             })();
           },50);
@@ -5560,7 +5774,10 @@ function buildTitleChars() {
             if(_cardCls==='ranger')  anim=-swing*4;
           }
           // Draw sprite
+          _skipWeapons=true;
           fn(cctx, cx2, cy2, 3, anim, false, xpD.level);
+          _skipWeapons=false;
+          DRAW_WEAPONS[_cardCls](cctx, cx2, cy2, 3, anim, xpD.level);
           // Spell effects on top
           var headY = cy2-20; // head center: top at -9*S=-27, so center ~-20px above feet
           var bodyY = cy2-10; // body center: torso midpoint ~-10px above feet
@@ -5610,7 +5827,10 @@ function buildTitleChars() {
           cctx.fillStyle='rgba(0,0,0,0.12)';
           cctx.beginPath();cctx.ellipse(cx2,cy2+2,14,3,0,0,Math.PI*2);cctx.fill();
         } else {
+          _skipWeapons=true;
           fn(cctx, cx2, SY, 3, Math.sin(animT2)*0.8, false, xpD.level);
+          _skipWeapons=false;
+          DRAW_WEAPONS[_cardCls](cctx, cx2, SY, 3, Math.sin(animT2)*0.8, xpD.level);
         }
       }
       requestAnimationFrame(function(){animTitleCard(myId);});
@@ -7446,7 +7666,10 @@ function renderAchievements(tab){
       t+=0.025;
       var origFn=getWeaponTier;
       if(weaponTierOverride!==null){getWeaponTier=function(){return weaponTierOverride;};}
+      _skipWeapons=true;
       fn(ctx2,40,70,3,Math.sin(t)*3,false,lvl);
+      _skipWeapons=false;
+      DRAW_WEAPONS[cls](ctx2,40,70,3,Math.sin(t)*3,lvl);
       getWeaponTier=origFn;
       requestAnimationFrame(anim);
     })();
