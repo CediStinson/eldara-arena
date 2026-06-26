@@ -4498,8 +4498,8 @@ function connectGameWS(){
         if(msg.type==='ready'){
           _wsReady=true;attempts=0;
           sidelog('WS','Connected — authoritative server active');
-          // Host triggers match start
-          if(iAmHost){
+          // Host triggers match start — only if game not already running
+          if(iAmHost&&(!gameState||gameState.phase==='pregame'||gameState.tick<5)){
             var ak=gameState&&gameState.arenaKey?gameState.arenaKey:ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
             _ws.send(JSON.stringify({
               type:'match_start',
