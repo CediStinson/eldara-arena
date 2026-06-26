@@ -3233,9 +3233,14 @@ function update(gs,dt) {
   var me=gs.players.find(function(p){return p.isMe;});
   var en=gs.players.find(function(p){return !p.isMe;});
   if(!me||!en){if(me)updateLocal(gs,me,dt);return;}
-  // In PvP: server runs simulation, client just sends inputs and renders
+  // In PvP: server runs simulation, client predicts own movement locally
   if(gameMode==='pvp'){
     updateHitNumbers(dt);updateFootDust(dt);
+    // Client-side prediction: move locally so it feels instant
+    if(gs.phase==='fighting'){
+      var meP=gs.players.find(function(p){return p.isMe;});
+      if(meP&&!meP.dead&&!meP.stunned)updateLocal(gs,meP,dt);
+    }
     return;
   }
   var _meOldX=me?me.x:0,_meOldY=me?me.y:0;
@@ -4561,29 +4566,49 @@ function applyServerState(snap){
   if(snap.arenaKey&&ARENAS[snap.arenaKey]){
     gameState.arena=ARENAS[snap.arenaKey];
     gameState.arenaKey=snap.arenaKey;
-    _arenaCacheKey=''; // invalidate arena cache on arena change
+    _arenaCacheKey='';
   }
-  // If server reset to pregame (rematch), close overlay
   if(prevPhase==='gameOver'&&snap.phase==='pregame'){
     pvpRematchReady=false;opponentRematchReady=false;
-    hideOverlay();
-    showBanner('Get Ready!');
+    hideOverlay();showBanner('Get Ready!');
     var btn=document.getElementById('ov-rematch');
     if(btn){btn.disabled=false;btn.textContent='REMATCH';}
   }
-  // Apply player states
   snap.players.forEach(function(sp){
     var lp=gameState.players.find(function(p){return p.id===sp.id;});
     if(!lp)return;
-    Object.assign(lp,sp);
-    lp.isMe=(sp.id===myId);
+    var isMe=sp.id===myId;
+    if(isMe){
+      // For our own player: smoothly correct position (client prediction)
+      // Only snap if we're very far off (teleport/respawn)
+      var dx=sp.x-lp.x, dy=sp.y-lp.y;
+      var dist=Math.hypot(dx,dy);
+      if(dist>80){
+        // Large correction — snap directly
+        lp.x=sp.x;lp.y=sp.y;
+      } else if(dist>5){
+        // Small drift — blend toward server position
+        lp.x+=dx*0.3;lp.y+=dy*0.3;
+      }
+      // Apply all non-position fields
+      var savedX=lp.x,savedY=lp.y;
+      Object.assign(lp,sp);
+      lp.x=savedX;lp.y=savedY;
+    } else {
+      // For opponent: interpolate position for smoothness
+      var odx=sp.x-lp.x,ody=sp.y-lp.y,od=Math.hypot(odx,ody);
+      if(od>120){lp.x=sp.x;lp.y=sp.y;}
+      else{lp.x+=odx*0.4;lp.y+=ody*0.4;}
+      var savedOX=lp.x,savedOY=lp.y;
+      Object.assign(lp,sp);
+      lp.x=savedOX;lp.y=savedOY;
+    }
+    lp.isMe=isMe;
   });
-  // Apply projs, effects, traps, dopps directly
   gameState.projs=snap.projs||[];
   gameState.effects=snap.effects||[];
   gameState.traps=snap.traps||[];
   gameState.dopps=snap.dopps||[];
-  // Update HUD
   updateHUD(gameState);
 }
 
