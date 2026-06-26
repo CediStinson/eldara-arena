@@ -398,13 +398,18 @@ wss.on('connection',function(ws){
           if(room[msg.role]&&room[msg.role]!==ws){try{room[msg.role].close();}catch(e){}}
           room[msg.role]=ws;
           ws.roomCode=code;ws.role=msg.role;ws.playerId=msg.playerId;
-          // Store player info for game creation
           room[msg.role+'Info']={playerId:msg.playerId,name:msg.playerName||msg.role,cls:msg.cls||'warrior'};
           console.log('JOIN '+code+' as '+msg.role+' cls='+msg.cls);
           if(room.host&&room.guest){
             send(room.host,{type:'ready'});
             send(room.guest,{type:'ready'});
-            console.log('READY '+code);
+            // If game already running (reconnect), resend current state
+            if(room.gs){
+              broadcastState(room,code,true);
+              console.log('RECONNECT '+code+' game already running');
+            } else {
+              console.log('READY '+code);
+            }
           }
           break;
         }
@@ -463,16 +468,20 @@ wss.on('connection',function(ws){
         }
 
         case 'match_start':{
-          // Host signals match should start - create authoritative game state
           var room4=rooms.get(ws.roomCode);
           if(!room4||ws.role!=='host')break;
+          // Only create game once — ignore if already running
+          if(room4.gs){
+            console.log('match_start ignored — game already running for '+ws.roomCode);
+            broadcastState(room4,ws.roomCode,true);
+            break;
+          }
           var ak4=msg.arenaKey||ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
           if(msg.hostCls&&room4.hostInfo)room4.hostInfo.cls=msg.hostCls;
           if(msg.guestCls&&room4.guestInfo)room4.guestInfo.cls=msg.guestCls;
           if(!room4.hostInfo||!room4.guestInfo){console.log('match_start: missing player info');break;}
           room4.gs=mkGS(ak4,room4.hostInfo,room4.guestInfo);
           room4.inputs={};
-          // Pre-populate with empty inputs so updatePlayer never gets undefined
           room4.inputs[room4.hostInfo.playerId]={up:false,down:false,left:false,right:false};
           room4.inputs[room4.guestInfo.playerId]={up:false,down:false,left:false,right:false};
           startGameLoop(room4,ws.roomCode);
@@ -495,10 +504,20 @@ wss.on('connection',function(ws){
   });
 
   ws.on('close',function(){
+    // Notify opponent but keep game loop running — they might reconnect
     relay(ws,{type:'opponent_left'});
     var room=rooms.get(ws.roomCode);
-    if(room)stopGameLoop(room);
-    cleanup(ws);
+    if(room){
+      delete room[ws.role]; // remove disconnected player's WS
+      // Only stop loop and clean up if BOTH players gone
+      if(!room.host&&!room.guest){
+        stopGameLoop(room);
+        rooms.delete(ws.roomCode);
+        console.log('ROOM '+ws.roomCode+' closed — both players gone');
+      } else {
+        console.log('PLAYER LEFT '+ws.roomCode+' role='+ws.role+' (game loop kept alive)');
+      }
+    }
   });
 
   ws.on('error',function(e){console.error('ws error:',e.message);});
@@ -512,19 +531,22 @@ function startGameLoop(room,code){
   var last=Date.now();
   room.loop=setInterval(function(){
     if(!room.gs){stopGameLoop(room);return;}
-    var now=Date.now();
-    var dt=Math.min(now-last,100); // cap at 100ms
-    last=now;
-    var wasGameOver=room.gs.phase==='gameOver';
-    update(room.gs,room.inputs,dt);
-    broadcastState(room,code,false);
-    // If round just ended, notify clients
-    if(!wasGameOver&&room.gs.phase==='gameOver'){
-      var dead=room.gs.players.find(function(p){return p.dead;});
-      var alive=room.gs.players.find(function(p){return !p.dead;});
-      send(room.host,{type:'round_over',deadId:dead?dead.id:null,winnerId:alive?alive.id:null});
-      send(room.guest,{type:'round_over',deadId:dead?dead.id:null,winnerId:alive?alive.id:null});
-      console.log('ROUND_OVER '+code+' winner='+(alive?alive.name:'?'));
+    try{
+      var now=Date.now();
+      var dt=Math.min(now-last,100);
+      last=now;
+      var wasGameOver=room.gs.phase==='gameOver';
+      update(room.gs,room.inputs,dt);
+      broadcastState(room,code,false);
+      if(!wasGameOver&&room.gs.phase==='gameOver'){
+        var dead=room.gs.players.find(function(p){return p.dead;});
+        var alive=room.gs.players.find(function(p){return !p.dead;});
+        send(room.host,{type:'round_over',deadId:dead?dead.id:null,winnerId:alive?alive.id:null});
+        send(room.guest,{type:'round_over',deadId:dead?dead.id:null,winnerId:alive?alive.id:null});
+        console.log('ROUND_OVER '+code+' winner='+(alive?alive.name:'?'));
+      }
+    }catch(e){
+      console.error('GAME LOOP ERROR in '+code+':',e.message,e.stack);
     }
   },TICK_MS);
 }
