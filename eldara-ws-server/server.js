@@ -482,10 +482,11 @@ wss.on('connection',function(ws){
           } else if(atype==='move'&&gs3.phase==='fighting'&&!actor.dead){
             var moveCdBefore=actor.moveCd||0;
             doMoveAbility(gs3,actor,other);
-            // Only spawn dopp if blink actually fired (moveCd was ready)
             var mv3=CLS[actor.cls]&&CLS[actor.cls].move;
             if(mv3&&mv3.blink&&moveCdBefore<=0){
-              var doppMsg={type:'dopp',x:Math.round(actor.x),y:Math.round(actor.y),dir:actor.dir,level:actor.level||1,playerId:actor.id};
+              // Use a seeded angle so both clients see same movement
+              var dAngleS=Math.random()*Math.PI*2;
+              var doppMsg={type:'dopp',x:Math.round(actor.x),y:Math.round(actor.y),dir:actor.dir,level:actor.level||1,playerId:actor.id,angle:dAngleS};
               send(room3.host,{type:'dopp_spawn',data:doppMsg});
               send(room3.guest,{type:'dopp_spawn',data:doppMsg});
             }
