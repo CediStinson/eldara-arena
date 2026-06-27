@@ -451,7 +451,6 @@ wss.on('connection',function(ws){
           var other=gs3.players.find(function(p){return p.id!==ws.playerId;});
           if(!actor||!other)break;
           var atype=msg.data&&msg.data.type;
-          console.log('ACTION '+atype+' phase='+gs3.phase+' cls='+actor.cls);
           if(atype==='attack'&&gs3.phase==='fighting'&&!actor.dead&&actor.atkTimer<=0&&!(actor.stunned>0)){
             doAttack(gs3,actor,other);
           } else if(atype==='skill1'&&gs3.phase==='fighting'&&!actor.dead){
@@ -472,7 +471,7 @@ wss.on('connection',function(ws){
                   gs3.projs.push({id:actor.id+'_'+(actor.projId=(actor.projId||0)+1),owner:actor.id,type:'fireball',
                     x:actor.x,y:actor.y+10,vx:Math.cos(angleS)*sk1s.speed,vy:Math.sin(angleS)*sk1s.speed,
                     dmg:scaledDmgS,dot:0,dotDur:0,range:sk1s.range,traveled:0,alive:true,anim:0});
-                  console.log('FIREBALL charged='+Math.round(usedCharge)+'/'+sk1s.chargeMax+' dmg='+scaledDmgS);
+                  console.log('FIREBALL dmg='+scaledDmgS);
                 }
               }
             } else if(!msg.data||!msg.data.charged){
@@ -481,14 +480,12 @@ wss.on('connection',function(ws){
           } else if(atype==='skill2'&&gs3.phase==='fighting'&&!actor.dead){
             doSkill(gs3,actor,other,2);
           } else if(atype==='move'&&gs3.phase==='fighting'&&!actor.dead){
-            console.log('MOVE action cls='+actor.cls+' moveCd='+Math.round(actor.moveCd||0));
             var beforeBlink={x:actor.x,y:actor.y};
             doMoveAbility(gs3,actor,other);
             // If blink, notify both clients to show dopp at old position
             var mv3=CLS[actor.cls]&&CLS[actor.cls].move;
             if(mv3&&mv3.blink){
               var doppMsg={type:'dopp',x:Math.round(beforeBlink.x),y:Math.round(beforeBlink.y),dir:actor.dir,level:actor.level||1,playerId:actor.id};
-              console.log('DOPP_SPAWN sending to both clients, playerId='+actor.id.slice(0,8)+' x='+doppMsg.x+' y='+doppMsg.y);
               send(room3.host,{type:'dopp_spawn',data:doppMsg});
               send(room3.guest,{type:'dopp_spawn',data:doppMsg});
             }
