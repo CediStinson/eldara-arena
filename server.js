@@ -540,14 +540,16 @@ wss.on('connection',function(ws){
             room3['rematch_'+(ws.role==='host'?'host':'guest')+'_cls']=msg.data.cls;
             relay(ws,msg); // also notify opponent
             if(room3.rematch_host_ready&&room3.rematch_guest_ready){
-              // Both ready - start rematch
               var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+              var spawnFlip=Math.random()<0.5;
               if(room3.hostInfo)room3.hostInfo.cls=room3.rematch_host_cls||room3.hostInfo.cls;
               if(room3.guestInfo)room3.guestInfo.cls=room3.rematch_guest_cls||room3.guestInfo.cls;
               room3.rematch_host_ready=false;room3.rematch_guest_ready=false;
               resetRound(gs3,ak);
               gs3.players[0].cls=room3.hostInfo.cls;
               gs3.players[1].cls=room3.guestInfo.cls;
+              var rmMsg={type:'rematch_start',data:{arenaKey:ak,spawnFlip:spawnFlip,hostCls:room3.hostInfo.cls,guestCls:room3.guestInfo.cls}};
+              send(room3.host,rmMsg);send(room3.guest,rmMsg);
               broadcastState(room3,code,true);
             }
           } else if(atype==='trap_place'&&gs3.phase==='fighting'){
