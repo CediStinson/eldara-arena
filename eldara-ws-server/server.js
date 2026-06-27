@@ -460,14 +460,15 @@ wss.on('connection',function(ws){
                 var clientCharge=msg.data.charge||0;
                 var serverCharge=actor.fireballCharge||0;
                 var usedCharge=Math.min(Math.max(clientCharge,serverCharge),sk1s.chargeMax);
-                // Always clear charge state regardless of cooldown
                 actor.fireballCharging=false;actor.fireballCharge=0;
-                // Only fire projectile if cooldown is ready
                 if(actor.s1cd<=0){
                   var chargeRatioS=usedCharge/sk1s.chargeMax;
                   var scaledDmgS=Math.round(sk1s.dmg+(sk1s.chargeDmgMax-sk1s.dmg)*chargeRatioS);
                   actor.s1cd=sk1s.cd;
-                  var angleS=Math.atan2(other.y-actor.y,other.x-actor.x);
+                  // Use client-provided aim position if available (allows targeting dopps)
+                  var aimX=msg.data.ax!=null?msg.data.ax:other.x;
+                  var aimY=msg.data.ay!=null?msg.data.ay:other.y;
+                  var angleS=Math.atan2(aimY-actor.y,aimX-actor.x);
                   gs3.projs.push({id:actor.id+'_'+(actor.projId=(actor.projId||0)+1),owner:actor.id,type:'fireball',
                     x:actor.x,y:actor.y+10,vx:Math.cos(angleS)*sk1s.speed,vy:Math.sin(angleS)*sk1s.speed,
                     dmg:scaledDmgS,dot:0,dotDur:0,range:sk1s.range,traveled:0,alive:true,anim:0});
@@ -475,16 +476,20 @@ wss.on('connection',function(ws){
                 }
               }
             } else if(!msg.data||!msg.data.charged){
-              doSkill(gs3,actor,other,1);
+              // Use client aim if provided
+              var aimOther1=other;
+              if(msg.data&&msg.data.ax!=null){aimOther1={x:msg.data.ax,y:msg.data.ay,stealthed:other.stealthed,rollInv:other.rollInv,hp:other.hp,id:other.id,name:other.name,dead:other.dead};}
+              doSkill(gs3,actor,aimOther1,1);
             }
           } else if(atype==='skill2'&&gs3.phase==='fighting'&&!actor.dead){
-            doSkill(gs3,actor,other,2);
+            var aimOther2=other;
+            if(msg.data&&msg.data.ax!=null){aimOther2={x:msg.data.ax,y:msg.data.ay,stealthed:other.stealthed,rollInv:other.rollInv,hp:other.hp,id:other.id,name:other.name,dead:other.dead};}
+            doSkill(gs3,actor,aimOther2,2);
           } else if(atype==='move'&&gs3.phase==='fighting'&&!actor.dead){
             var moveCdBefore=actor.moveCd||0;
             doMoveAbility(gs3,actor,other);
             var mv3=CLS[actor.cls]&&CLS[actor.cls].move;
             if(mv3&&mv3.blink&&moveCdBefore<=0){
-              // Use a seeded angle so both clients see same movement
               var dAngleS=Math.random()*Math.PI*2;
               var doppMsg={type:'dopp',x:Math.round(actor.x),y:Math.round(actor.y),dir:actor.dir,level:actor.level||1,playerId:actor.id,angle:dAngleS};
               send(room3.host,{type:'dopp_spawn',data:doppMsg});
@@ -516,7 +521,7 @@ wss.on('connection',function(ws){
               actor.fireballCharging=!!msg.data.charging;
               if(!msg.data.charging)actor.fireballCharge=0; // clear charge when stopped
             }
-          } else if(atype==='chat'||atype==='dopp'||atype==='opponent_left'){
+          } else if(atype==='chat'||atype==='opponent_left'){
             relay(ws,msg);
           }
           break;
