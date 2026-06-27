@@ -1,5 +1,34 @@
 const http = require('http');
 const WebSocket = require('ws');
+const https = require('https');
+
+var FB_KEY = 'AIzaSyAq1J5dOJE94SGZ982fHJrxc5f_5xe6Wjc';
+
+// Verify a Firebase ID token — returns promise resolving to uid or null
+function verifyFirebaseToken(token){
+  return new Promise(function(resolve){
+    if(!token){resolve(null);return;}
+    var postData=JSON.stringify({idToken:token});
+    var req=https.request({
+      hostname:'identitytoolkit.googleapis.com',
+      path:'/v1/accounts:lookup?key='+FB_KEY,
+      method:'POST',
+      headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(postData)}
+    },function(res){
+      var body='';
+      res.on('data',function(d){body+=d;});
+      res.on('end',function(){
+        try{
+          var r=JSON.parse(body);
+          if(r.users&&r.users[0])resolve(r.users[0].localId);
+          else resolve(null);
+        }catch(e){resolve(null);}
+      });
+    });
+    req.on('error',function(){resolve(null);});
+    req.write(postData);req.end();
+  });
+}
 
 // ===========================================
 // GAME CONSTANTS (mirrored from client)
@@ -412,24 +441,33 @@ wss.on('connection',function(ws){
 
         case 'join':{
           var code=msg.roomCode;if(!code)break;
-          if(!rooms.has(code))rooms.set(code,makeRoom());
-          var room=rooms.get(code);
-          if(room[msg.role]&&room[msg.role]!==ws){try{room[msg.role].close();}catch(e){}}
-          room[msg.role]=ws;
-          ws.roomCode=code;ws.role=msg.role;ws.playerId=msg.playerId;
-          room[msg.role+'Info']={playerId:msg.playerId,name:msg.playerName||msg.role,cls:msg.cls||'warrior',level:msg.level||1,rating:msg.rating||1000,redEyes:!!msg.redEyes,skullHelmet:!!msg.skullHelmet,crownOn:!!msg.crownOn};
-          console.log('JOIN '+code+' as '+msg.role+' cls='+msg.cls);
-          if(room.host&&room.guest){
-            send(room.host,{type:'ready'});
-            send(room.guest,{type:'ready'});
-            // If game already running (reconnect), resend current state
-            if(room.gs){
-              broadcastState(room,code,true);
-              console.log('RECONNECT '+code+' game already running');
-            } else {
-              console.log('READY '+code);
+          var joinMsg=msg;var joinWs=ws;
+          // Verify Firebase token — guests allowed without token for now
+          verifyFirebaseToken(msg.token||'').then(function(uid){
+            // Allow if token matches playerId, or if no token (guest/fallback)
+            if(msg.token&&uid&&uid!==msg.playerId){
+              send(joinWs,{type:'error',message:'Auth failed'});
+              try{joinWs.close();}catch(e){}
+              return;
             }
-          }
+            if(!rooms.has(code))rooms.set(code,makeRoom());
+            var room=rooms.get(code);
+            if(room[joinMsg.role]&&room[joinMsg.role]!==joinWs){try{room[joinMsg.role].close();}catch(e){}}
+            room[joinMsg.role]=joinWs;
+            joinWs.roomCode=code;joinWs.role=joinMsg.role;joinWs.playerId=joinMsg.playerId;
+            room[joinMsg.role+'Info']={playerId:joinMsg.playerId,name:joinMsg.playerName||joinMsg.role,cls:joinMsg.cls||'warrior',level:joinMsg.level||1,rating:joinMsg.rating||1000,redEyes:!!joinMsg.redEyes,skullHelmet:!!joinMsg.skullHelmet,crownOn:!!joinMsg.crownOn};
+            console.log('JOIN '+code+' as '+joinMsg.role+' cls='+joinMsg.cls+(uid?' auth:ok':' auth:guest'));
+            if(room.host&&room.guest){
+              send(room.host,{type:'ready'});
+              send(room.guest,{type:'ready'});
+              if(room.gs){
+                broadcastState(room,code,true);
+                console.log('RECONNECT '+code+' game already running');
+              } else {
+                console.log('READY '+code);
+              }
+            }
+          });// end verifyFirebaseToken
           break;
         }
 
@@ -502,14 +540,16 @@ wss.on('connection',function(ws){
             room3['rematch_'+(ws.role==='host'?'host':'guest')+'_cls']=msg.data.cls;
             relay(ws,msg); // also notify opponent
             if(room3.rematch_host_ready&&room3.rematch_guest_ready){
-              // Both ready - start rematch
               var ak=ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
+              var spawnFlip=Math.random()<0.5;
               if(room3.hostInfo)room3.hostInfo.cls=room3.rematch_host_cls||room3.hostInfo.cls;
               if(room3.guestInfo)room3.guestInfo.cls=room3.rematch_guest_cls||room3.guestInfo.cls;
               room3.rematch_host_ready=false;room3.rematch_guest_ready=false;
               resetRound(gs3,ak);
               gs3.players[0].cls=room3.hostInfo.cls;
               gs3.players[1].cls=room3.guestInfo.cls;
+              var rmMsg={type:'rematch_start',data:{arenaKey:ak,spawnFlip:spawnFlip,hostCls:room3.hostInfo.cls,guestCls:room3.guestInfo.cls}};
+              send(room3.host,rmMsg);send(room3.guest,rmMsg);
               broadcastState(room3,code,true);
             }
           } else if(atype==='trap_place'&&gs3.phase==='fighting'){
