@@ -480,12 +480,12 @@ wss.on('connection',function(ws){
           } else if(atype==='skill2'&&gs3.phase==='fighting'&&!actor.dead){
             doSkill(gs3,actor,other,2);
           } else if(atype==='move'&&gs3.phase==='fighting'&&!actor.dead){
-            var beforeBlink={x:actor.x,y:actor.y};
+            var moveCdBefore=actor.moveCd||0;
             doMoveAbility(gs3,actor,other);
-            // If blink, notify both clients to show dopp at old position
+            // Only spawn dopp if blink actually fired (moveCd was ready)
             var mv3=CLS[actor.cls]&&CLS[actor.cls].move;
-            if(mv3&&mv3.blink){
-              var doppMsg={type:'dopp',x:Math.round(beforeBlink.x),y:Math.round(beforeBlink.y),dir:actor.dir,level:actor.level||1,playerId:actor.id};
+            if(mv3&&mv3.blink&&moveCdBefore<=0){
+              var doppMsg={type:'dopp',x:Math.round(actor.x),y:Math.round(actor.y),dir:actor.dir,level:actor.level||1,playerId:actor.id};
               send(room3.host,{type:'dopp_spawn',data:doppMsg});
               send(room3.guest,{type:'dopp_spawn',data:doppMsg});
             }
