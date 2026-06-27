@@ -8,18 +8,18 @@ var TILE=48, AW=16, AH=12;
 var COLL_OFFSET_Y=-30, COLL_R=18;
 
 var CLS={
-  warrior:{name:'Warrior',hp:105,spd:2.7,atkDmg:22,atkRange:54,atkMs:320,atkType:'melee',
-    s1:{name:'Shield Bash',cd:5000,range:58,dmg:16,stun:600,shieldHp:10,shieldDur:3000},
+  warrior:{name:'Warrior',hp:140,spd:2.7,atkDmg:19,atkRange:54,atkMs:320,atkType:'melee',
+    s1:{name:'Shield Bash',cd:5000,range:58,dmg:14,stun:600,shieldHp:10,shieldDur:3000},
     s2:{name:'War Cry',cd:10000,warcry:true},
     move:{name:'War Charge',cd:6000,charge:true,chargeDur:800,dmgReduce:0.4}},
-  mage:{name:'Mage',hp:80,spd:2.2,atkDmg:10,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
-    s1:{name:'Fireball',cd:2800,dmg:25,proj:true,speed:340,range:230,charged:true,chargeMax:1500,chargeDmgMax:55},
+  mage:{name:'Mage',hp:105,spd:2.2,atkDmg:9,atkRange:220,atkMs:500,atkType:'proj',atkSpeed:300,
+    s1:{name:'Fireball',cd:2800,dmg:22,proj:true,speed:340,range:230,charged:true,chargeMax:1500,chargeDmgMax:47},
     s2:{name:'Frost Shield',cd:10000,arcaneShield:true,arcaneShieldDur:8000,arcaneShieldHits:3},
     move:{name:'Blink',cd:4000,blink:140}},
-  ranger:{name:'Rogue',hp:105,spd:3.0,atkDmg:10,atkRange:58,atkMs:240,atkType:'melee',
-    s1:{name:'Headbutt',cd:5500,dmg:12,range:56,stun:700},
+  ranger:{name:'Rogue',hp:140,spd:3.0,atkDmg:9,atkRange:58,atkMs:240,atkType:'melee',
+    s1:{name:'Headbutt',cd:5500,dmg:10,range:56,stun:700},
     s2:{name:'Stealth',cd:10000,stealth:true,stealthDur:7000,spdMult:0.65},
-    move:{name:'Shadow Step',cd:5000,shadowStep:true,stepRange:280,stepDmg:12}}
+    move:{name:'Shadow Step',cd:5000,shadowStep:true,stepRange:280,stepDmg:10}}
 };
 
 var ARENAS={
@@ -83,14 +83,13 @@ function mkPlayer(id,cls,name,spawn,isHost,level,redEyes,skullHelmet,crownOn){
     dir:isHost?3:2,anim:0,moving:false,
     atkTimer:0,attacking:0,s1cd:0,s2cd:0,
     stunned:0,stealthed:false,stealthTimer:0,stealthFirstHit:false,
-    rollInv:false,rolling:0,rollTimer:0,rollDir:{x:1,y:0},
+    rollInv:false,
     shieldHp:0,shieldTimer:0,arcaneShield:0,arcaneShieldHits:0,
     frostSlow:0,frost:0,frostTimer:0,frosted:false,frostedTimer:0,
     burning:false,burnTimer:0,burnTick:0,
     warCryBuff:0,warCryShake:0,warCharging:false,chargeTimer:0,chargeVx:0,chargeVy:0,dmgReduce:0,
     fireballCharging:false,fireballCharge:0,
-    galing:false,galeTimer:0,
-    moveCd:0,disarmed:0,hitFlash:0,dead:false,wins:0,projId:0};
+    moveCd:0,hitFlash:0,dead:false,wins:0,projId:0};
 }
 
 function mkGS(arenaKey,host,guest){
@@ -189,7 +188,7 @@ function doSkill(gs,user,target,num){
     user.arcaneShield=sk.arcaneShieldDur;user.arcaneShieldHits=sk.arcaneShieldHits||3;
     spawnEfx(gs,'arcane_block',user.x,user.y);
   } else if(sk.warcry){
-    user.stunned=0;user.frosted=false;user.frostedTimer=0;user.disarmed=0;
+    user.stunned=0;user.frosted=false;user.frostedTimer=0;
     user.s1cd=Math.max(0,(user.s1cd||0)-2000);user.s2cd=Math.max(0,(user.s2cd||0)-2000);user.moveCd=Math.max(0,(user.moveCd||0)-2000);
     user.warCryBuff=3000;user.warCryShake=600;
     spawnEfx(gs,'warcry',user.x,user.y);
@@ -223,7 +222,7 @@ function doMoveAbility(gs,user,target){
       user.y=Math.max(TILE+COLL_OFFSET_Y+COLL_R,Math.min((AH-1)*TILE-COLL_R,target.y+Math.sin(ang)*45));
       spawnEfx(gs,'shadow_step',user.x,user.y);
       if(user.stealthed){user.stealthed=false;user.stealthTimer=0;user.rollInv=false;user.stealthFirstHit=false;}
-      if(wasStealthed&&!target.rollInv){target.stunned=1400;dealDmg(gs,target,CLS[user.cls].s1.dmg,'bash');spawnEfx(gs,'stun',target.x,target.y);}
+      if(wasStealthed&&!target.rollInv){target.stunned=1400;dealDmg(gs,target,mv.stepDmg,'bash');spawnEfx(gs,'stun',target.x,target.y);}
     }
   }
 }
@@ -237,7 +236,7 @@ function updatePlayer(gs,p,inputs,dt){
   }
   p._inputWarnLogged=false;
   var C=CLS[p.cls];
-  var spd=C.spd*(p.rolling>0?1.75:1)*(p.galing?(1+(C.move.galeSpd||0)):1)*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1)*(p.frostSlow>0?0.25:1)*(p.fireballCharging&&p.cls==='mage'?0.25:1);
+  var spd=C.spd*(p.stealthed&&C.s2&&C.s2.stealth?C.s2.spdMult:1)*(p.frostSlow>0?0.25:1)*(p.fireballCharging&&p.cls==='mage'?0.25:1);
   p.vx=0;p.vy=0;var moved=false;
   if(inputs){
     if(inputs.up){p.vy=-spd;p.dir=1;moved=true;}
@@ -248,11 +247,10 @@ function updatePlayer(gs,p,inputs,dt){
   // Diagonal normalisation
   if(p.vx!==0&&p.vy!==0){var n=Math.SQRT1_2;p.vx*=n;p.vy*=n;}
   p.moving=moved;
-  if(p.rolling>0){p.vx=p.rollDir.x*spd;p.vy=p.rollDir.y*spd;}
   var step=dt/16;
   p.x+=p.vx*step;resolveX(gs.arena,p);
   p.y+=p.vy*step;resolveY(gs.arena,p);
-  if(moved||p.rolling>0)p.anim+=step;else p.anim=0;
+  if(moved)p.anim+=step;else p.anim=0;
 }
 
 function update(gs,inputs,dt){
@@ -272,8 +270,11 @@ function update(gs,inputs,dt){
   gs.roundMs+=dt;
   if(gs.roundMs>=1000){gs.roundMs-=1000;gs.roundTimer=Math.max(0,gs.roundTimer-1);}
   if(gs.roundTimer<=0){
-    var w=p0.hp>=p1.hp?p0:p1;
-    w.wins++;endRound(gs);return;
+    // True draw — nobody wins
+    send(room.host,{type:'draw'});
+    send(room.guest,{type:'draw'});
+    console.log('DRAW '+code+' — time ran out');
+    endRound(gs);return;
   }
   // Update each player with their inputs
   updatePlayer(gs,p0,inputs[p0.id],dt);
@@ -289,12 +290,25 @@ function update(gs,inputs,dt){
     if(p.arcaneShield>0){p.arcaneShield-=dt;if(p.arcaneShield<=0){p.arcaneShield=0;p.arcaneShieldHits=0;}}
     if(p.frostSlow>0)p.frostSlow-=dt;
     if(p.warCryBuff>0)p.warCryBuff-=dt;if(p.warCryShake>0)p.warCryShake-=dt;
-    if(p.disarmed>0)p.disarmed-=dt;
     if(p.frosted>0){p.frostedTimer-=dt;if(p.frostedTimer<=0){p.frosted=false;p.frostedTimer=0;p.stunned=0;}}
     if(p.moveCd>0)p.moveCd-=dt;
-    if(p.warCharging){p.chargeTimer-=dt;if(p.chargeTimer<=0){p.warCharging=false;p.dmgReduce=0;p.chargeVx=0;p.chargeVy=0;}else{p.x+=p.chargeVx*(dt/16);p.y+=p.chargeVy*(dt/16);resolveX(gs.arena,p);resolveY(gs.arena,p);}}
-    if(p.galing){p.galeTimer-=dt;if(p.galeTimer<=0)p.galing=false;}
-    if(p.rollTimer>0)p.rollTimer-=dt;if(p.rolling>0){p.rolling-=dt;if(p.rolling<=0)p.rolling=0;}
+    if(p.warCharging){
+      p.chargeTimer-=dt;
+      if(p.chargeTimer<=0){p.warCharging=false;p.dmgReduce=0;p.chargeVx=0;p.chargeVy=0;}
+      else{
+        p.x+=p.chargeVx*(dt/16);p.y+=p.chargeVy*(dt/16);
+        resolveX(gs.arena,p);resolveY(gs.arena,p);
+        // Collision damage with opponent
+        var chargeOther=p===p0?p1:p0;
+        if(!p._chargeHit&&dist(p,chargeOther)<40&&!chargeOther.dead&&!chargeOther.rollInv){
+          dealDmg(gs,chargeOther,CLS[p.cls].atkDmg,'bash');
+          chargeOther.stunned=400;
+          spawnEfx(gs,'bash',chargeOther.x,chargeOther.y);
+          p._chargeHit=true;
+        }
+      }
+    }
+    if(!p.warCharging)p._chargeHit=false;
     if(p.stunned>0)p.stunned-=dt;else p.stunned=0;
     if(p.s1cd>0)p.s1cd-=dt;if(p.s2cd>0)p.s2cd-=dt;if(p.hitFlash>0)p.hitFlash-=dt;
     // Lava
@@ -361,13 +375,13 @@ function resetRound(gs,arenaKey){
     p.vx=0;p.vy=0;p.hp=C.hp;p.maxHp=C.hp;p.dead=false;
     p.dir=idx===0?3:2;p.anim=0;p.moving=false;
     p.atkTimer=0;p.attacking=0;p.s1cd=0;p.s2cd=0;p.stunned=0;
-    p.stealthed=false;p.stealthTimer=0;p.stealthFirstHit=false;p.rollInv=false;p.rolling=0;p.rollTimer=0;
+    p.stealthed=false;p.stealthTimer=0;p.stealthFirstHit=false;p.rollInv=false;
     p.shieldHp=0;p.shieldTimer=0;p.arcaneShield=0;p.arcaneShieldHits=0;
     p.frostSlow=0;p.frost=0;p.frostTimer=0;p.frosted=false;p.frostedTimer=0;
     p.burning=false;p.burnTimer=0;p.burnTick=0;
     p.warCryBuff=0;p.warCryShake=0;p.warCharging=false;p.chargeTimer=0;p.dmgReduce=0;
     p.fireballCharging=false;p.fireballCharge=0;
-    p.galing=false;p.galeTimer=0;p.moveCd=0;p.disarmed=0;p.hitFlash=0;p.projId=0;
+    p.moveCd=0;p.hitFlash=0;p.projId=0;
   });
 }
 
@@ -430,7 +444,6 @@ wss.on('connection',function(ws){
         }
 
         case 'action':{
-          // Combat actions: attack, skill1, skill2, move, rematch_start etc
           var room3=rooms.get(ws.roomCode);
           if(!room3||!room3.gs)break;
           var gs3=room3.gs;
@@ -438,14 +451,47 @@ wss.on('connection',function(ws){
           var other=gs3.players.find(function(p){return p.id!==ws.playerId;});
           if(!actor||!other)break;
           var atype=msg.data&&msg.data.type;
-          if(atype==='attack'&&gs3.phase==='fighting'&&!actor.dead&&actor.atkTimer<=0&&!actor.disarmed&&!(actor.stunned>0)){
+          console.log('ACTION '+atype+' phase='+gs3.phase+' cls='+actor.cls);
+          if(atype==='attack'&&gs3.phase==='fighting'&&!actor.dead&&actor.atkTimer<=0&&!(actor.stunned>0)){
             doAttack(gs3,actor,other);
           } else if(atype==='skill1'&&gs3.phase==='fighting'&&!actor.dead){
-            doSkill(gs3,actor,other,1);
+            if(msg.data&&msg.data.charged){
+              var sk1s=CLS[actor.cls]&&CLS[actor.cls].s1;
+              if(sk1s&&sk1s.charged){
+                var clientCharge=msg.data.charge||0;
+                var serverCharge=actor.fireballCharge||0;
+                var usedCharge=Math.min(Math.max(clientCharge,serverCharge),sk1s.chargeMax);
+                // Always clear charge state regardless of cooldown
+                actor.fireballCharging=false;actor.fireballCharge=0;
+                // Only fire projectile if cooldown is ready
+                if(actor.s1cd<=0){
+                  var chargeRatioS=usedCharge/sk1s.chargeMax;
+                  var scaledDmgS=Math.round(sk1s.dmg+(sk1s.chargeDmgMax-sk1s.dmg)*chargeRatioS);
+                  actor.s1cd=sk1s.cd;
+                  var angleS=Math.atan2(other.y-actor.y,other.x-actor.x);
+                  gs3.projs.push({id:actor.id+'_'+(actor.projId=(actor.projId||0)+1),owner:actor.id,type:'fireball',
+                    x:actor.x,y:actor.y+10,vx:Math.cos(angleS)*sk1s.speed,vy:Math.sin(angleS)*sk1s.speed,
+                    dmg:scaledDmgS,dot:0,dotDur:0,range:sk1s.range,traveled:0,alive:true,anim:0});
+                  console.log('FIREBALL charged='+Math.round(usedCharge)+'/'+sk1s.chargeMax+' dmg='+scaledDmgS);
+                }
+              }
+            } else if(!msg.data||!msg.data.charged){
+              doSkill(gs3,actor,other,1);
+            }
           } else if(atype==='skill2'&&gs3.phase==='fighting'&&!actor.dead){
             doSkill(gs3,actor,other,2);
           } else if(atype==='move'&&gs3.phase==='fighting'&&!actor.dead){
+            console.log('MOVE action cls='+actor.cls+' moveCd='+Math.round(actor.moveCd||0));
+            var beforeBlink={x:actor.x,y:actor.y};
             doMoveAbility(gs3,actor,other);
+            // If blink, notify both clients to show dopp at old position
+            var mv3=CLS[actor.cls]&&CLS[actor.cls].move;
+            if(mv3&&mv3.blink){
+              var doppMsg={type:'dopp',x:Math.round(beforeBlink.x),y:Math.round(beforeBlink.y),dir:actor.dir,level:actor.level||1,playerId:actor.id};
+              console.log('DOPP_SPAWN sending to both clients, playerId='+actor.id.slice(0,8)+' x='+doppMsg.x+' y='+doppMsg.y);
+              send(room3.host,{type:'dopp_spawn',data:doppMsg});
+              send(room3.guest,{type:'dopp_spawn',data:doppMsg});
+            }
           } else if(atype==='rematch_ready'){
             // Update class choice
             if(actor&&msg.data.cls)actor.cls=msg.data.cls;
@@ -468,7 +514,10 @@ wss.on('connection',function(ws){
             if(myTraps.length>=3){var old=myTraps[0];gs3.traps.splice(gs3.traps.indexOf(old),1);}
             gs3.traps.push({id:actor.id+'_t'+Date.now(),owner:actor.id,x:actor.x,y:actor.y,life:30000,trapDur:1000,triggered:false,triggerTimer:0});
           } else if(atype==='fireball_charge'){
-            if(actor)actor.fireballCharging=!!msg.data.charging;
+            if(actor){
+              actor.fireballCharging=!!msg.data.charging;
+              if(!msg.data.charging)actor.fireballCharge=0; // clear charge when stopped
+            }
           } else if(atype==='chat'||atype==='dopp'||atype==='opponent_left'){
             relay(ws,msg);
           }
@@ -594,9 +643,8 @@ function serializeGS(gs){
         warCryBuff:Math.round(p.warCryBuff),warCryShake:Math.round(p.warCryShake),
         warCharging:p.warCharging,dmgReduce:p.dmgReduce||0,
         fireballCharging:p.fireballCharging,fireballCharge:Math.round(p.fireballCharge||0),
-        rolling:Math.round(p.rolling),rollInv:p.rollInv,rollDir:p.rollDir,
+        rollInv:p.rollInv,
         burning:p.burning,burnTimer:Math.round(p.burnTimer||0),
-        galing:p.galing,disarmed:Math.round(p.disarmed||0),
         vx:p.vx,vy:p.vy,
       };
     }),
