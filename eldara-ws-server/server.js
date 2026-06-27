@@ -714,13 +714,13 @@ function cleanup(ws){
   if(!room.host&&!room.guest){stopGameLoop(room);rooms.delete(ws.roomCode);console.log('ROOM '+ws.roomCode+' closed (rooms: '+rooms.size+')');}
 }
 
-// Heartbeat
+// Heartbeat — 20s interval, kills connections that haven't responded
 setInterval(function(){
   wss.clients.forEach(function(ws){
     if(!ws.isAlive){ws.terminate();return;}
     ws.isAlive=false;ws.ping();
   });
-},30000);
+},20000);
 
 var PORT=process.env.PORT||3000;
 server.listen(PORT,function(){console.log('Eldara authoritative server on port '+PORT+' @ '+TICK_RATE+'hz');});
