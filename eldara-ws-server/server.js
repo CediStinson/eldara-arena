@@ -432,7 +432,7 @@ const wss=new WebSocket.Server({server});
 const rooms=new Map();
 
 function makeRoom(){
-  return {host:null,guest:null,gs:null,inputs:{},loop:null,hostInfo:null,guestInfo:null};
+  return {host:null,guest:null,gs:null,inputs:{},loop:null,hostInfo:null,guestInfo:null,pendingArenaKey:null};
 }
 
 wss.on('connection',function(ws){
@@ -469,6 +469,15 @@ wss.on('connection',function(ws){
               if(room.gs){
                 broadcastState(room,code,true);
                 console.log('RECONNECT '+code+' game already running');
+              } else if(room.hostInfo&&room.guestInfo&&room.pendingArenaKey){
+                // Host already sent match_start but guest wasn't connected yet — start now
+                room.gs=mkGS(room.pendingArenaKey,room.hostInfo,room.guestInfo);
+                room.inputs={};
+                room.inputs[room.hostInfo.playerId]={up:false,down:false,left:false,right:false};
+                room.inputs[room.guestInfo.playerId]={up:false,down:false,left:false,right:false};
+                startGameLoop(room,code);
+                broadcastState(room,code,true);
+                console.log('DEFERRED MATCH_START '+code);
               } else {
                 console.log('READY '+code);
               }
@@ -576,7 +585,6 @@ wss.on('connection',function(ws){
         case 'match_start':{
           var room4=rooms.get(ws.roomCode);
           if(!room4||ws.role!=='host')break;
-          // Only create game once — ignore if already running
           if(room4.gs){
             console.log('match_start ignored — game already running for '+ws.roomCode);
             broadcastState(room4,ws.roomCode,true);
@@ -585,7 +593,12 @@ wss.on('connection',function(ws){
           var ak4=msg.arenaKey||ARENA_KEYS[Math.floor(Math.random()*ARENA_KEYS.length)];
           if(msg.hostCls&&room4.hostInfo)room4.hostInfo.cls=msg.hostCls;
           if(msg.guestCls&&room4.guestInfo)room4.guestInfo.cls=msg.guestCls;
-          if(!room4.hostInfo||!room4.guestInfo){console.log('match_start: missing player info');break;}
+          // Store arena key so we can start when guest connects
+          room4.pendingArenaKey=ak4;
+          if(!room4.hostInfo||!room4.guestInfo){
+            console.log('match_start: guest not connected yet — will start when guest joins ('+ws.roomCode+')');
+            break;
+          }
           room4.gs=mkGS(ak4,room4.hostInfo,room4.guestInfo);
           room4.inputs={};
           room4.inputs[room4.hostInfo.playerId]={up:false,down:false,left:false,right:false};
