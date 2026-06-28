@@ -447,42 +447,33 @@ wss.on('connection',function(ws){
 
         case 'join':{
           var code=msg.roomCode;if(!code)break;
-          var joinMsg=msg;var joinWs=ws;
-          // Verify Firebase token — guests allowed without token for now
-          verifyFirebaseToken(msg.token||'').then(function(uid){
-            // Allow if token matches playerId, or if no token (guest/fallback)
-            if(msg.token&&uid&&uid!==msg.playerId){
-              send(joinWs,{type:'error',message:'Auth failed'});
-              try{joinWs.close();}catch(e){}
-              return;
+          if(!rooms.has(code))rooms.set(code,makeRoom());
+          var room=rooms.get(code);
+          if(room[msg.role]&&room[msg.role]!==ws){try{room[msg.role].close();}catch(e){}}
+          room[msg.role]=ws;
+          ws.roomCode=code;ws.role=msg.role;ws.playerId=msg.playerId;
+          room[msg.role+'Info']={playerId:msg.playerId,name:msg.playerName||msg.role,cls:msg.cls||'warrior',level:msg.level||1,rating:msg.rating||1000,redEyes:!!msg.redEyes,skullHelmet:!!msg.skullHelmet,crownOn:!!msg.crownOn};
+          console.log('JOIN '+code+' as '+msg.role+' cls='+msg.cls);
+          if(room.host&&room.guest){
+            send(room.host,{type:'ready'});
+            send(room.guest,{type:'ready'});
+            if(room.gs){
+              broadcastState(room,code,true);
+              console.log('RECONNECT '+code+' game already running');
+            } else if(room.pendingArenaKey){
+              room.gs=mkGS(room.pendingArenaKey,room.hostInfo,room.guestInfo);
+              room.inputs={};
+              room.inputs[room.hostInfo.playerId]={up:false,down:false,left:false,right:false};
+              room.inputs[room.guestInfo.playerId]={up:false,down:false,left:false,right:false};
+              startGameLoop(room,code);
+              broadcastState(room,code,true);
+              console.log('DEFERRED MATCH_START '+code);
+            } else {
+              console.log('READY '+code+' waiting for match_start');
             }
-            if(!rooms.has(code))rooms.set(code,makeRoom());
-            var room=rooms.get(code);
-            if(room[joinMsg.role]&&room[joinMsg.role]!==joinWs){try{room[joinMsg.role].close();}catch(e){}}
-            room[joinMsg.role]=joinWs;
-            joinWs.roomCode=code;joinWs.role=joinMsg.role;joinWs.playerId=joinMsg.playerId;
-            room[joinMsg.role+'Info']={playerId:joinMsg.playerId,name:joinMsg.playerName||joinMsg.role,cls:joinMsg.cls||'warrior',level:joinMsg.level||1,rating:joinMsg.rating||1000,redEyes:!!joinMsg.redEyes,skullHelmet:!!joinMsg.skullHelmet,crownOn:!!joinMsg.crownOn};
-            console.log('JOIN '+code+' as '+joinMsg.role+' cls='+joinMsg.cls+(uid?' auth:ok':' auth:guest'));
-            if(room.host&&room.guest){
-              send(room.host,{type:'ready'});
-              send(room.guest,{type:'ready'});
-              if(room.gs){
-                broadcastState(room,code,true);
-                console.log('RECONNECT '+code+' game already running');
-              } else if(room.hostInfo&&room.guestInfo&&room.pendingArenaKey){
-                // Host already sent match_start but guest wasn't connected yet — start now
-                room.gs=mkGS(room.pendingArenaKey,room.hostInfo,room.guestInfo);
-                room.inputs={};
-                room.inputs[room.hostInfo.playerId]={up:false,down:false,left:false,right:false};
-                room.inputs[room.guestInfo.playerId]={up:false,down:false,left:false,right:false};
-                startGameLoop(room,code);
-                broadcastState(room,code,true);
-                console.log('DEFERRED MATCH_START '+code);
-              } else {
-                console.log('READY '+code);
-              }
-            }
-          });// end verifyFirebaseToken
+          } else {
+            console.log('WAITING '+code+' host='+!!room.host+' guest='+!!room.guest);
+          }
           break;
         }
 
