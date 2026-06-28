@@ -8,6 +8,11 @@ var FB_KEY = 'AIzaSyAq1J5dOJE94SGZ982fHJrxc5f_5xe6Wjc';
 function verifyFirebaseToken(token){
   return new Promise(function(resolve){
     if(!token){resolve(null);return;}
+    // Timeout after 2s — fail open so game isn't blocked by slow Google API
+    var done=false;
+    var timeout=setTimeout(function(){
+      if(!done){done=true;console.log('Token verify timeout — proceeding as guest');resolve(null);}
+    },2000);
     var postData=JSON.stringify({idToken:token});
     var req=https.request({
       hostname:'identitytoolkit.googleapis.com',
@@ -18,6 +23,7 @@ function verifyFirebaseToken(token){
       var body='';
       res.on('data',function(d){body+=d;});
       res.on('end',function(){
+        if(done)return;done=true;clearTimeout(timeout);
         try{
           var r=JSON.parse(body);
           if(r.users&&r.users[0])resolve(r.users[0].localId);
@@ -25,7 +31,7 @@ function verifyFirebaseToken(token){
         }catch(e){resolve(null);}
       });
     });
-    req.on('error',function(){resolve(null);});
+    req.on('error',function(){if(!done){done=true;clearTimeout(timeout);resolve(null);}});
     req.write(postData);req.end();
   });
 }
